@@ -255,16 +255,30 @@ treeDiffGoldenTest fp =
           input = "tests" </> "ParserTests" </> "regressions" </> fp
           exprFile = replaceExtension input (label <> ".expr")
   in testGroup "expr"
-      [ go "packageDescription" packageDescription
-      , go "gpdScannedVersion" gpdScannedVersion
-      , go "genPackageFlags" genPackageFlags
-      -- Test accessors because they encapsulate the merging behaviour
-      , go "condLibrary" condLibrary
-      , go "condSubLibraries" condSubLibraries
-      , go "condForeignLibs" condForeignLibs
-      , go "condExecutables" condExecutables
-      , go "condTestSuites" condTestSuites
-      , go "condBenchmarks" condBenchmarks
+      [
+      --   go "packageDescription" packageDescription
+      -- , go "gpdScannedVersion" gpdScannedVersion
+      -- , go "genPackageFlags" genPackageFlags
+      -- -- Test accessors because they encapsulate the merging behaviour
+      -- , go "condLibrary" condLibrary
+      -- , go "condSubLibraries" condSubLibraries
+      -- , go "condForeignLibs" condForeignLibs
+      -- , go "condExecutables" condExecutables
+      -- , go "condTestSuites" condTestSuites
+      -- , go "condBenchmarks" condBenchmarks
+      go "entireGPD"
+        (\gpd ->
+          ( packageDescription gpd
+          , gpdScannedVersion gpd
+          , genPackageFlags gpd
+          , condLibrary gpd
+          , condSubLibraries gpd
+          , condForeignLibs gpd
+          , condExecutables gpd
+          , condTestSuites gpd
+          , condBenchmarks gpd
+          )
+        )
       ]
 #endif
 
