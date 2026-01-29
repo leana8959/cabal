@@ -78,6 +78,7 @@ instance Stream LexState' Identity LToken where
   uncons (LexState' _ (tok, st')) =
     case tok of
       L _ EOF -> return Nothing
+      L _ (TokVSpace{}) -> uncons st'
       _ -> return (Just (tok, st'))
 
 -- | A strict either for parser performance
@@ -120,6 +121,7 @@ describeToken t = case t of
   OpenBrace -> "\"{\""
   CloseBrace -> "\"}\""
   TokComment c -> "comment \"" ++ B8.unpack c ++ "\""
+  TokVSpace s -> "vertical space \"" ++ B8.unpack s ++ "\""
   --  SemiColon       -> "\";\""
   EOF -> "end of file"
   LexicalError is -> "character in input " ++ show (B8.head is)

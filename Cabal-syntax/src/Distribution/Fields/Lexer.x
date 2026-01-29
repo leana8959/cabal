@@ -81,7 +81,12 @@ tokens :-
 }
 
 <bol_section, bol_field_layout, bol_field_braces> {
-  @nbspspacetab* @nl         { \pos len inp -> checkWhitespace pos len inp >> adjustPos retPos >> lexToken }
+  @nbspspacetab* @nl         { \pos len inp -> do
+                                  _ <- checkWhitespace pos len inp
+                                  adjustPos retPos
+                                  toki TokVSpace pos len inp
+                             }
+
   -- no @nl here to allow for comments on last line of the file with no trailing \n
   $spacetab* "--" $comment*  { toki TokComment }
   -- TODO: check the lack of @nl works here
@@ -115,7 +120,12 @@ tokens :-
   \:           { tok  Colon }
   \{           { tok  OpenBrace }
   \}           { tok  CloseBrace }
-  @nl          { \_ _ _ -> adjustPos retPos >> setStartCode bol_section >> lexToken }
+
+  @nl          { \pos len inp -> do
+                    adjustPos retPos
+                    setStartCode bol_section
+                    toki TokVSpace pos len inp
+               }
 }
 
 <bol_field_layout> {
@@ -134,7 +144,12 @@ tokens :-
 <in_field_layout> {
   $spacetab+;
   $field_layout' $field_layout*  { toki TokFieldLine }
-  @nl             { \_ _ _ -> adjustPos retPos >> setStartCode bol_field_layout >> lexToken }
+
+  @nl             { \pos len inp -> do
+                      adjustPos retPos
+                      setStartCode bol_field_layout
+                      toki TokVSpace pos len inp
+                  }
 }
 
 <bol_field_braces> {
@@ -146,7 +161,12 @@ tokens :-
   $field_braces' $field_braces*    { toki TokFieldLine }
   \{                { tok  OpenBrace  }
   \}                { tok  CloseBrace }
-  @nl               { \_ _ _ -> adjustPos retPos >> setStartCode bol_field_braces >> lexToken }
+
+  @nl               { \pos len inp ->  do
+                        adjustPos retPos
+                        setStartCode bol_field_braces
+                        toki TokVSpace pos len inp
+                    }
 }
 
 {
@@ -161,6 +181,7 @@ data Token = TokSym   !ByteString       -- ^ Haskell-like identifier, number or 
            | OpenBrace
            | CloseBrace
            | TokComment !ByteString
+           | TokVSpace !ByteString
            | EOF
            | LexicalError InputStream --TODO: add separate string lexical error
   deriving Show
