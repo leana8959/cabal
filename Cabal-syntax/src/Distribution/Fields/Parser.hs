@@ -147,6 +147,9 @@ tokVSpace = getTokenWithPos $ \t -> case t of L pos (TokVSpace vs) -> Just (VWhi
 tokComment :: Parser (FieldTrivia Position)
 tokComment = getTokenWithPos $ \t -> case t of L pos (TokComment c) -> Just (Comment c pos); _ -> Nothing
 
+tokTrivia :: Parser (FieldTrivia Position)
+tokTrivia = tokVSpace <|> tokComment
+
 colon, openBrace, closeBrace :: Parser ()
 sectionArg :: Parser (SectionArg Position)
 sectionArg = tokSym' <|> tokStr <|> tokOther <?> "section parameter"
@@ -227,13 +230,17 @@ inLexerMode (LexerMode mode) p =
 --                              | content
 -- @
 --
+--
+-- [Note: The grammar is not fully left-factored]
+-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+--
 -- Note how we have several productions with the sequence:
 --
 -- > '\\n'? '{'
 --
 -- That is, an optional newline (and indent) followed by a @{@ token.
 -- In the @SectionLayoutOrBraces@ case you can see that this makes it
--- not fully left factored (because @SecElems@ can start with a @\\n@).
+-- not fully left factored (because @Elements@ can start with a @\\n@).
 -- Fully left factoring here would be ugly, and though we could use a
 -- lookahead of two tokens to resolve the alternatives, we can't
 -- conveniently use Parsec's 'try' here to get a lookahead of only two.
@@ -255,49 +262,49 @@ cabalStyleFile = do
 -- | Collect in annotation one or more comments after a parser succeeds
 -- Careful with the 'Functor' instance!
 -- If you use this with Field you might attach the same comments everywhere
-commentsAfter :: Functor f => Parser (f Position) -> Parser (f (WithFieldTrivia Position))
-commentsAfter p = do
+triviaAfter :: Functor f => Parser (f Position) -> Parser (f (WithFieldTrivia Position))
+triviaAfter p = do
   x <- p
-  postCmts <- many tokComment
-  pure $ fmap (WithFieldTrivia postCmts) x
+  postTrivia <- many (tokComment <|> tokVSpace)
+  pure $ fmap (WithFieldTrivia postTrivia) x
 
 noComments :: Functor f => f ann -> f (WithFieldTrivia ann)
 noComments = fmap (WithFieldTrivia mempty)
 
 -- | Returns 'Nothing' when there is no field to attach the comments to.
-prependCommentsFields :: [FieldTrivia ann] -> [Field (WithFieldTrivia ann)] -> Maybe [Field (WithFieldTrivia ann)]
-prependCommentsFields cs fs = case fs of
+prepentFieldTrivia :: [FieldTrivia ann] -> [Field (WithFieldTrivia ann)] -> Maybe [Field (WithFieldTrivia ann)]
+prepentFieldTrivia cs fs = case fs of
   [] -> Nothing
-  (f : fs') -> Just $ prependCommentsField cs f : fs'
+  (f : fs') -> Just $ prependFieldTriviaStep cs f : fs'
 
 -- | We attach the comments to the name (foremost child) of 'Field', this hence cannot fail.
-prependCommentsField :: [FieldTrivia ann] -> Field (WithFieldTrivia ann) -> Field (WithFieldTrivia ann)
-prependCommentsField cs f = case f of
+prependFieldTriviaStep :: [FieldTrivia ann] -> Field (WithFieldTrivia ann) -> Field (WithFieldTrivia ann)
+prependFieldTriviaStep cs f = case f of
   (Field name fls) -> Field (mapComments (cs ++) <$> name) fls
   (Section name args fs) -> Section (mapComments (cs ++) <$> name) args fs
 
 -- | Returns 'Nothing' when there is no field to attach the comments to.
-appendCommentsFields :: [FieldTrivia ann] -> [Field (WithFieldTrivia ann)] -> Maybe [Field (WithFieldTrivia ann)]
-appendCommentsFields cs fs = case fs of
+appendFieldTrivia :: [FieldTrivia ann] -> [Field (WithFieldTrivia ann)] -> Maybe [Field (WithFieldTrivia ann)]
+appendFieldTrivia cs fs = case fs of
   [] -> Nothing
-  [f] -> Just [appendCommentsField cs f]
-  (f : fs') -> (f :) <$> appendCommentsFields cs fs'
+  [f] -> Just [appendFieldTriviaStep cs f]
+  (f : fs') -> (f :) <$> appendFieldTrivia cs fs'
 
-appendCommentsField :: [FieldTrivia ann] -> Field (WithFieldTrivia ann) -> Field (WithFieldTrivia ann)
-appendCommentsField cs f = case f of
-  (Field name fls) -> case appendCommentsFieldLines cs fls of
+appendFieldTriviaStep :: [FieldTrivia ann] -> Field (WithFieldTrivia ann) -> Field (WithFieldTrivia ann)
+appendFieldTriviaStep cs f = case f of
+  (Field name fls) -> case appendFieldTriviaFieldLine cs fls of
     Nothing -> Field (mapComments (++ cs) <$> name) []
     Just fls' -> Field name fls'
-  (Section name args fs) -> case appendCommentsFields cs fs of
+  (Section name args fs) -> case appendFieldTrivia cs fs of
     Nothing -> Section (mapComments (++ cs) <$> name) args []
     Just fs' -> Section name args fs'
 
 -- | Returns 'Nothing' when there is no field to attach the comments to.
-appendCommentsFieldLines :: [FieldTrivia ann] -> [FieldLine (WithFieldTrivia ann)] -> Maybe [FieldLine (WithFieldTrivia ann)]
-appendCommentsFieldLines cs fls = case fls of
+appendFieldTriviaFieldLine :: [FieldTrivia ann] -> [FieldLine (WithFieldTrivia ann)] -> Maybe [FieldLine (WithFieldTrivia ann)]
+appendFieldTriviaFieldLine cs fls = case fls of
   [] -> Nothing
   [fl] -> Just [mapComments (++ cs) <$> fl]
-  (f : fls') -> (f :) <$> appendCommentsFieldLines cs fls'
+  (f : fls') -> (f :) <$> appendFieldTriviaFieldLine cs fls'
 
 -- Elements that live at the top level or inside a section, i.e. fields
 -- and sections content.
@@ -310,14 +317,14 @@ appendCommentsFieldLines cs fls = case fls of
 -- elements ::= comment* (element comment*)*
 elements :: IndentLevel -> Parser (Either' [FieldTrivia Position] [Field (WithFieldTrivia Position)])
 elements ilevel = do
-  preCmts <- many tokComment
+  preTrivia <- many tokTrivia
   es <- many $ do
     e <- element ilevel
-    postCmts <- many tokComment
-    pure $ appendCommentsField postCmts e
+    postTrivia <- many tokTrivia
+    pure $ appendFieldTriviaStep postTrivia e
 
-  case prependCommentsFields preCmts es of
-    Nothing -> pure $ Left' preCmts
+  case prepentFieldTrivia preTrivia es of
+    Nothing -> pure $ Left' preTrivia
     Just es' -> pure $ Right' es'
 
 -- An individual element, ie a field or a section. These can either use
@@ -391,28 +398,30 @@ fieldLayoutOrBraces ilevel name = braces <|> fieldLayout
     braces = do
       x <- optional tokVSpace
       openBrace
-      preCmts <- many tokComment
-      ls <- inLexerMode (LexerMode in_field_braces) (many $ commentsAfter fieldContent)
+      preTrivia <- many tokTrivia
+      ls <- inLexerMode (LexerMode in_field_braces) (many $ triviaAfter fieldContent)
       closeBrace
-      return $ Field (WithFieldTrivia preCmts <$> name) ls
+      return $ Field (WithFieldTrivia preTrivia <$> name) ls
 
     fieldLayout :: Parser (Field (WithFieldTrivia Position))
     fieldLayout = inLexerMode (LexerMode in_field_layout) $ do
-      preCmts <- many tokComment
-      l <- optionMaybe (commentsAfter fieldContent)
+      preTrivia <- many tokTrivia
+      l <- optionMaybe (triviaAfter fieldContent)
       ls <- many $ do
               _ <- indentOfAtLeast ilevel
-              ret <- commentsAfter fieldContent
+              ret <- triviaAfter fieldContent
               -- FIXME(leana8959): this /required/ tokVSpace doesn't correspond to the grammar!
               x <- optional tokVSpace
               pure ret
       return
         ( case l of
-            Nothing -> (Field (WithFieldTrivia preCmts <$> name) ls)
-            Just l' -> (Field (WithFieldTrivia preCmts <$> name) (l' : ls))
+            Nothing -> (Field (WithFieldTrivia preTrivia <$> name) ls)
+            Just l' -> (Field (WithFieldTrivia preTrivia <$> name) (l' : ls))
         )
 
 -- The body of a section, using either layout style or braces style.
+--
+-- See [Note: The grammar is not fully left-factored].
 --
 -- sectionLayoutOrBraces ::= '\\n'? '{' elements \\n? '}'
 --                         | elements
