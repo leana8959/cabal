@@ -14,7 +14,7 @@ import Control.Monad                               (unless, void)
 import Data.Algorithm.Diff                         (PolyDiff (..), getGroupedDiff)
 import Data.Maybe                                  (isNothing)
 import Distribution.Fields                         (pwarning)
-import Distribution.Fields.Parser                  (readFieldsWithComments', formatError)
+import Distribution.Fields.Parser                  (readFieldsWithFieldTrivia', formatError)
 import Distribution.PackageDescription             (GenericPackageDescription, exactComments)
 import Distribution.PackageDescription.Parsec
   ( parseGenericPackageDescription
@@ -128,7 +128,7 @@ commentTests = testGroup "comments"
 readFieldTest :: FilePath -> TestTree
 readFieldTest fname = ediffGolden goldenTest fname exprFile $ do
   contents <- BS.readFile input
-  let res = readFieldsWithComments' contents
+  let res = readFieldsWithFieldTrivia' contents
 
   case res of
     Left perr -> fail $ formatError contents perr

@@ -19,8 +19,8 @@ module Distribution.Fields.Field
   , sectionArgAnn
 
     -- * Comment
-  , Comment (..)
-  , WithComments (..)
+  , FieldTrivia (..)
+  , WithFieldTrivia (..)
   , mapComments
   , mapCommentedData
 
@@ -51,20 +51,22 @@ import qualified Data.Foldable1 as F1
 -- Cabal file
 -------------------------------------------------------------------------------
 
-data Comment ann = Comment !ByteString !ann
+data FieldTrivia ann
+  = Comment !ByteString !ann
+  | VWhitespace !ByteString !ann
   deriving (Show, Generic, Eq, Ord, Functor)
 
-data WithComments ann = WithComments
-  { justComments :: ![Comment ann]
+data WithFieldTrivia ann = WithFieldTrivia
+  { justComments :: ![FieldTrivia ann]
   , unComments :: !ann
   }
   deriving (Show, Generic, Eq, Ord, Functor)
 
-mapComments :: ([Comment ann] -> [Comment ann]) -> WithComments ann -> WithComments ann
-mapComments f (WithComments cs x) = WithComments (f cs) x
+mapComments :: ([FieldTrivia ann] -> [FieldTrivia ann]) -> WithFieldTrivia ann -> WithFieldTrivia ann
+mapComments f (WithFieldTrivia cs x) = WithFieldTrivia (f cs) x
 
-mapCommentedData :: (ann -> ann) -> WithComments ann -> WithComments ann
-mapCommentedData f (WithComments cs x) = WithComments cs (f x)
+mapCommentedData :: (ann -> ann) -> WithFieldTrivia ann -> WithFieldTrivia ann
+mapCommentedData f (WithFieldTrivia cs x) = WithFieldTrivia cs (f x)
 
 -- | A Cabal-like file consists of a series of fields (@foo: bar@) and sections (@library ...@).
 data Field ann

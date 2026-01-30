@@ -22,8 +22,8 @@ module Distribution.Fields.Parser
     -- $grammar
   , readFields
   , readFields'
-  , readFieldsWithComments
-  , readFieldsWithComments'
+  , readFieldsWithFieldTrivia
+  , readFieldsWithFieldTrivia'
 #ifdef CABAL_PARSEC_DEBUG
 
     -- * Internal
@@ -142,7 +142,7 @@ tokOpenBrace = getTokenWithPos $ \t -> case t of L pos OpenBrace -> Just pos; _ 
 tokCloseBrace = getToken $ \t -> case t of CloseBrace -> Just (); _ -> Nothing
 tokFieldLine = getTokenWithPos $ \t -> case t of L pos (TokFieldLine s) -> Just (FieldLine pos s); _ -> Nothing
 
-tokComment :: Parser (Comment Position)
+tokComment :: Parser (FieldTrivia Position)
 tokComment = getTokenWithPos $ \t -> case t of L pos (TokComment c) -> Just (Comment c pos); _ -> Nothing
 
 colon, openBrace, closeBrace :: Parser ()
@@ -242,7 +242,7 @@ inLexerMode (LexerMode mode) p =
 
 -- Top level of a file using cabal syntax
 --
-cabalStyleFile :: Parser [Field (WithComments Position)]
+cabalStyleFile :: Parser [Field (WithFieldTrivia Position)]
 cabalStyleFile = do
   es <- elements zeroIndentLevel
   eof
@@ -253,35 +253,35 @@ cabalStyleFile = do
 -- | Collect in annotation one or more comments after a parser succeeds
 -- Careful with the 'Functor' instance!
 -- If you use this with Field you might attach the same comments everywhere
-commentsAfter :: Functor f => Parser (f Position) -> Parser (f (WithComments Position))
+commentsAfter :: Functor f => Parser (f Position) -> Parser (f (WithFieldTrivia Position))
 commentsAfter p = do
   x <- p
   postCmts <- many tokComment
-  pure $ fmap (WithComments postCmts) x
+  pure $ fmap (WithFieldTrivia postCmts) x
 
-noComments :: Functor f => f ann -> f (WithComments ann)
-noComments = fmap (WithComments mempty)
+noComments :: Functor f => f ann -> f (WithFieldTrivia ann)
+noComments = fmap (WithFieldTrivia mempty)
 
 -- | Returns 'Nothing' when there is no field to attach the comments to.
-prependCommentsFields :: [Comment ann] -> [Field (WithComments ann)] -> Maybe [Field (WithComments ann)]
+prependCommentsFields :: [FieldTrivia ann] -> [Field (WithFieldTrivia ann)] -> Maybe [Field (WithFieldTrivia ann)]
 prependCommentsFields cs fs = case fs of
   [] -> Nothing
   (f : fs') -> Just $ prependCommentsField cs f : fs'
 
 -- | We attach the comments to the name (foremost child) of 'Field', this hence cannot fail.
-prependCommentsField :: [Comment ann] -> Field (WithComments ann) -> Field (WithComments ann)
+prependCommentsField :: [FieldTrivia ann] -> Field (WithFieldTrivia ann) -> Field (WithFieldTrivia ann)
 prependCommentsField cs f = case f of
   (Field name fls) -> Field (mapComments (cs ++) <$> name) fls
   (Section name args fs) -> Section (mapComments (cs ++) <$> name) args fs
 
 -- | Returns 'Nothing' when there is no field to attach the comments to.
-appendCommentsFields :: [Comment ann] -> [Field (WithComments ann)] -> Maybe [Field (WithComments ann)]
+appendCommentsFields :: [FieldTrivia ann] -> [Field (WithFieldTrivia ann)] -> Maybe [Field (WithFieldTrivia ann)]
 appendCommentsFields cs fs = case fs of
   [] -> Nothing
   [f] -> Just [appendCommentsField cs f]
   (f : fs') -> (f :) <$> appendCommentsFields cs fs'
 
-appendCommentsField :: [Comment ann] -> Field (WithComments ann) -> Field (WithComments ann)
+appendCommentsField :: [FieldTrivia ann] -> Field (WithFieldTrivia ann) -> Field (WithFieldTrivia ann)
 appendCommentsField cs f = case f of
   (Field name fls) -> case appendCommentsFieldLines cs fls of
     Nothing -> Field (mapComments (++ cs) <$> name) []
@@ -291,7 +291,7 @@ appendCommentsField cs f = case f of
     Just fs' -> Section name args fs'
 
 -- | Returns 'Nothing' when there is no field to attach the comments to.
-appendCommentsFieldLines :: [Comment ann] -> [FieldLine (WithComments ann)] -> Maybe [FieldLine (WithComments ann)]
+appendCommentsFieldLines :: [FieldTrivia ann] -> [FieldLine (WithFieldTrivia ann)] -> Maybe [FieldLine (WithFieldTrivia ann)]
 appendCommentsFieldLines cs fls = case fls of
   [] -> Nothing
   [fl] -> Just [mapComments (++ cs) <$> fl]
@@ -306,7 +306,7 @@ appendCommentsFieldLines cs fls = case fls of
 -- elements isn't a valid cabal file.
 --
 -- elements ::= comment* (element comment*)*
-elements :: IndentLevel -> Parser (Either' [Comment Position] [Field (WithComments Position)])
+elements :: IndentLevel -> Parser (Either' [FieldTrivia Position] [Field (WithFieldTrivia Position)])
 elements ilevel = do
   preCmts <- many tokComment
   es <- many $ do
@@ -324,7 +324,7 @@ elements ilevel = do
 --
 -- element ::= '\\n' name elementInLayoutContext
 --           |      name elementInNonLayoutContext
-element :: IndentLevel -> Parser (Field (WithComments Position))
+element :: IndentLevel -> Parser (Field (WithFieldTrivia Position))
 element ilevel =
   ( do
       ilevel' <- indentOfAtLeast ilevel
@@ -342,7 +342,7 @@ element ilevel =
 --
 -- elementInLayoutContext ::= ':'  fieldLayoutOrBraces
 --                          | arg* sectionLayoutOrBraces
-elementInLayoutContext :: IndentLevel -> Name Position -> Parser (Field (WithComments Position))
+elementInLayoutContext :: IndentLevel -> Name Position -> Parser (Field (WithFieldTrivia Position))
 elementInLayoutContext ilevel name =
   (do colon; fieldLayoutOrBraces ilevel name)
     <|> ( do
@@ -350,7 +350,7 @@ elementInLayoutContext ilevel name =
             elems <- sectionLayoutOrBraces ilevel
             case elems of
               -- If there are no elements but comments, we attach them to the name (args can be multiple)
-              Left' onlyCmts -> return (Section (WithComments onlyCmts <$> name) (noComments <$> args) [])
+              Left' onlyCmts -> return (Section (WithFieldTrivia onlyCmts <$> name) (noComments <$> args) [])
               Right' elems' -> return (Section (noComments name) (noComments <$> args) elems')
         )
 
@@ -360,7 +360,7 @@ elementInLayoutContext ilevel name =
 --
 -- elementInNonLayoutContext ::= ':' FieldInlineOrBraces
 --                             | arg* '\\n'? '{' elements '\\n'? '}'
-elementInNonLayoutContext :: Name Position -> Parser (Field (WithComments Position))
+elementInNonLayoutContext :: Name Position -> Parser (Field (WithFieldTrivia Position))
 elementInNonLayoutContext name =
   (do colon; noComments <$> fieldInlineOrBraces name) -- inline field or braces can never have comments
     <|> ( do
@@ -371,7 +371,7 @@ elementInNonLayoutContext name =
             closeBrace
 
             case elems of
-              Left' elementCmts -> return (Section (WithComments elementCmts <$> name) (noComments <$> args) [])
+              Left' elementCmts -> return (Section (WithFieldTrivia elementCmts <$> name) (noComments <$> args) [])
               Right' elems' -> return (Section (noComments name) (noComments <$> args) elems')
         )
 
@@ -379,33 +379,33 @@ elementInNonLayoutContext name =
 --
 -- fieldLayoutOrBraces   ::= '\\n'? '{' comment* (content comment*)* '}'
 --                         | comment* line? comment* ('\\n' line comment*)*
-fieldLayoutOrBraces :: IndentLevel -> Name Position -> Parser (Field (WithComments Position))
+fieldLayoutOrBraces :: IndentLevel -> Name Position -> Parser (Field (WithFieldTrivia Position))
 fieldLayoutOrBraces ilevel name = braces <|> fieldLayout
   where
-    braces :: Parser (Field (WithComments Position))
+    braces :: Parser (Field (WithFieldTrivia Position))
     braces = do
       openBrace
       preCmts <- many tokComment
       ls <- inLexerMode (LexerMode in_field_braces) (many $ commentsAfter fieldContent)
       closeBrace
-      return $ Field (WithComments preCmts <$> name) ls
+      return $ Field (WithFieldTrivia preCmts <$> name) ls
 
-    fieldLayout :: Parser (Field (WithComments Position))
+    fieldLayout :: Parser (Field (WithFieldTrivia Position))
     fieldLayout = inLexerMode (LexerMode in_field_layout) $ do
       preCmts <- many tokComment
       l <- optionMaybe (commentsAfter fieldContent)
       ls <- many (do _ <- indentOfAtLeast ilevel; commentsAfter fieldContent)
       return
         ( case l of
-            Nothing -> (Field (WithComments preCmts <$> name) ls)
-            Just l' -> (Field (WithComments preCmts <$> name) (l' : ls))
+            Nothing -> (Field (WithFieldTrivia preCmts <$> name) ls)
+            Just l' -> (Field (WithFieldTrivia preCmts <$> name) (l' : ls))
         )
 
 -- The body of a section, using either layout style or braces style.
 --
 -- sectionLayoutOrBraces ::= '\\n'? '{' elements \\n? '}'
 --                         | elements
-sectionLayoutOrBraces :: IndentLevel -> Parser (Either' [Comment Position] [Field (WithComments Position)])
+sectionLayoutOrBraces :: IndentLevel -> Parser (Either' [FieldTrivia Position] [Field (WithFieldTrivia Position)])
 sectionLayoutOrBraces ilevel =
   ( do
       openBrace
@@ -460,17 +460,17 @@ fieldInlineOrBraces name =
 -- >>> readFields' "\xc2\xa0 foo: bar"
 -- Right ([Field (Name (Position 1 3) "foo") [FieldLine (Position 1 8) "bar"]],[LexWarning LexWarningNBSP (Position 1 1)])
 readFields :: B8.ByteString -> Either ParseError [Field Position]
-readFields = (fmap . map . fmap) unComments . readFieldsWithComments
+readFields = (fmap . map . fmap) unComments . readFieldsWithFieldTrivia
 
 -- | Like 'readFields' but also return lexer warnings.
 readFields' :: B8.ByteString -> Either ParseError ([Field Position], [LexWarning])
-readFields' = (fmap . Bi.first . map . fmap) unComments . readFieldsWithComments'
+readFields' = (fmap . Bi.first . map . fmap) unComments . readFieldsWithFieldTrivia'
 
-readFieldsWithComments :: B8.ByteString -> Either ParseError [Field (WithComments Position)]
-readFieldsWithComments = fmap fst . readFieldsWithComments'
+readFieldsWithFieldTrivia :: B8.ByteString -> Either ParseError [Field (WithFieldTrivia Position)]
+readFieldsWithFieldTrivia = fmap fst . readFieldsWithFieldTrivia'
 
-readFieldsWithComments' :: B8.ByteString -> Either ParseError ([Field (WithComments Position)], [LexWarning])
-readFieldsWithComments' s = do
+readFieldsWithFieldTrivia' :: B8.ByteString -> Either ParseError ([Field (WithFieldTrivia Position)], [LexWarning])
+readFieldsWithFieldTrivia' s = do
   parse parser "the input" lexSt
   where
     parser = do
@@ -488,13 +488,13 @@ readFieldsWithComments' s = do
 --
 -- To catch during parsing we would need to parse first field/section of a section
 -- and then parse the following ones (softly) requiring the exactly the same indentation.
-checkIndentation :: [Field (WithComments Position)] -> [LexWarning] -> [LexWarning]
+checkIndentation :: [Field (WithFieldTrivia Position)] -> [LexWarning] -> [LexWarning]
 checkIndentation [] = id
 checkIndentation (Field name _ : fs') = checkIndentation' (unComments $ nameAnn name) fs'
 checkIndentation (Section name _ fs : fs') = checkIndentation fs . checkIndentation' (unComments $ nameAnn name) fs'
 
 -- | We compare adjacent fields to reduce the amount of reported indentation warnings.
-checkIndentation' :: Position -> [Field (WithComments Position)] -> [LexWarning] -> [LexWarning]
+checkIndentation' :: Position -> [Field (WithFieldTrivia Position)] -> [LexWarning] -> [LexWarning]
 checkIndentation' _ [] = id
 checkIndentation' pos (Field name _ : fs') = checkIndentation'' pos (unComments $ nameAnn name) . checkIndentation' (unComments $ nameAnn name) fs'
 checkIndentation' pos (Section name _ fs : fs') = checkIndentation'' pos (unComments $ nameAnn name) . checkIndentation fs . checkIndentation' (unComments $ nameAnn name) fs'

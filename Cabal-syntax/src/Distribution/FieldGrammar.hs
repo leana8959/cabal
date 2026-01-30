@@ -110,8 +110,8 @@ takeFields = finalize . spanMaybe match
     match (Field (Name ann name) fs) = Just (name, [MkNamelessField ann fs])
     match _ = Nothing
 
-extractComments :: (Foldable f, Functor f) => [f (WithComments ann)] -> ([Comment ann], [f ann])
+extractComments :: (Foldable f, Functor f) => [f (WithFieldTrivia ann)] -> ([FieldTrivia ann], [f ann])
 extractComments = Bi.first mconcat . unzip . map extractCommentsStep
 
-extractCommentsStep :: (Foldable f, Functor f) => f (WithComments ann) -> ([Comment ann], f ann)
+extractCommentsStep :: (Foldable f, Functor f) => f (WithFieldTrivia ann) -> ([FieldTrivia ann], f ann)
 extractCommentsStep f = (foldMap justComments f, fmap unComments f)

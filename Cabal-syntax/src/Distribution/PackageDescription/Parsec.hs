@@ -43,7 +43,7 @@ import Distribution.Compat.Lens
 import Distribution.FieldGrammar
 import Distribution.FieldGrammar.Parsec (NamelessField (..))
 import Distribution.Fields.ConfVar (parseConditionConfVar)
-import Distribution.Fields.Field (Comment (..), FieldName, WithComments, getName, sectionArgAnn)
+import Distribution.Fields.Field (FieldName, FieldTrivia (..), WithFieldTrivia, getName, sectionArgAnn)
 import Distribution.Fields.LexerMonad (LexWarning, toPWarnings)
 import Distribution.Fields.ParseResult
 import Distribution.Fields.Parser
@@ -113,7 +113,7 @@ parseAnnotatedGenericPackageDescription bs = do
             ++ cabalFormatVersionsDesc
     _ -> pure Nothing
 
-  case readFieldsWithComments' bs'' of
+  case readFieldsWithFieldTrivia' bs'' of
     Right (fs, lexWarnings) -> do
       when patched $
         parseWarning zeroPos PWTQuirkyCabalFile "Legacy cabal file"
@@ -178,7 +178,7 @@ parseAnnotatedGenericPackageDescription'
   :: Maybe CabalSpecVersion
   -> [LexWarning]
   -> Maybe Int
-  -> [Field (WithComments Position)]
+  -> [Field (WithFieldTrivia Position)]
   -> ParseResult src AnnotatedGenericPackageDescription
 parseAnnotatedGenericPackageDescription' scannedVer lexWarnings utf8WarnPos fs = do
   parseWarnings (toPWarnings lexWarnings)
