@@ -78,7 +78,6 @@ instance Stream LexState' Identity LToken where
   uncons (LexState' _ (tok, st')) =
     case tok of
       L _ EOF -> return Nothing
-      L _ (TokVSpace{}) -> uncons st'
       _ -> return (Just (tok, st'))
 
 -- | A strict either for parser performance
@@ -141,6 +140,9 @@ tokColon = getToken $ \t -> case t of Colon -> Just (); _ -> Nothing
 tokOpenBrace = getTokenWithPos $ \t -> case t of L pos OpenBrace -> Just pos; _ -> Nothing
 tokCloseBrace = getToken $ \t -> case t of CloseBrace -> Just (); _ -> Nothing
 tokFieldLine = getTokenWithPos $ \t -> case t of L pos (TokFieldLine s) -> Just (FieldLine pos s); _ -> Nothing
+
+tokVSpace :: Parser (FieldTrivia Position)
+tokVSpace = getTokenWithPos $ \t -> case t of L pos (TokVSpace vs) -> Just (VWhitespace vs pos); _ -> Nothing
 
 tokComment :: Parser (FieldTrivia Position)
 tokComment = getTokenWithPos $ \t -> case t of L pos (TokComment c) -> Just (Comment c pos); _ -> Nothing
@@ -328,9 +330,10 @@ element :: IndentLevel -> Parser (Field (WithFieldTrivia Position))
 element ilevel =
   ( do
       ilevel' <- indentOfAtLeast ilevel
+      x <- optional tokVSpace
       name <- fieldSecName
       elementInLayoutContext (incIndentLevel ilevel') name
-  )
+    )
     <|> ( do
             name <- fieldSecName
             elementInNonLayoutContext name
@@ -365,9 +368,11 @@ elementInNonLayoutContext name =
   (do colon; noComments <$> fieldInlineOrBraces name) -- inline field or braces can never have comments
     <|> ( do
             args <- many sectionArg
+            x <- optional tokVSpace
             openBrace
             elems <- elements zeroIndentLevel
             optional tokIndent
+            x <- optional tokVSpace
             closeBrace
 
             case elems of
@@ -384,6 +389,7 @@ fieldLayoutOrBraces ilevel name = braces <|> fieldLayout
   where
     braces :: Parser (Field (WithFieldTrivia Position))
     braces = do
+      x <- optional tokVSpace
       openBrace
       preCmts <- many tokComment
       ls <- inLexerMode (LexerMode in_field_braces) (many $ commentsAfter fieldContent)
@@ -394,7 +400,12 @@ fieldLayoutOrBraces ilevel name = braces <|> fieldLayout
     fieldLayout = inLexerMode (LexerMode in_field_layout) $ do
       preCmts <- many tokComment
       l <- optionMaybe (commentsAfter fieldContent)
-      ls <- many (do _ <- indentOfAtLeast ilevel; commentsAfter fieldContent)
+      ls <- many $ do
+              _ <- indentOfAtLeast ilevel
+              ret <- commentsAfter fieldContent
+              -- FIXME(leana8959): this /required/ tokVSpace doesn't correspond to the grammar!
+              x <- optional tokVSpace
+              pure ret
       return
         ( case l of
             Nothing -> (Field (WithFieldTrivia preCmts <$> name) ls)
@@ -408,13 +419,19 @@ fieldLayoutOrBraces ilevel name = braces <|> fieldLayout
 sectionLayoutOrBraces :: IndentLevel -> Parser (Either' [FieldTrivia Position] [Field (WithFieldTrivia Position)])
 sectionLayoutOrBraces ilevel =
   ( do
+      x <- optional tokVSpace
       openBrace
       elems <- elements zeroIndentLevel
+      x <- optional tokVSpace
       optional tokIndent
       closeBrace
       return elems
   )
-    <|> (elements ilevel)
+    <|> (do
+            ret <- elements ilevel
+            x <- optional tokVSpace
+            pure ret
+          )
 
 -- The body of a field, using either inline style or braces.
 --
