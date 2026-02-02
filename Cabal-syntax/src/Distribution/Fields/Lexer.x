@@ -125,8 +125,8 @@ tokens :-
   @nl          { \pos len inp -> do
                     adjustPos retPos
                     setStartCode bol_section
-                    -- toki TokVSpace pos len inp
-                    lexToken
+                    toki TokVSpace pos len inp
+                    -- lexToken
                }
 }
 

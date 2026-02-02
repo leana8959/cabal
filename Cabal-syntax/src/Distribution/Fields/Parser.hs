@@ -187,8 +187,11 @@ newtype LexerMode = LexerMode Int
 -- | This would change the state of the lexer and make interpretations of tokens different!
 -- Certain lexer states are unreachable without it.
 inLexerMode :: LexerMode -> Parser p -> Parser p
-inLexerMode (LexerMode mode) p =
-  do setLexerMode mode; x <- p; setLexerMode in_section; return x
+inLexerMode (LexerMode mode) p = do
+  trace ("in mode " <> show mode) $ setLexerMode mode
+  x <- p
+  trace "in mode in_section" $ setLexerMode in_section
+  return x
 
 -----------------------
 -- Cabal file grammar
@@ -254,7 +257,14 @@ inLexerMode (LexerMode mode) p =
 -- Top level of a file using cabal syntax
 --
 cabalStyleFile :: Parser [Field (WithFieldTrivia Position)]
-cabalStyleFile = do
+cabalStyleFile = trace (
+    concat $ map (\(x, y) -> x <> " " <> show y <> "\n") $
+      [ ( "bol_section", bol_section )
+      , ( "in_section", in_section )
+      , ( "in_field_layout", in_field_layout )
+      , ( "in_field_braces", in_field_braces )
+      ]
+  ) $ do
   es <- elements zeroIndentLevel
   eof
   case es of
@@ -359,6 +369,8 @@ elementInLayoutContext ilevel name =
   (do colon; fieldLayoutOrBraces ilevel name)
     <|> ( do
             args <- many sectionArg
+            -- Should this be moved to the start of sectionLayoutOrBraces
+            x <- optional tokVSpace
             elems <- sectionLayoutOrBraces ilevel
             case elems of
               -- If there are no elements but comments, we attach them to the name (args can be multiple)
@@ -374,7 +386,7 @@ elementInLayoutContext ilevel name =
 --                             | arg* '\\n'? '{' elements '\\n'? '}'
 elementInNonLayoutContext :: Name Position -> Parser (Field (WithFieldTrivia Position))
 elementInNonLayoutContext name =
-  (do colon; noComments <$> fieldInlineOrBraces name) -- inline field or braces can never have comments
+  (do colon; triviaAfter (fieldInlineOrBraces name)) -- inline field or braces can never have comments
     <|> ( do
             args <- many sectionArg
             x <- optional tokVSpace
@@ -398,7 +410,8 @@ fieldLayoutOrBraces ilevel name = braces <|> fieldLayout
   where
     braces :: Parser (Field (WithFieldTrivia Position))
     braces = do
-      x <- optional tokVSpace
+      -- This one makes empty field fail
+      -- x <- optional tokVSpace
       openBrace
       preTrivia <- many tokTrivia
       ls <- inLexerMode (LexerMode in_field_braces) (many $ triviaAfter fieldContent)
