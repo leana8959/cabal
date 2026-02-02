@@ -186,7 +186,9 @@ parseAnnotatedGenericPackageDescription' scannedVer lexWarnings utf8WarnPos fs =
     parseWarning zeroPos PWTUTF $ "UTF8 encoding problem at byte offset " ++ show pos
 
   let (comments, fs') = extractComments fs
-      !commentsMap = Map.fromList . map (\(Comment cmt pos) -> (pos, cmt)) $ comments
+      !commentsMap = Map.fromList . catMaybes . map g $ comments
+          where g (Comment cmt pos) = Just (pos, cmt)
+                g _ = Nothing
 
   let (syntax, fs'') = sectionizeFields fs'
   let (fields, sectionFields) = takeFields fs''
