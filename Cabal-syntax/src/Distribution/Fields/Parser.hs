@@ -78,7 +78,9 @@ instance Stream LexState' Identity LToken where
   uncons (LexState' _ (tok, st')) =
     case tok of
       L _ EOF -> return Nothing
-      _ -> return (Just (tok, st'))
+      L _ vspace@(TokVSpace{}) -> trace (show vspace) $ uncons st'
+      (L _ x) -> trace (show x) $ return (Just (tok, st'))
+      -- _ -> return (Just (tok, st'))
 
 -- | A strict either for parser performance
 data Either' a b = Left' !a | Right' !b

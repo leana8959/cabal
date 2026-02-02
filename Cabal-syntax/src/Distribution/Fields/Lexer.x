@@ -84,7 +84,8 @@ tokens :-
   @nbspspacetab* @nl         { \pos len inp -> do
                                   _ <- checkWhitespace pos len inp
                                   adjustPos retPos
-                                  toki TokVSpace pos len inp
+                                  lexToken
+                                  -- toki TokVSpace pos len inp
                              }
 
   -- no @nl here to allow for comments on last line of the file with no trailing \n
@@ -124,7 +125,8 @@ tokens :-
   @nl          { \pos len inp -> do
                     adjustPos retPos
                     setStartCode bol_section
-                    toki TokVSpace pos len inp
+                    -- toki TokVSpace pos len inp
+                    lexToken
                }
 }
 
@@ -149,6 +151,7 @@ tokens :-
                       adjustPos retPos
                       setStartCode bol_field_layout
                       toki TokVSpace pos len inp
+                      -- lexToken
                   }
 }
 
@@ -165,7 +168,9 @@ tokens :-
   @nl               { \pos len inp ->  do
                         adjustPos retPos
                         setStartCode bol_field_braces
-                        toki TokVSpace pos len inp
+                        -- TODO(leana8959): we don't support braces
+                        -- toki TokVSpace pos len inp
+                        lexToken
                     }
 }
 
