@@ -1,10 +1,19 @@
+{-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 module Distribution.Types.GenericPackageDescription
-  ( GenericPackageDescription (..)
+  ( GenericPackageDescription
+  , GenericPackageDescriptionBarbie (..)
   , emptyGenericPackageDescription
   ) where
 
@@ -29,12 +38,24 @@ import Distribution.Types.TestSuite
 import Distribution.Types.UnqualComponentName
 import Distribution.Version
 
+import Data.Kind
+
+data WithTrivia a = WithTrivia a
+
+type family Modify (f :: Type -> Type) (a :: Type) where
+  Modify Identity a = a
+  -- A bad placeholder for Trivia
+  Modify WithTrivia a = ([String], a)
+  Modify _ a = a
+
 -- ---------------------------------------------------------------------------
 -- The 'GenericPackageDescription' type
 
-data GenericPackageDescription = GenericPackageDescription
-  { packageDescription :: PackageDescription
-  , gpdScannedVersion :: Maybe Version
+type GenericPackageDescription = GenericPackageDescriptionBarbie Identity
+
+data GenericPackageDescriptionBarbie (f :: Type -> Type) = GenericPackageDescription
+  { packageDescription :: Modify f PackageDescription
+  , gpdScannedVersion :: Modify f (Maybe Version)
   -- ^ This is a version as specified in source.
   --   We populate this field in index reading for dummy GPDs,
   --   only when GPD reading failed, but scanning haven't.
@@ -43,40 +64,59 @@ data GenericPackageDescription = GenericPackageDescription
   --
   --   Perfectly, PackageIndex should have sum type, so we don't need to
   --   have dummy GPDs.
-  , genPackageFlags :: [PackageFlag]
-  , condLibrary :: Maybe (CondTree ConfVar [Dependency] Library)
+  , genPackageFlags :: Modify f [PackageFlag]
+  , condLibrary :: Modify f (Maybe (CondTree ConfVar [Dependency] Library))
   , condSubLibraries
-      :: [ ( UnqualComponentName
-           , CondTree ConfVar [Dependency] Library
-           )
-         ]
+      :: Modify f [ ( UnqualComponentName , CondTree ConfVar [Dependency] Library) ]
   , condForeignLibs
-      :: [ ( UnqualComponentName
-           , CondTree ConfVar [Dependency] ForeignLib
-           )
-         ]
+      :: Modify f [ ( UnqualComponentName , CondTree ConfVar [Dependency] ForeignLib) ]
   , condExecutables
-      :: [ ( UnqualComponentName
-           , CondTree ConfVar [Dependency] Executable
-           )
-         ]
+      :: Modify f [ ( UnqualComponentName , CondTree ConfVar [Dependency] Executable) ]
   , condTestSuites
-      :: [ ( UnqualComponentName
-           , CondTree ConfVar [Dependency] TestSuite
-           )
-         ]
+      :: Modify f [ ( UnqualComponentName , CondTree ConfVar [Dependency] TestSuite) ]
   , condBenchmarks
-      :: [ ( UnqualComponentName
-           , CondTree ConfVar [Dependency] Benchmark
-           )
-         ]
+      :: Modify f [ ( UnqualComponentName , CondTree ConfVar [Dependency] Benchmark) ]
   }
-  deriving (Show, Eq, Data, Generic)
 
-instance Package GenericPackageDescription where
+type AllGPDFields (c :: Type -> Constraint) (f :: Type -> Type) =
+  ( c (Modify f PackageDescription)
+  , c (Modify f (Maybe Version))
+  , c (Modify f [PackageFlag])
+  , c (Modify f (Maybe (CondTree ConfVar [Dependency] Library)))
+  , c (Modify f [(UnqualComponentName, CondTree ConfVar [Dependency] Library)])
+  , c (Modify f [(UnqualComponentName, CondTree ConfVar [Dependency] ForeignLib)])
+  , c (Modify f [(UnqualComponentName, CondTree ConfVar [Dependency] Executable)])
+  , c (Modify f [(UnqualComponentName, CondTree ConfVar [Dependency] TestSuite)])
+  , c (Modify f [(UnqualComponentName, CondTree ConfVar [Dependency] Benchmark)])
+  )
+
+deriving instance forall (f :: Type -> Type)
+   . AllGPDFields Eq f
+  => Eq (GenericPackageDescriptionBarbie f)
+
+deriving instance forall (f :: Type -> Type)
+   . AllGPDFields Show f
+  => Show (GenericPackageDescriptionBarbie f)
+
+deriving instance forall (f :: Type -> Type)
+   . ( Typeable f
+     , AllGPDFields Data f
+     )
+  => Data (GenericPackageDescriptionBarbie f)
+
+deriving instance forall (f :: Type -> Type)
+   . AllGPDFields Generic f
+  => Generic (GenericPackageDescriptionBarbie f)
+
+instance Package (GenericPackageDescriptionBarbie Identity) where
   packageId = packageId . packageDescription
 
-instance Binary GenericPackageDescription
+deriving anyclass instance forall (f :: Type -> Type)
+   . ( AllGPDFields Binary f
+     , AllGPDFields Generic f
+     )
+  => Binary (GenericPackageDescriptionBarbie f)
+
 instance Structured GenericPackageDescription
 instance NFData GenericPackageDescription where rnf = genericRnf
 
