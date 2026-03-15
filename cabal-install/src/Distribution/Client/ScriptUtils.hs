@@ -155,7 +155,8 @@ import Distribution.Types.Executable
   ( Executable (..)
   )
 import Distribution.Types.GenericPackageDescription as GPD
-  ( GenericPackageDescription (..)
+  ( GenericPackageDescription
+  , GenericPackageDescriptionBarbie (..)
   , emptyGenericPackageDescription
   )
 import Distribution.Types.PackageDescription
