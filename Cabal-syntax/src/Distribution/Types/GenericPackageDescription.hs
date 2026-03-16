@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric #-}
@@ -38,6 +39,7 @@ import Distribution.Types.TestSuite
 import Distribution.Types.UnqualComponentName
 import Distribution.Version
 
+import Control.Exception
 import Data.Kind
 
 data WithTrivia a = WithTrivia a
@@ -46,7 +48,7 @@ type family Modify (f :: Type -> Type) (a :: Type) where
   Modify Identity a = a
   -- A bad placeholder for Trivia
   Modify WithTrivia a = ([String], a)
-  Modify _ a = a
+  Modify _ a = TypeError
 
 -- ---------------------------------------------------------------------------
 -- The 'GenericPackageDescription' type
@@ -67,15 +69,15 @@ data GenericPackageDescriptionBarbie (f :: Type -> Type) = GenericPackageDescrip
   , genPackageFlags :: Modify f [PackageFlag]
   , condLibrary :: Modify f (Maybe (CondTree ConfVar [Dependency] Library))
   , condSubLibraries
-      :: Modify f [ ( UnqualComponentName , CondTree ConfVar [Dependency] Library) ]
+      :: Modify f [(UnqualComponentName, CondTree ConfVar [Dependency] Library)]
   , condForeignLibs
-      :: Modify f [ ( UnqualComponentName , CondTree ConfVar [Dependency] ForeignLib) ]
+      :: Modify f [(UnqualComponentName, CondTree ConfVar [Dependency] ForeignLib)]
   , condExecutables
-      :: Modify f [ ( UnqualComponentName , CondTree ConfVar [Dependency] Executable) ]
+      :: Modify f [(UnqualComponentName, CondTree ConfVar [Dependency] Executable)]
   , condTestSuites
-      :: Modify f [ ( UnqualComponentName , CondTree ConfVar [Dependency] TestSuite) ]
+      :: Modify f [(UnqualComponentName, CondTree ConfVar [Dependency] TestSuite)]
   , condBenchmarks
-      :: Modify f [ ( UnqualComponentName , CondTree ConfVar [Dependency] Benchmark) ]
+      :: Modify f [(UnqualComponentName, CondTree ConfVar [Dependency] Benchmark)]
   }
 
 type AllGPDFields (c :: Type -> Constraint) (f :: Type -> Type) =
