@@ -1,10 +1,17 @@
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeSynonymInstances #-}
+{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DeriveTraversable #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module Distribution.Types.CondTree
-  ( CondTree (..)
+  ( CondTree
+  , CondTreeBarbie (..)
   , CondBranch (..)
   , condIfThen
   , condIfThenElse
@@ -28,7 +35,17 @@ import Prelude ()
 
 import Distribution.Types.Condition
 
+import Control.Exception
+import Data.Kind
+
 import qualified Distribution.Compat.Lens as L
+
+data WithTrivia a = WithTrivia a
+
+type family Modify (f :: Type -> Type) (a :: Type) where
+  Modify Identity a = a
+  Modify WithTrivia a = ([String], a)
+  Modify _ a = TypeError
 
 -- | A 'CondTree' is used to represent the conditional structure of
 -- a Cabal file, reflecting a syntax element subject to constraints,
@@ -54,12 +71,34 @@ import qualified Distribution.Compat.Lens as L
 -- derived off of 'targetBuildInfo' (perhaps a good refactoring
 -- would be to convert this into an opaque type, with a smart
 -- constructor that pre-computes the dependencies.)
-data CondTree v c a = CondNode
-  { condTreeData :: a
+
+-- data CondTree v c a = CondNode
+--   { condTreeData :: a
+--   , condTreeConstraints :: c
+--   , condTreeComponents :: [CondBranch v c a]
+--   }
+type CondTree = CondTreeBarbie Identity
+
+data CondTreeBarbie f v c a = CondNode
+  { condTreeData :: Modify f a
+  -- TODO(leana8959): can we remove this
   , condTreeConstraints :: c
   , condTreeComponents :: [CondBranch v c a]
   }
-  deriving (Show, Eq, Data, Generic, Functor, Foldable, Traversable)
+
+deriving instance (Show v, Show c, Show a) => Show (CondTree v c a)
+deriving instance (Eq v, Eq c, Eq a) => Eq (CondTree v c a)
+deriving instance (Data v, Data c, Data a) => Data (CondTree v c a)
+deriving instance Generic (CondTree v c a)
+
+instance Functor (CondTree v c) where
+  fmap f (CondNode x c bs) = CondNode (f x) c ((fmap . fmap) f bs)
+
+instance Foldable (CondTree v c) where
+  foldMap f (CondNode x cs bs) = f x <> ((foldMap . foldMap) f bs)
+
+instance Traversable (CondTree v c) where
+  traverse f (CondNode x cs bs) = CondNode <$> f x <*> pure cs <*> (traverse . traverse) f bs
 
 instance (Binary v, Binary c, Binary a) => Binary (CondTree v c a)
 instance (Structured v, Structured c, Structured a) => Structured (CondTree v c a)
