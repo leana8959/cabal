@@ -10,7 +10,6 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE UndecidableInstances #-}
 
 module Distribution.Types.GenericPackageDescription
   ( GenericPackageDescription
@@ -80,44 +79,15 @@ data GenericPackageDescriptionBarbie (f :: Type -> Type) = GenericPackageDescrip
       :: Modify f [(UnqualComponentName, CondTree ConfVar [Dependency] Benchmark)]
   }
 
-type AllGPDFields (c :: Type -> Constraint) (f :: Type -> Type) =
-  ( c (Modify f PackageDescription)
-  , c (Modify f (Maybe Version))
-  , c (Modify f [PackageFlag])
-  , c (Modify f (Maybe (CondTree ConfVar [Dependency] Library)))
-  , c (Modify f [(UnqualComponentName, CondTree ConfVar [Dependency] Library)])
-  , c (Modify f [(UnqualComponentName, CondTree ConfVar [Dependency] ForeignLib)])
-  , c (Modify f [(UnqualComponentName, CondTree ConfVar [Dependency] Executable)])
-  , c (Modify f [(UnqualComponentName, CondTree ConfVar [Dependency] TestSuite)])
-  , c (Modify f [(UnqualComponentName, CondTree ConfVar [Dependency] Benchmark)])
-  )
-
-deriving instance forall (f :: Type -> Type)
-   . AllGPDFields Eq f
-  => Eq (GenericPackageDescriptionBarbie f)
-
-deriving instance forall (f :: Type -> Type)
-   . AllGPDFields Show f
-  => Show (GenericPackageDescriptionBarbie f)
-
-deriving instance forall (f :: Type -> Type)
-   . ( Typeable f
-     , AllGPDFields Data f
-     )
-  => Data (GenericPackageDescriptionBarbie f)
-
-deriving instance forall (f :: Type -> Type)
-   . AllGPDFields Generic f
-  => Generic (GenericPackageDescriptionBarbie f)
+deriving instance Eq (GenericPackageDescriptionBarbie Identity)
+deriving instance Show (GenericPackageDescriptionBarbie Identity)
+deriving instance Data (GenericPackageDescriptionBarbie Identity)
+deriving instance Generic (GenericPackageDescriptionBarbie Identity)
 
 instance Package (GenericPackageDescriptionBarbie Identity) where
   packageId = packageId . packageDescription
 
-deriving anyclass instance forall (f :: Type -> Type)
-   . ( AllGPDFields Binary f
-     , AllGPDFields Generic f
-     )
-  => Binary (GenericPackageDescriptionBarbie f)
+deriving instance Binary (GenericPackageDescriptionBarbie Identity)
 
 instance Structured GenericPackageDescription
 instance NFData GenericPackageDescription where rnf = genericRnf
