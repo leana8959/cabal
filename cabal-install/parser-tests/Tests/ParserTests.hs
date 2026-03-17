@@ -49,7 +49,7 @@ import Distribution.Solver.Types.Settings
   , StrongFlags (..)
   )
 import Distribution.System (OS (..), buildOS)
-import Distribution.Types.CondTree (CondTree (..))
+import Distribution.Types.CondTree (CondTreeBarbie (..))
 import Distribution.Types.Flag (mkFlagAssignment)
 import Distribution.Types.PackageId (PackageIdentifier (..))
 import Distribution.Types.PackageName

@@ -149,7 +149,7 @@ import Distribution.Types.ComponentId
   ( mkComponentId
   )
 import Distribution.Types.CondTree
-  ( CondTree (..)
+  ( CondTreeBarbie (..)
   )
 import Distribution.Types.Executable
   ( Executable (..)
