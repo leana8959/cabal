@@ -8,6 +8,7 @@ module Distribution.Types.UnqualComponentName
   , unUnqualComponentNameST
   , mkUnqualComponentName
   , packageNameToUnqualComponentName
+  , packageNameToUnqualComponentNameBarbie
   , unqualComponentNameToPackageName
   , combineNames
   ) where
@@ -16,6 +17,7 @@ import Distribution.Compat.Prelude
 import Distribution.Utils.ShortText
 
 import Distribution.Parsec
+import Distribution.Trivia
 import Distribution.Pretty
 import Distribution.Types.PackageName
 
@@ -92,6 +94,9 @@ instance NFData UnqualComponentName where
 -- @since 2.0.0.2
 packageNameToUnqualComponentName :: PackageName -> UnqualComponentName
 packageNameToUnqualComponentName = UnqualComponentName . unPackageNameST
+
+packageNameToUnqualComponentNameBarbie :: PackageNameBarbie WithTrivia -> WithTrivia UnqualComponentName
+packageNameToUnqualComponentNameBarbie (PackageName u) = fmap UnqualComponentName u
 
 -- | Converts an unqualified component name to a package name
 --

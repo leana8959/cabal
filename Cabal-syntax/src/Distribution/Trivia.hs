@@ -1,3 +1,5 @@
+{-# LANGUAGE DeriveFunctor #-}
+
 module Distribution.Trivia
   ( Trivia (..)
   , Trivium (..)
@@ -20,4 +22,4 @@ data WithTrivia a = WithTrivia
   { getTrivia :: Trivia
   , unTrivia :: a
   }
-  deriving (Show, Eq, Ord)
+  deriving (Show, Eq, Ord, Functor)

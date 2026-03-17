@@ -1,4 +1,5 @@
 {-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE RankNTypes #-}
@@ -16,7 +17,7 @@ module Distribution.Parsec
   , simpleParsec'
   , simpleParsecW'
   , lexemeParsec
-  , exactLexemeParsec
+  , lexemeExactParsec
   , eitherParsec
   , explicitEitherParsec
   , explicitEitherParsec'
@@ -76,6 +77,8 @@ import Distribution.Parsec.Warning
 import Numeric (showIntAtBase)
 import Prelude ()
 
+import Data.Kind
+
 import qualified Control.Monad.Fail as Fail
 import qualified Distribution.Compat.CharParsing as P
 import qualified Distribution.Compat.DList as DList
@@ -91,8 +94,8 @@ import qualified Text.Parsec as Parsec
 class Parsec a where
   parsec :: CabalParsing m => m a
 
-class ExactParsec a where
-  exactParsec :: CabalParsing m => m (WithTrivia a)
+class ExactParsec (a :: (Type -> Type) -> Type) where
+  exactParsec :: CabalParsing m => m (a WithTrivia)
 
 -- | Parsing class which
 --
@@ -111,8 +114,8 @@ class (P.CharParsing m, MonadPlus m, Fail.MonadFail m) => CabalParsing m where
 lexemeParsec :: (CabalParsing m, Parsec a) => m a
 lexemeParsec = parsec <* P.spaces
 
-exactLexemeParsec :: (CabalParsing m, ExactParsec a) => m (WithTrivia a)
-exactLexemeParsec = exactParsec <* P.spaces
+lexemeExactParsec :: (CabalParsing m, ExactParsec a) => m (a WithTrivia)
+lexemeExactParsec = exactParsec <* P.spaces
 
 newtype ParsecParser a = PP
   { unPP
@@ -198,10 +201,10 @@ simpleParsec =
     . runParsecParser lexemeParsec "<simpleParsec>"
     . fieldLineStreamFromString
 
-simpleExactParsec :: ExactParsec a => String -> Maybe (WithTrivia a)
+simpleExactParsec :: ExactParsec a => String -> Maybe (a WithTrivia)
 simpleExactParsec =
   either (const Nothing) Just
-    . runParsecParser exactLexemeParsec "<simpleParsec>"
+    . runParsecParser lexemeExactParsec "<simpleParsec>"
     . fieldLineStreamFromString
 
 

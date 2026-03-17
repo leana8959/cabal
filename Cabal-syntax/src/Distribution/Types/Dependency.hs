@@ -1,4 +1,6 @@
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE FlexibleInstances #-}
@@ -80,10 +82,19 @@ mkDependency :: PackageName -> VersionRange -> NonEmptySet LibraryName -> Depend
 mkDependency pn vr lb = Dependency pn vr (NES.map conv lb)
   where
     pn' = packageNameToUnqualComponentName pn
-
     conv l@LMainLibName = l
     conv l@(LSubLibName ln)
       | ln == pn' = LMainLibName
+      | otherwise = l
+
+-- TODO(leana8959): a way to not duplicate smart constructor
+mkDependencyBarbie :: PackageNameBarbie WithTrivia -> VersionRange -> NonEmptySet LibraryName -> DependencyBarbie WithTrivia
+mkDependencyBarbie pn vr lb = Dependency pn vr (NES.map conv lb)
+  where
+    pn' = packageNameToUnqualComponentNameBarbie pn
+    conv l@LMainLibName = l
+    conv l@(LSubLibName ln)
+      | ln == unTrivia pn' = LMainLibName
       | otherwise = l
 
 instance Binary Dependency
@@ -163,8 +174,27 @@ instance Parsec Dependency where
           (NES.fromNonEmpty <$> parsecCommaNonEmpty parseLib)
 
 -- TODO(leana8959): dummy instance
-instance ExactParsec Dependency where
-  exactParsec = WithTrivia (ExactRepresentation "This is a fake representation") <$> parsec
+instance ExactParsec DependencyBarbie where
+  exactParsec = do
+    -- TODO(leana8959): give PackageNameBarbie an exactparsec instance
+    -- name <- parsec
+    let name = undefined
+
+    libs <- option mainLibSet $ do
+      _ <- char ':'
+      versionGuardMultilibs
+      NES.singleton <$> parseLib <|> parseMultipleLibs
+
+    spaces -- https://github.com/haskell/cabal/issues/5846
+    ver <- parsec <|> pure anyVersion
+    return $ mkDependencyBarbie name ver libs
+    where
+      parseLib = LSubLibName <$> parsec
+      parseMultipleLibs =
+        between
+          (char '{' *> spaces)
+          (spaces *> char '}')
+          (NES.fromNonEmpty <$> parsecCommaNonEmpty parseLib)
 
 versionGuardMultilibs :: CabalParsing m => m ()
 versionGuardMultilibs = do
