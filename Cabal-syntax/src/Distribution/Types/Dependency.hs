@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE KindSignatures #-}
@@ -48,10 +49,17 @@ data DependencyBarbie (f :: Type -> Type)
     -- Only the selected libraries will be built.
     -- It does not affect the cabal-install solver yet.
     Dependency
-      PackageName
+      (PackageNameBarbie f)
       VersionRange
       (NonEmptySet LibraryName)
-  deriving (Generic, Read, Show, Eq, Ord, Data)
+  deriving (Generic)
+
+deriving instance Read Dependency
+deriving instance Show Dependency
+deriving instance Eq Dependency
+deriving instance Ord Dependency
+deriving instance Data Dependency
+
 
 depPkgName :: Dependency -> PackageName
 depPkgName (Dependency pn _ _) = pn

@@ -8,6 +8,7 @@
 
 module Distribution.Types.PackageName
   ( PackageName
+  , PackageNameBarbie (..)
   , unPackageName
   , mkPackageName
   , unPackageNameST
