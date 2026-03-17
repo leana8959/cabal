@@ -21,6 +21,7 @@ import Distribution.CabalSpecVersion
 import Distribution.Compat.CharParsing (char, spaces)
 import Distribution.Compat.Parsing (between, option)
 import Distribution.Parsec
+import Distribution.Trivia
 import Distribution.Pretty
 import Distribution.Types.LibraryName
 import Distribution.Types.PackageName
@@ -143,6 +144,10 @@ instance Parsec Dependency where
           (char '{' *> spaces)
           (spaces *> char '}')
           (NES.fromNonEmpty <$> parsecCommaNonEmpty parseLib)
+
+-- TODO(leana8959): dummy instance
+instance ExactParsec Dependency where
+  exactParsec = WithTrivia (ExactRepresentation "This is a fake representation") <$> parsec
 
 versionGuardMultilibs :: CabalParsing m => m ()
 versionGuardMultilibs = do

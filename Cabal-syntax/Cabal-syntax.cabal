@@ -102,7 +102,6 @@ library
     Distribution.PackageDescription.Quirks
     Distribution.PackageDescription.Utils
     Distribution.Parsec
-    Distribution.ExactParsec
     Distribution.Trivia
     Distribution.Parsec.Error
     Distribution.Parsec.FieldLineStream

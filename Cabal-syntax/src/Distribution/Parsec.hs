@@ -6,14 +6,17 @@
 
 module Distribution.Parsec
   ( Parsec (..)
+  , ExactParsec (..)
   , ParsecParser (..)
   , runParsecParser
   , runParsecParser'
   , simpleParsec
+  , simpleExactParsec
   , simpleParsecBS
   , simpleParsec'
   , simpleParsecW'
   , lexemeParsec
+  , exactLexemeParsec
   , eitherParsec
   , explicitEitherParsec
   , explicitEitherParsec'
@@ -63,6 +66,7 @@ import Data.Char (digitToInt, intToDigit)
 import Data.List (transpose)
 import Distribution.CabalSpecVersion
 import Distribution.Compat.Prelude
+import Distribution.Trivia
 import Distribution.Parsec.Error (PError (..), PErrorWithSource (..), showPError, showPErrorWithSource)
 
 import Data.Monoid (Last (..))
@@ -87,6 +91,9 @@ import qualified Text.Parsec as Parsec
 class Parsec a where
   parsec :: CabalParsing m => m a
 
+class ExactParsec a where
+  exactParsec :: CabalParsing m => m (WithTrivia a)
+
 -- | Parsing class which
 --
 -- * can report Cabal parser warnings.
@@ -103,6 +110,9 @@ class (P.CharParsing m, MonadPlus m, Fail.MonadFail m) => CabalParsing m where
 -- | 'parsec' /could/ consume trailing spaces, this function /will/ consume.
 lexemeParsec :: (CabalParsing m, Parsec a) => m a
 lexemeParsec = parsec <* P.spaces
+
+exactLexemeParsec :: (CabalParsing m, ExactParsec a) => m (WithTrivia a)
+exactLexemeParsec = exactParsec <* P.spaces
 
 newtype ParsecParser a = PP
   { unPP
@@ -187,6 +197,13 @@ simpleParsec =
   either (const Nothing) Just
     . runParsecParser lexemeParsec "<simpleParsec>"
     . fieldLineStreamFromString
+
+simpleExactParsec :: ExactParsec a => String -> Maybe (WithTrivia a)
+simpleExactParsec =
+  either (const Nothing) Just
+    . runParsecParser exactLexemeParsec "<simpleParsec>"
+    . fieldLineStreamFromString
+
 
 -- | Like 'simpleParsec' but for 'ByteString'
 simpleParsecBS :: Parsec a => ByteString -> Maybe a
