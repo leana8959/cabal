@@ -62,6 +62,7 @@ deriving instance Eq Dependency
 deriving instance Ord Dependency
 deriving instance Data Dependency
 
+-- TODO: less instances?
 deriving instance Read (DependencyBarbie WithTrivia)
 deriving instance Show (DependencyBarbie WithTrivia)
 deriving instance Eq (DependencyBarbie WithTrivia)

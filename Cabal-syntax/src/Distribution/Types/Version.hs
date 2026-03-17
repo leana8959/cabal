@@ -1,4 +1,7 @@
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE TypeSynonymInstances #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE DeriveGeneric #-}
 
 module Distribution.Types.Version
@@ -28,6 +31,8 @@ import qualified Distribution.Compat.CharParsing as P
 import qualified Text.PrettyPrint as Disp
 import qualified Text.Read as Read
 
+import Data.Kind
+
 -- | A 'Version' represents the version of a software entity.
 --
 -- Instances of 'Eq' and 'Ord' are provided, which gives exact
@@ -39,7 +44,9 @@ import qualified Text.Read as Read
 -- 'Binary' instance using a different (and more compact) encoding.
 --
 -- @since 2.0.0.2
-data Version
+type Version = VersionBarbie Identity
+
+data VersionBarbie (f :: Type -> Type)
   = PV0 {-# UNPACK #-} !Word64
   | PV1 !Int [Int]
   -- NOTE: If a version fits into the packed Word64
