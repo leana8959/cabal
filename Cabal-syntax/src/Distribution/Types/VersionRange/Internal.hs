@@ -1,4 +1,6 @@
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DeriveTraversable #-}
 {-# LANGUAGE FlexibleContexts #-}
@@ -12,7 +14,8 @@
 -- "Distribution.Types.VersionRange". To avoid creating orphan
 -- instances, a lot of related code had to be moved here too.
 module Distribution.Types.VersionRange.Internal
-  ( VersionRange (..)
+  ( VersionRange
+  , VersionRangeBarbie (..)
   , anyVersion
   , noVersion
   , thisVersion
@@ -49,15 +52,19 @@ import qualified Distribution.Compat.CharParsing as P
 import qualified Distribution.Compat.DList as DList
 import qualified Text.PrettyPrint as Disp
 
-data VersionRange
+import Data.Kind
+
+type VersionRange = VersionRangeBarbie Identity
+
+data VersionRangeBarbie (f :: Type -> Type)
   = ThisVersion Version -- = version
   | LaterVersion Version -- > version  (NB. not >=)
   | OrLaterVersion Version -- >= version
   | EarlierVersion Version -- < version
   | OrEarlierVersion Version -- <= version
   | MajorBoundVersion Version -- @^>= ver@ (same as >= ver && < MAJ(ver)+1)
-  | UnionVersionRanges VersionRange VersionRange
-  | IntersectVersionRanges VersionRange VersionRange
+  | UnionVersionRanges (VersionRangeBarbie f) (VersionRangeBarbie f)
+  | IntersectVersionRanges (VersionRangeBarbie f) (VersionRangeBarbie f)
   deriving (Data, Eq, Ord, Generic, Read, Show)
 
 instance Binary VersionRange
