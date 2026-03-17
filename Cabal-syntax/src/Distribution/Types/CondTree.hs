@@ -12,7 +12,8 @@
 module Distribution.Types.CondTree
   ( CondTree
   , CondTreeBarbie (..)
-  , CondBranch (..)
+  , CondBranch
+  , CondBranchBarbie (..)
   , condIfThen
   , condIfThenElse
   , foldCondTree
@@ -71,12 +72,6 @@ type family Modify (f :: Type -> Type) (a :: Type) where
 -- derived off of 'targetBuildInfo' (perhaps a good refactoring
 -- would be to convert this into an opaque type, with a smart
 -- constructor that pre-computes the dependencies.)
-
--- data CondTree v c a = CondNode
---   { condTreeData :: a
---   , condTreeConstraints :: c
---   , condTreeComponents :: [CondBranch v c a]
---   }
 type CondTree = CondTreeBarbie Identity
 
 data CondTreeBarbie f v c a = CondNode
@@ -95,7 +90,7 @@ instance Functor (CondTree v c) where
   fmap f (CondNode x c bs) = CondNode (f x) c ((fmap . fmap) f bs)
 
 instance Foldable (CondTree v c) where
-  foldMap f (CondNode x cs bs) = f x <> ((foldMap . foldMap) f bs)
+  foldMap f (CondNode x cs bs) = f x <> (foldMap . foldMap) f bs
 
 instance Traversable (CondTree v c) where
   traverse f (CondNode x cs bs) = CondNode <$> f x <*> pure cs <*> (traverse . traverse) f bs
@@ -114,12 +109,20 @@ instance (Semigroup a, Semigroup c, Monoid a, Monoid c) => Monoid (CondTree v c 
 -- | A 'CondBranch' represents a conditional branch, e.g., @if
 -- flag(foo)@ on some syntax @a@.  It also has an optional false
 -- branch.
-data CondBranch v c a = CondBranch
+type CondBranch = CondBranchBarbie Identity
+
+data CondBranchBarbie (f :: Type -> Type) v c a = CondBranch
   { condBranchCondition :: Condition v
-  , condBranchIfTrue :: CondTree v c a
-  , condBranchIfFalse :: Maybe (CondTree v c a)
+  , condBranchIfTrue :: CondTreeBarbie f v c a
+  , condBranchIfFalse :: Maybe (CondTreeBarbie f v c a)
   }
-  deriving (Show, Eq, Data, Generic, Functor, Traversable)
+  deriving (Generic)
+
+deriving instance (Show v, Show c, Show a) => Show (CondBranch v c a)
+deriving instance (Eq v, Eq c, Eq a) => Eq (CondBranch v c a)
+deriving instance (Data v, Data c, Data a) => Data (CondBranch v c a)
+deriving instance Functor (CondBranch v c)
+deriving instance Traversable (CondBranch v c)
 
 -- This instance is written by hand because GHC 8.0.1/8.0.2 infinite
 -- loops when trying to derive it with optimizations.  See
