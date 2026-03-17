@@ -1,8 +1,12 @@
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE TypeSynonymInstances #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE DeriveGeneric #-}
 
 module Distribution.Types.Dependency
-  ( Dependency (..)
+  ( Dependency
+  , DependencyBarbie (..)
   , mkDependency
   , depPkgName
   , depVerRange
@@ -30,11 +34,16 @@ import Distribution.Types.UnqualComponentName
 import qualified Distribution.Compat.NonEmptySet as NES
 import qualified Text.PrettyPrint as PP
 
+import Data.Kind
+
 -- | Describes a dependency on a source package (API)
 --
 -- /Invariant:/ package name does not appear as 'LSubLibName' in
 -- set of library names.
-data Dependency
+
+type Dependency = DependencyBarbie Identity
+
+data DependencyBarbie (f :: Type -> Type)
   = -- | The set of libraries required from the package.
     -- Only the selected libraries will be built.
     -- It does not affect the cabal-install solver yet.

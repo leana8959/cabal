@@ -1,4 +1,7 @@
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE TypeSynonymInstances #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE DeriveGeneric #-}
 
 module Distribution.Types.PackageName
@@ -17,6 +20,8 @@ import Distribution.Parsec
 import Distribution.Pretty
 import qualified Text.PrettyPrint as Disp
 
+import Data.Kind
+
 -- | A package name.
 --
 -- Use 'mkPackageName' and 'unPackageName' to convert from/to a
@@ -25,7 +30,9 @@ import qualified Text.PrettyPrint as Disp
 -- This type is opaque since @Cabal-2.0@
 --
 -- @since 2.0.0.2
-newtype PackageName = PackageName ShortText
+type PackageName = PackageNameBarbie Identity
+
+newtype PackageNameBarbie (f :: Type -> Type) = PackageName ShortText
   deriving (Generic, Read, Show, Eq, Ord, Data)
 
 -- | Convert 'PackageName' to 'String'
