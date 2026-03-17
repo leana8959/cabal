@@ -9,6 +9,7 @@
 module Distribution.Types.PackageName
   ( PackageName
   , PackageNameBarbie (..)
+  , unannotatePackageName
   , unPackageName
   , mkPackageName
   , unPackageNameST
@@ -54,6 +55,9 @@ deriving instance Read (PackageNameBarbie WithTrivia)
 deriving instance Eq (PackageNameBarbie WithTrivia)
 deriving instance Ord (PackageNameBarbie WithTrivia)
 deriving instance Data (PackageNameBarbie WithTrivia)
+
+unannotatePackageName :: PackageNameBarbie WithTrivia -> PackageName
+unannotatePackageName (PackageName pname) = PackageName (unTrivia pname)
 
 -- | Convert 'PackageName' to 'String'
 unPackageName :: PackageName -> String

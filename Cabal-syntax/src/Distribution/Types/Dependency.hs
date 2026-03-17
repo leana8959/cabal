@@ -68,6 +68,13 @@ deriving instance Eq (DependencyBarbie WithTrivia)
 deriving instance Ord (DependencyBarbie WithTrivia)
 deriving instance Data (DependencyBarbie WithTrivia)
 
+unannotateDependency :: DependencyBarbie WithTrivia -> Dependency
+unannotateDependency (Dependency pname vrange libs) =
+  Dependency
+    (unannotatePackageName pname)
+    vrange
+    libs
+
 depPkgName :: Dependency -> PackageName
 depPkgName (Dependency pn _ _) = pn
 
@@ -159,26 +166,9 @@ instance Pretty Dependency where
 -- >>> map (`simpleParsec'` "mylib:sub") [CabalSpecV2_4, CabalSpecV3_0] :: [Maybe Dependency]
 -- [Nothing,Just (Dependency (PackageName "mylib") (OrLaterVersion (mkVersion [0])) (fromNonEmpty (LSubLibName (UnqualComponentName "sub") :| [])))]
 instance Parsec Dependency where
-  parsec = do
-    name <- parsec
+  parsec = unannotateDependency <$> exactParsec
 
-    libs <- option mainLibSet $ do
-      _ <- char ':'
-      versionGuardMultilibs
-      NES.singleton <$> parseLib <|> parseMultipleLibs
-
-    spaces -- https://github.com/haskell/cabal/issues/5846
-    ver <- parsec <|> pure anyVersion
-    return $ mkDependency name ver libs
-    where
-      parseLib = LSubLibName <$> parsec
-      parseMultipleLibs =
-        between
-          (char '{' *> spaces)
-          (spaces *> char '}')
-          (NES.fromNonEmpty <$> parsecCommaNonEmpty parseLib)
-
--- TODO(leana8959): dummy instance
+-- TODO(leana8959): proof of concept
 instance ExactParsec DependencyBarbie where
   exactParsec = do
     name <- exactParsec
