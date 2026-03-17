@@ -62,6 +62,11 @@ deriving instance Eq Dependency
 deriving instance Ord Dependency
 deriving instance Data Dependency
 
+deriving instance Read (DependencyBarbie WithTrivia)
+deriving instance Show (DependencyBarbie WithTrivia)
+deriving instance Eq (DependencyBarbie WithTrivia)
+deriving instance Ord (DependencyBarbie WithTrivia)
+deriving instance Data (DependencyBarbie WithTrivia)
 
 depPkgName :: Dependency -> PackageName
 depPkgName (Dependency pn _ _) = pn
@@ -176,9 +181,7 @@ instance Parsec Dependency where
 -- TODO(leana8959): dummy instance
 instance ExactParsec DependencyBarbie where
   exactParsec = do
-    -- TODO(leana8959): give PackageNameBarbie an exactparsec instance
-    -- name <- parsec
-    let name = undefined
+    name <- exactParsec
 
     libs <- option mainLibSet $ do
       _ <- char ':'

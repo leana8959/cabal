@@ -36,12 +36,11 @@ import Distribution.Types.ForeignLib
 import Distribution.Types.Library
 import Distribution.Types.TestSuite
 import Distribution.Types.UnqualComponentName
+import Distribution.Trivia
 import Distribution.Version
 
 import Control.Exception
 import Data.Kind
-
-data WithTrivia a = WithTrivia a
 
 type family Modify (f :: Type -> Type) (a :: Type) where
   Modify Identity a = a

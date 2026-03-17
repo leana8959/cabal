@@ -35,13 +35,12 @@ import Distribution.Compat.Prelude
 import Prelude ()
 
 import Distribution.Types.Condition
+import Distribution.Trivia
 
 import Control.Exception
 import Data.Kind
 
 import qualified Distribution.Compat.Lens as L
-
-data WithTrivia a = WithTrivia a
 
 type family Modify (f :: Type -> Type) (a :: Type) where
   Modify Identity a = a

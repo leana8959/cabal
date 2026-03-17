@@ -49,6 +49,12 @@ deriving instance Eq PackageName
 deriving instance Ord PackageName
 deriving instance Data PackageName
 
+deriving instance Show (PackageNameBarbie WithTrivia)
+deriving instance Read (PackageNameBarbie WithTrivia)
+deriving instance Eq (PackageNameBarbie WithTrivia)
+deriving instance Ord (PackageNameBarbie WithTrivia)
+deriving instance Data (PackageNameBarbie WithTrivia)
+
 -- | Convert 'PackageName' to 'String'
 unPackageName :: PackageName -> String
 unPackageName (PackageName s) = fromShortText s
@@ -91,6 +97,11 @@ instance Pretty PackageName where
 
 instance Parsec PackageName where
   parsec = mkPackageName <$> parsecUnqualComponentName
+
+instance ExactParsec PackageNameBarbie where
+  exactParsec =
+    PackageName . WithTrivia (ExactRepresentation "packagename trivia") . toShortText
+      <$> parsecUnqualComponentName
 
 instance NFData PackageName where
   rnf (PackageName pkg) = rnf pkg
