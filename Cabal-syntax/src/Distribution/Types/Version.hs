@@ -7,6 +7,7 @@
 module Distribution.Types.Version
   ( -- * Package versions
     Version
+  , VersionBarbie
   , mkVersion
   , mkVersion'
   , versionNumbers

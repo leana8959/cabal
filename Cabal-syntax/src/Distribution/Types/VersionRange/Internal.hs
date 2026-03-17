@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE DeriveGeneric #-}
@@ -56,16 +57,23 @@ import Data.Kind
 
 type VersionRange = VersionRangeBarbie Identity
 
+-- TODO(leana8959): try to store trivia in this model
 data VersionRangeBarbie (f :: Type -> Type)
-  = ThisVersion Version -- = version
-  | LaterVersion Version -- > version  (NB. not >=)
-  | OrLaterVersion Version -- >= version
-  | EarlierVersion Version -- < version
-  | OrEarlierVersion Version -- <= version
-  | MajorBoundVersion Version -- @^>= ver@ (same as >= ver && < MAJ(ver)+1)
+  = ThisVersion (VersionBarbie f) -- = version
+  | LaterVersion (VersionBarbie f) -- > version  (NB. not >=)
+  | OrLaterVersion (VersionBarbie f) -- >= version
+  | EarlierVersion (VersionBarbie f) -- < version
+  | OrEarlierVersion (VersionBarbie f) -- <= version
+  | MajorBoundVersion (VersionBarbie f) -- @^>= ver@ (same as >= ver && < MAJ(ver)+1)
   | UnionVersionRanges (VersionRangeBarbie f) (VersionRangeBarbie f)
   | IntersectVersionRanges (VersionRangeBarbie f) (VersionRangeBarbie f)
-  deriving (Data, Eq, Ord, Generic, Read, Show)
+  deriving (Generic)
+
+deriving instance Eq VersionRange
+deriving instance Ord VersionRange
+deriving instance Data VersionRange
+deriving instance Read VersionRange
+deriving instance Show VersionRange
 
 instance Binary VersionRange
 instance Structured VersionRange
