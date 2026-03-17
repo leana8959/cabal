@@ -136,7 +136,8 @@ import Distribution.Types.CondTree
   ( CondTreeBarbie (..)
   )
 import Distribution.Types.Dependency
-  ( Dependency (..)
+  ( Dependency
+  , DependencyBarbie (..)
   , mainLibSet
   )
 import Distribution.Types.Library

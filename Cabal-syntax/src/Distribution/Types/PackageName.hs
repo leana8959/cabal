@@ -1,4 +1,6 @@
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE KindSignatures #-}
@@ -17,6 +19,7 @@ import Distribution.Utils.ShortText
 import Prelude ()
 
 import Distribution.Parsec
+import Distribution.Trivia
 import Distribution.Pretty
 import qualified Text.PrettyPrint as Disp
 
@@ -32,8 +35,18 @@ import Data.Kind
 -- @since 2.0.0.2
 type PackageName = PackageNameBarbie Identity
 
-newtype PackageNameBarbie (f :: Type -> Type) = PackageName ShortText
-  deriving (Generic, Read, Show, Eq, Ord, Data)
+type family ModifyPackageName (f :: Type -> Type) (a :: Type) where
+  ModifyPackageName Identity a = a
+  ModifyPackageName WithTrivia a = WithTrivia a
+
+newtype PackageNameBarbie (f :: Type -> Type) = PackageName (ModifyPackageName f ShortText)
+  deriving (Generic)
+
+deriving instance Show PackageName
+deriving instance Read PackageName
+deriving instance Eq PackageName
+deriving instance Ord PackageName
+deriving instance Data PackageName
 
 -- | Convert 'PackageName' to 'String'
 unPackageName :: PackageName -> String

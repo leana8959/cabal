@@ -1,4 +1,5 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
 
