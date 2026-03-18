@@ -55,7 +55,7 @@ import Distribution.Client.HttpUtils
 import Distribution.Client.ProjectConfig.Types
 import Distribution.Client.RebuildMonad (runRebuild)
 import Distribution.Types.CondTree
-  ( CondTreeBarbie (..)
+  ( CondTreeWith (..)
   )
 import Distribution.Utils.NubList
   ( fromNubList

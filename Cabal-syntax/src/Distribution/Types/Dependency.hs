@@ -9,7 +9,7 @@
 
 module Distribution.Types.Dependency
   ( Dependency
-  , DependencyBarbie (..)
+  , DependencyWith (..)
   , mkDependency
   , depPkgName
   , depVerRange
@@ -44,14 +44,14 @@ import Data.Kind
 -- /Invariant:/ package name does not appear as 'LSubLibName' in
 -- set of library names.
 
-type Dependency = DependencyBarbie Identity
+type Dependency = DependencyWith Identity
 
-data DependencyBarbie (f :: Type -> Type)
+data DependencyWith (f :: Type -> Type)
   = -- | The set of libraries required from the package.
     -- Only the selected libraries will be built.
     -- It does not affect the cabal-install solver yet.
     Dependency
-      (PackageNameBarbie f)
+      (PackageNameWith f)
       VersionRange
       (NonEmptySet LibraryName)
   deriving (Generic)
@@ -63,13 +63,13 @@ deriving instance Ord Dependency
 deriving instance Data Dependency
 
 -- TODO: less instances?
-deriving instance Read (DependencyBarbie WithTrivia)
-deriving instance Show (DependencyBarbie WithTrivia)
-deriving instance Eq (DependencyBarbie WithTrivia)
-deriving instance Ord (DependencyBarbie WithTrivia)
-deriving instance Data (DependencyBarbie WithTrivia)
+deriving instance Read (DependencyWith Ann)
+deriving instance Show (DependencyWith Ann)
+deriving instance Eq (DependencyWith Ann)
+deriving instance Ord (DependencyWith Ann)
+deriving instance Data (DependencyWith Ann)
 
-unannotateDependency :: DependencyBarbie WithTrivia -> Dependency
+unannotateDependency :: DependencyWith Ann -> Dependency
 unannotateDependency (Dependency pname vrange libs) =
   Dependency
     (unannotatePackageName pname)
@@ -101,10 +101,10 @@ mkDependency pn vr lb = Dependency pn vr (NES.map conv lb)
       | otherwise = l
 
 -- TODO(leana8959): a way to not duplicate smart constructor
-mkDependencyBarbie :: PackageNameBarbie WithTrivia -> VersionRange -> NonEmptySet LibraryName -> DependencyBarbie WithTrivia
-mkDependencyBarbie pn vr lb = Dependency pn vr (NES.map conv lb)
+mkDependencyWith :: PackageNameWith Ann -> VersionRange -> NonEmptySet LibraryName -> DependencyWith Ann
+mkDependencyWith pn vr lb = Dependency pn vr (NES.map conv lb)
   where
-    pn' = packageNameToUnqualComponentNameBarbie pn
+    pn' = packageNameToUnqualComponentNameWith pn
     conv l@LMainLibName = l
     conv l@(LSubLibName ln)
       | ln == unTrivia pn' = LMainLibName
@@ -170,7 +170,7 @@ instance Parsec Dependency where
   parsec = unannotateDependency <$> parsec
 
 -- TODO(leana8959): proof of concept
-instance Parsec (DependencyBarbie WithTrivia) where
+instance Parsec (DependencyWith Ann) where
   parsec = do
     name <- parsec
 
@@ -181,7 +181,7 @@ instance Parsec (DependencyBarbie WithTrivia) where
 
     spaces -- https://github.com/haskell/cabal/issues/5846
     ver <- parsec <|> pure anyVersion
-    return $ mkDependencyBarbie name ver libs
+    return $ mkDependencyWith name ver libs
     where
       parseLib = LSubLibName <$> parsec
       parseMultipleLibs =

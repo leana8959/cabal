@@ -137,9 +137,9 @@ import Distribution.Simple.Utils
   )
 import Distribution.Types.CondTree
   ( CondBranch
-  , CondBranchBarbie (..)
+  , CondBranchWith (..)
   , CondTree
-  , CondTreeBarbie (..)
+  , CondTreeWith (..)
   , ignoreConditions
   , mapTreeConds
   , traverseCondTreeC

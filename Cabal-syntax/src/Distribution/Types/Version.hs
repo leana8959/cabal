@@ -7,7 +7,7 @@
 module Distribution.Types.Version
   ( -- * Package versions
     Version
-  , VersionBarbie
+  , VersionWith
   , mkVersion
   , mkVersion'
   , versionNumbers
@@ -45,9 +45,9 @@ import Data.Kind
 -- 'Binary' instance using a different (and more compact) encoding.
 --
 -- @since 2.0.0.2
-type Version = VersionBarbie Identity
+type Version = VersionWith Identity
 
-data VersionBarbie (f :: Type -> Type)
+data VersionWith (f :: Type -> Type)
   = PV0 {-# UNPACK #-} !Word64
   | PV1 !Int [Int]
   -- NOTE: If a version fits into the packed Word64

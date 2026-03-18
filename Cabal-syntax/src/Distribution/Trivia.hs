@@ -4,7 +4,7 @@
 module Distribution.Trivia
   ( Trivia (..)
   , Trivium (..)
-  , WithTrivia (..)
+  , Ann (..)
   )
   where
 
@@ -21,7 +21,7 @@ data Trivium
   | TrailingTrivium String
   deriving (Show, Eq, Ord, Read, Data)
 
-data WithTrivia a = WithTrivia
+data Ann a = Ann
   { getTrivia :: Trivia
   , unTrivia :: a
   }

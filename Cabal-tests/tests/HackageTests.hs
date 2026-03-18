@@ -21,7 +21,7 @@ import Distribution.PackageDescription.Check       (PackageCheck (..), checkPack
 import Distribution.PackageDescription.PrettyPrint (showGenericPackageDescription)
 import Distribution.PackageDescription.Quirks      (patchQuirks)
 import Distribution.PackageDescription
-  ( GenericPackageDescriptionBarbie(GenericPackageDescription)
+  ( GenericPackageDescriptionWith(GenericPackageDescription)
   , packageDescription
   , gpdScannedVersion
   , genPackageFlags

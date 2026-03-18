@@ -13,7 +13,7 @@
 
 module Distribution.Types.GenericPackageDescription
   ( GenericPackageDescription
-  , GenericPackageDescriptionBarbie (..)
+  , GenericPackageDescriptionWith (..)
   , emptyGenericPackageDescription
   ) where
 
@@ -45,15 +45,15 @@ import Data.Kind
 type family Modify (f :: Type -> Type) (a :: Type) where
   Modify Identity a = a
   -- A bad placeholder for Trivia
-  Modify WithTrivia a = ([String], a)
+  Modify Ann a = ([String], a)
   Modify _ a = TypeError
 
 -- ---------------------------------------------------------------------------
 -- The 'GenericPackageDescription' type
 
-type GenericPackageDescription = GenericPackageDescriptionBarbie Identity
+type GenericPackageDescription = GenericPackageDescriptionWith Identity
 
-data GenericPackageDescriptionBarbie (f :: Type -> Type) = GenericPackageDescription
+data GenericPackageDescriptionWith (f :: Type -> Type) = GenericPackageDescription
   { packageDescription :: Modify f PackageDescription
   , gpdScannedVersion :: Modify f (Maybe Version)
   -- ^ This is a version as specified in source.
@@ -78,15 +78,15 @@ data GenericPackageDescriptionBarbie (f :: Type -> Type) = GenericPackageDescrip
       :: Modify f [(UnqualComponentName, CondTree ConfVar [Dependency] Benchmark)]
   }
 
-deriving instance Eq (GenericPackageDescriptionBarbie Identity)
-deriving instance Show (GenericPackageDescriptionBarbie Identity)
-deriving instance Data (GenericPackageDescriptionBarbie Identity)
-deriving instance Generic (GenericPackageDescriptionBarbie Identity)
+deriving instance Eq (GenericPackageDescriptionWith Identity)
+deriving instance Show (GenericPackageDescriptionWith Identity)
+deriving instance Data (GenericPackageDescriptionWith Identity)
+deriving instance Generic (GenericPackageDescriptionWith Identity)
 
-instance Package (GenericPackageDescriptionBarbie Identity) where
+instance Package (GenericPackageDescriptionWith Identity) where
   packageId = packageId . packageDescription
 
-deriving instance Binary (GenericPackageDescriptionBarbie Identity)
+deriving instance Binary (GenericPackageDescriptionWith Identity)
 
 instance Structured GenericPackageDescription
 instance NFData GenericPackageDescription where rnf = genericRnf

@@ -16,7 +16,7 @@
 -- instances, a lot of related code had to be moved here too.
 module Distribution.Types.VersionRange.Internal
   ( VersionRange
-  , VersionRangeBarbie (..)
+  , VersionRangeWith (..)
   , anyVersion
   , noVersion
   , thisVersion
@@ -55,18 +55,18 @@ import qualified Text.PrettyPrint as Disp
 
 import Data.Kind
 
-type VersionRange = VersionRangeBarbie Identity
+type VersionRange = VersionRangeWith Identity
 
 -- TODO(leana8959): try to store trivia in this model
-data VersionRangeBarbie (f :: Type -> Type)
-  = ThisVersion (VersionBarbie f) -- = version
-  | LaterVersion (VersionBarbie f) -- > version  (NB. not >=)
-  | OrLaterVersion (VersionBarbie f) -- >= version
-  | EarlierVersion (VersionBarbie f) -- < version
-  | OrEarlierVersion (VersionBarbie f) -- <= version
-  | MajorBoundVersion (VersionBarbie f) -- @^>= ver@ (same as >= ver && < MAJ(ver)+1)
-  | UnionVersionRanges (VersionRangeBarbie f) (VersionRangeBarbie f)
-  | IntersectVersionRanges (VersionRangeBarbie f) (VersionRangeBarbie f)
+data VersionRangeWith (f :: Type -> Type)
+  = ThisVersion (VersionWith f) -- = version
+  | LaterVersion (VersionWith f) -- > version  (NB. not >=)
+  | OrLaterVersion (VersionWith f) -- >= version
+  | EarlierVersion (VersionWith f) -- < version
+  | OrEarlierVersion (VersionWith f) -- <= version
+  | MajorBoundVersion (VersionWith f) -- @^>= ver@ (same as >= ver && < MAJ(ver)+1)
+  | UnionVersionRanges (VersionRangeWith f) (VersionRangeWith f)
+  | IntersectVersionRanges (VersionRangeWith f) (VersionRangeWith f)
   deriving (Generic)
 
 deriving instance Eq VersionRange

@@ -49,7 +49,7 @@ import Distribution.Package
   )
 import Distribution.PackageDescription
   ( BuildType (..)
-  , GenericPackageDescriptionBarbie (packageDescription)
+  , GenericPackageDescriptionWith (packageDescription)
   , PackageDescription (..)
   , buildType
   , specVersion

@@ -149,14 +149,14 @@ import Distribution.Types.ComponentId
   ( mkComponentId
   )
 import Distribution.Types.CondTree
-  ( CondTreeBarbie (..)
+  ( CondTreeWith (..)
   )
 import Distribution.Types.Executable
   ( Executable (..)
   )
 import Distribution.Types.GenericPackageDescription as GPD
   ( GenericPackageDescription
-  , GenericPackageDescriptionBarbie (..)
+  , GenericPackageDescriptionWith (..)
   , emptyGenericPackageDescription
   )
 import Distribution.Types.PackageDescription

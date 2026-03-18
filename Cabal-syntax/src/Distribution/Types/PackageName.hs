@@ -8,7 +8,7 @@
 
 module Distribution.Types.PackageName
   ( PackageName
-  , PackageNameBarbie (..)
+  , PackageNameWith (..)
   , unannotatePackageName
   , unPackageName
   , mkPackageName
@@ -35,13 +35,13 @@ import Data.Kind
 -- This type is opaque since @Cabal-2.0@
 --
 -- @since 2.0.0.2
-type PackageName = PackageNameBarbie Identity
+type PackageName = PackageNameWith Identity
 
 type family ModifyPackageName (f :: Type -> Type) (a :: Type) where
   ModifyPackageName Identity a = a
-  ModifyPackageName WithTrivia a = WithTrivia a
+  ModifyPackageName Ann a = Ann a
 
-newtype PackageNameBarbie (f :: Type -> Type) = PackageName (ModifyPackageName f ShortText)
+newtype PackageNameWith (f :: Type -> Type) = PackageName (ModifyPackageName f ShortText)
   deriving (Generic)
 
 deriving instance Show PackageName
@@ -50,13 +50,13 @@ deriving instance Eq PackageName
 deriving instance Ord PackageName
 deriving instance Data PackageName
 
-deriving instance Show (PackageNameBarbie WithTrivia)
-deriving instance Read (PackageNameBarbie WithTrivia)
-deriving instance Eq (PackageNameBarbie WithTrivia)
-deriving instance Ord (PackageNameBarbie WithTrivia)
-deriving instance Data (PackageNameBarbie WithTrivia)
+deriving instance Show (PackageNameWith Ann)
+deriving instance Read (PackageNameWith Ann)
+deriving instance Eq (PackageNameWith Ann)
+deriving instance Ord (PackageNameWith Ann)
+deriving instance Data (PackageNameWith Ann)
 
-unannotatePackageName :: PackageNameBarbie WithTrivia -> PackageName
+unannotatePackageName :: PackageNameWith Ann -> PackageName
 unannotatePackageName (PackageName pname) = PackageName (unTrivia pname)
 
 -- | Convert 'PackageName' to 'String'
@@ -102,9 +102,9 @@ instance Pretty PackageName where
 instance Parsec PackageName where
   parsec = mkPackageName <$> parsecUnqualComponentName
 
-instance Parsec (PackageNameBarbie WithTrivia) where
+instance Parsec (PackageNameWith Ann) where
   parsec =
-    PackageName . WithTrivia (ExactRepresentation "packagename trivia") . toShortText
+    PackageName . Ann (ExactRepresentation "packagename trivia") . toShortText
       <$> parsecUnqualComponentName
 
 instance NFData PackageName where

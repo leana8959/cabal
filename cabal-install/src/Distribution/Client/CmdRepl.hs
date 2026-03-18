@@ -133,11 +133,11 @@ import Distribution.Types.ComponentName
   ( componentNameString
   )
 import Distribution.Types.CondTree
-  ( CondTreeBarbie (..)
+  ( CondTreeWith (..)
   )
 import Distribution.Types.Dependency
   ( Dependency
-  , DependencyBarbie (..)
+  , DependencyWith (..)
   , mainLibSet
   )
 import Distribution.Types.Library

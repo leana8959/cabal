@@ -11,9 +11,9 @@
 
 module Distribution.Types.CondTree
   ( CondTree
-  , CondTreeBarbie (..)
+  , CondTreeWith (..)
   , CondBranch
-  , CondBranchBarbie (..)
+  , CondBranchWith (..)
   , condIfThen
   , condIfThenElse
   , foldCondTree
@@ -44,7 +44,7 @@ import qualified Distribution.Compat.Lens as L
 
 type family Modify (f :: Type -> Type) (a :: Type) where
   Modify Identity a = a
-  Modify WithTrivia a = ([String], a)
+  Modify Ann a = ([String], a)
   Modify _ a = TypeError
 
 -- | A 'CondTree' is used to represent the conditional structure of
@@ -71,9 +71,9 @@ type family Modify (f :: Type -> Type) (a :: Type) where
 -- derived off of 'targetBuildInfo' (perhaps a good refactoring
 -- would be to convert this into an opaque type, with a smart
 -- constructor that pre-computes the dependencies.)
-type CondTree = CondTreeBarbie Identity
+type CondTree = CondTreeWith Identity
 
-data CondTreeBarbie f v c a = CondNode
+data CondTreeWith f v c a = CondNode
   { condTreeData :: Modify f a
   -- TODO(leana8959): can we remove this
   , condTreeConstraints :: c
@@ -108,12 +108,12 @@ instance (Semigroup a, Semigroup c, Monoid a, Monoid c) => Monoid (CondTree v c 
 -- | A 'CondBranch' represents a conditional branch, e.g., @if
 -- flag(foo)@ on some syntax @a@.  It also has an optional false
 -- branch.
-type CondBranch = CondBranchBarbie Identity
+type CondBranch = CondBranchWith Identity
 
-data CondBranchBarbie (f :: Type -> Type) v c a = CondBranch
+data CondBranchWith (f :: Type -> Type) v c a = CondBranch
   { condBranchCondition :: Condition v
-  , condBranchIfTrue :: CondTreeBarbie f v c a
-  , condBranchIfFalse :: Maybe (CondTreeBarbie f v c a)
+  , condBranchIfTrue :: CondTreeWith f v c a
+  , condBranchIfFalse :: Maybe (CondTreeWith f v c a)
   }
   deriving (Generic)
 

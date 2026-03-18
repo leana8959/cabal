@@ -142,9 +142,9 @@ import Distribution.Types.UnqualComponentName
 
 -- For amendGPD
 import Distribution.PackageDescription
-       (CondTreeBarbie (..))
+       (CondTreeWith (..))
 import Distribution.Types.GenericPackageDescription
-       (GenericPackageDescriptionBarbie (condTestSuites))
+       (GenericPackageDescriptionWith (condTestSuites))
 
 import Distribution.Version
        (mkVersion)

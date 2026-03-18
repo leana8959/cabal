@@ -79,7 +79,7 @@ import Distribution.Package
   )
 import Distribution.PackageDescription
   ( GenericPackageDescription
-  , GenericPackageDescriptionBarbie (..)
+  , GenericPackageDescriptionWith (..)
   , PackageDescription (..)
   , emptyPackageDescription
   )
