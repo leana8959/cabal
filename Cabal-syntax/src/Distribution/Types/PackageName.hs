@@ -102,8 +102,8 @@ instance Pretty PackageName where
 instance Parsec PackageName where
   parsec = mkPackageName <$> parsecUnqualComponentName
 
-instance ExactParsec PackageNameBarbie where
-  exactParsec =
+instance Parsec (PackageNameBarbie WithTrivia) where
+  parsec =
     PackageName . WithTrivia (ExactRepresentation "packagename trivia") . toShortText
       <$> parsecUnqualComponentName
 

@@ -7,17 +7,14 @@
 
 module Distribution.Parsec
   ( Parsec (..)
-  , ExactParsec (..)
   , ParsecParser (..)
   , runParsecParser
   , runParsecParser'
   , simpleParsec
-  , simpleExactParsec
   , simpleParsecBS
   , simpleParsec'
   , simpleParsecW'
   , lexemeParsec
-  , lexemeExactParsec
   , eitherParsec
   , explicitEitherParsec
   , explicitEitherParsec'
@@ -67,7 +64,6 @@ import Data.Char (digitToInt, intToDigit)
 import Data.List (transpose)
 import Distribution.CabalSpecVersion
 import Distribution.Compat.Prelude
-import Distribution.Trivia
 import Distribution.Parsec.Error (PError (..), PErrorWithSource (..), showPError, showPErrorWithSource)
 
 import Data.Monoid (Last (..))
@@ -76,8 +72,6 @@ import Distribution.Parsec.Position (Position (..), incPos, retPos, showPos, zer
 import Distribution.Parsec.Warning
 import Numeric (showIntAtBase)
 import Prelude ()
-
-import Data.Kind
 
 import qualified Control.Monad.Fail as Fail
 import qualified Distribution.Compat.CharParsing as P
@@ -93,9 +87,6 @@ import qualified Text.Parsec as Parsec
 -- For parsing @.cabal@ like file structure, see "Distribution.Fields".
 class Parsec a where
   parsec :: CabalParsing m => m a
-
-class ExactParsec (a :: (Type -> Type) -> Type) where
-  exactParsec :: CabalParsing m => m (a WithTrivia)
 
 -- | Parsing class which
 --
@@ -113,9 +104,6 @@ class (P.CharParsing m, MonadPlus m, Fail.MonadFail m) => CabalParsing m where
 -- | 'parsec' /could/ consume trailing spaces, this function /will/ consume.
 lexemeParsec :: (CabalParsing m, Parsec a) => m a
 lexemeParsec = parsec <* P.spaces
-
-lexemeExactParsec :: (CabalParsing m, ExactParsec a) => m (a WithTrivia)
-lexemeExactParsec = exactParsec <* P.spaces
 
 newtype ParsecParser a = PP
   { unPP
@@ -200,13 +188,6 @@ simpleParsec =
   either (const Nothing) Just
     . runParsecParser lexemeParsec "<simpleParsec>"
     . fieldLineStreamFromString
-
-simpleExactParsec :: ExactParsec a => String -> Maybe (a WithTrivia)
-simpleExactParsec =
-  either (const Nothing) Just
-    . runParsecParser lexemeExactParsec "<simpleParsec>"
-    . fieldLineStreamFromString
-
 
 -- | Like 'simpleParsec' but for 'ByteString'
 simpleParsecBS :: Parsec a => ByteString -> Maybe a

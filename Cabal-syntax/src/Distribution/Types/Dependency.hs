@@ -167,12 +167,12 @@ instance Pretty Dependency where
 -- >>> map (`simpleParsec'` "mylib:sub") [CabalSpecV2_4, CabalSpecV3_0] :: [Maybe Dependency]
 -- [Nothing,Just (Dependency (PackageName "mylib") (OrLaterVersion (mkVersion [0])) (fromNonEmpty (LSubLibName (UnqualComponentName "sub") :| [])))]
 instance Parsec Dependency where
-  parsec = unannotateDependency <$> exactParsec
+  parsec = unannotateDependency <$> parsec
 
 -- TODO(leana8959): proof of concept
-instance ExactParsec DependencyBarbie where
-  exactParsec = do
-    name <- exactParsec
+instance Parsec (DependencyBarbie WithTrivia) where
+  parsec = do
+    name <- parsec
 
     libs <- option mainLibSet $ do
       _ <- char ':'
