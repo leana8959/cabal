@@ -3,7 +3,6 @@
 
 module Distribution.Trivia
   ( Trivia (..)
-  , Trivium (..)
   , Ann (..)
   , mapAnn
   , mapAnnA
@@ -14,14 +13,14 @@ import Data.Data
 import Data.List.NonEmpty (NonEmpty)
 
 data Trivia
-  = HasTrivia (NonEmpty Trivium)
+  = HasTrivia String String
   | ExactRepresentation String
   | IsInserted
   | NoTrivia
   deriving (Show, Eq, Ord, Read, Data)
 
 instance Semigroup Trivia where
-  HasTrivia u <> HasTrivia v = HasTrivia (u <> v)
+  HasTrivia s t <> HasTrivia a b = HasTrivia (s <> a) (t <> b)
 
   ExactRepresentation u <> ExactRepresentation v = ExactRepresentation (u <> v)
   u@(ExactRepresentation _) <> _ = u
@@ -36,17 +35,11 @@ instance Semigroup Trivia where
 instance Monoid Trivia where
   mempty = NoTrivia
 
-data Trivium
-  = LeadingTrivium String
-  | TrailingTrivium String
-  deriving (Show, Eq, Ord, Read, Data)
-
 data Ann a = Ann
   { getAnn :: Trivia
   , unAnn :: a
   }
   deriving (Show, Eq, Ord, Functor, Read, Data)
-
 
 mapAnn
   :: (Trivia -> Trivia)

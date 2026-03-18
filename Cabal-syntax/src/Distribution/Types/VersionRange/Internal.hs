@@ -488,14 +488,11 @@ instance Parsec VersionRangeAnn where
 versionRangeParser :: forall m. CabalParsing m => m Int -> CabalSpecVersion -> m VersionRange
 versionRangeParser digitParser csv = unAnnVersionRange <$> versionRangeAnnParser digitParser csv
 
-stringTrivia :: forall m. CabalParsing m => m Trivium -> m Trivia
-stringTrivia p = HasTrivia . NE.singleton <$> p
-
 leadingString :: forall m. CabalParsing m => m String -> m Trivia
-leadingString p = stringTrivia (LeadingTrivium <$> p)
+leadingString = fmap $ flip HasTrivia mempty
 
 trailingString :: forall m. CabalParsing m => m String -> m Trivia
-trailingString p = stringTrivia (TrailingTrivium <$> p)
+trailingString = fmap $ HasTrivia mempty
 
 -- TODO(leana8959): implement this
 versionRangeAnnParser :: forall m. CabalParsing m => m Int -> CabalSpecVersion -> m VersionRangeAnn
