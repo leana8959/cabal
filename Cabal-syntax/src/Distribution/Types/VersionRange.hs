@@ -4,6 +4,7 @@
 module Distribution.Types.VersionRange
   ( -- * Version Range
     VersionRange
+  , VersionRangeAnn
 
     -- ** Predicates
     -- $predicate-examples

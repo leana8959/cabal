@@ -9,6 +9,7 @@
 
 module Distribution.Types.Dependency
   ( Dependency
+  , DependencyAnn
   , DependencyWith (..)
   , mkDependency
   , depPkgName
@@ -45,6 +46,7 @@ import Data.Kind
 -- set of library names.
 
 type Dependency = DependencyWith Identity
+type DependencyAnn = DependencyWith Ann
 
 data DependencyWith (f :: Type -> Type)
   = -- | The set of libraries required from the package.
@@ -107,7 +109,7 @@ mkDependencyWith pn vr lb = Dependency pn vr (NES.map conv lb)
     pn' = packageNameToUnqualComponentNameWith pn
     conv l@LMainLibName = l
     conv l@(LSubLibName ln)
-      | ln == unTrivia pn' = LMainLibName
+      | ln == unAnn pn' = LMainLibName
       | otherwise = l
 
 instance Binary Dependency

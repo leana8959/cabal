@@ -1,5 +1,6 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE DeriveGeneric #-}
@@ -16,6 +17,7 @@
 -- instances, a lot of related code had to be moved here too.
 module Distribution.Types.VersionRange.Internal
   ( VersionRange
+  , VersionRangeAnn
   , VersionRangeWith (..)
   , anyVersion
   , noVersion
@@ -35,9 +37,11 @@ module Distribution.Types.VersionRange.Internal
   , cataVersionRange
   , anaVersionRange
   , hyloVersionRange
+  , hyloVersionRangeAnn
   , versionRangeParser
   , majorUpperBound
   , wildcardUpperBound
+  , wildcardUpperBoundAnn
   ) where
 
 import Distribution.Compat.Prelude
@@ -46,6 +50,7 @@ import Prelude ()
 
 import Distribution.CabalSpecVersion
 import Distribution.Parsec
+import Distribution.Trivia
 import Distribution.Pretty
 import Distribution.Utils.Generic (unsnoc)
 
@@ -53,20 +58,28 @@ import qualified Distribution.Compat.CharParsing as P
 import qualified Distribution.Compat.DList as DList
 import qualified Text.PrettyPrint as Disp
 
+import Control.Applicative
 import Data.Kind
+import Data.List.NonEmpty (NonEmpty (..))
+import qualified Data.List.NonEmpty as NE
 
 type VersionRange = VersionRangeWith Identity
+type VersionRangeAnn = VersionRangeWith Ann
+
+type family Modify (f :: Type -> Type) (a :: Type) where
+  Modify Identity a = a
+  Modify Ann a = Ann a
 
 -- TODO(leana8959): try to store trivia in this model
 data VersionRangeWith (f :: Type -> Type)
-  = ThisVersion (VersionWith f) -- = version
-  | LaterVersion (VersionWith f) -- > version  (NB. not >=)
-  | OrLaterVersion (VersionWith f) -- >= version
-  | EarlierVersion (VersionWith f) -- < version
-  | OrEarlierVersion (VersionWith f) -- <= version
-  | MajorBoundVersion (VersionWith f) -- @^>= ver@ (same as >= ver && < MAJ(ver)+1)
-  | UnionVersionRanges (VersionRangeWith f) (VersionRangeWith f)
-  | IntersectVersionRanges (VersionRangeWith f) (VersionRangeWith f)
+  = ThisVersion (Modify f Version) -- = version
+  | LaterVersion (Modify f Version) -- > version  (NB. not >=)
+  | OrLaterVersion (Modify f Version) -- >= version
+  | EarlierVersion (Modify f Version) -- < version
+  | OrEarlierVersion (Modify f Version) -- <= version
+  | MajorBoundVersion (Modify f Version) -- @^>= ver@ (same as >= ver && < MAJ(ver)+1)
+  | UnionVersionRanges (Modify f (VersionRangeWith f)) (Modify f (VersionRangeWith f))
+  | IntersectVersionRanges (Modify f (VersionRangeWith f)) (Modify f (VersionRangeWith f))
   deriving (Generic)
 
 deriving instance Eq VersionRange
@@ -75,9 +88,64 @@ deriving instance Data VersionRange
 deriving instance Read VersionRange
 deriving instance Show VersionRange
 
+deriving instance Show VersionRangeAnn
+
 instance Binary VersionRange
 instance Structured VersionRange
 instance NFData VersionRange where rnf = genericRnf
+
+unAnnVersionRange :: VersionRangeAnn -> VersionRange
+unAnnVersionRange (ThisVersion v) = ThisVersion (unAnn v)
+unAnnVersionRange (LaterVersion v) = LaterVersion (unAnn v)
+unAnnVersionRange (OrLaterVersion v) = OrLaterVersion (unAnn v)
+unAnnVersionRange (EarlierVersion v) = EarlierVersion (unAnn v)
+unAnnVersionRange (OrEarlierVersion v) = OrEarlierVersion (unAnn v)
+unAnnVersionRange (MajorBoundVersion v) = MajorBoundVersion (unAnn v)
+unAnnVersionRange (UnionVersionRanges a b) = UnionVersionRanges (unAnnVersionRange $ unAnn a) (unAnnVersionRange $ unAnn b)
+unAnnVersionRange (IntersectVersionRanges a b) = IntersectVersionRanges (unAnnVersionRange $ unAnn a) (unAnnVersionRange $ unAnn b)
+
+-- | Map annotation to a already annotated VersionRange data
+mapVersionRangeAnn
+  :: (Trivia -> Trivia)
+  -> ( Trivia -> Trivia
+     , Trivia -> Trivia
+     )
+  -> VersionRangeAnn
+  -> VersionRangeAnn
+mapVersionRangeAnn f (g, h) vr = case vr of
+  ThisVersion v -> ThisVersion (mapAnn f v)
+  LaterVersion v -> LaterVersion (mapAnn f v)
+  OrLaterVersion v -> OrLaterVersion (mapAnn f v)
+  EarlierVersion v -> EarlierVersion (mapAnn f v)
+  OrEarlierVersion v -> OrEarlierVersion (mapAnn f v)
+  MajorBoundVersion v -> MajorBoundVersion (mapAnn f v)
+  UnionVersionRanges a b -> UnionVersionRanges (mapAnn g a) (mapAnn h b)
+  IntersectVersionRanges a b -> IntersectVersionRanges (mapAnn g a) (mapAnn h b)
+
+decorateTriviaVersionRangeAnn
+  :: (Trivia, Trivia)
+  -> VersionRangeAnn
+  -> (Ann VersionRangeAnn, VersionRangeAnn)
+decorateTriviaVersionRangeAnn (leading, trailing) vr =
+  (enclosed vr, inserted vr)
+  where
+  enclosed = Ann (leading <> trailing)
+  inserted =
+      mapVersionRangeAnn
+        (\v -> leading <> v <> trailing)
+        ( \vr1 -> leading <> vr1
+        , \vr2 -> vr2 <> trailing
+        )
+
+-- | LiftA3 with a different ordering
+surroundWith
+  :: Applicative f
+  => (a -> b -> c -> d)
+  -> f a
+  -> f c
+  -> f b
+  -> f d
+surroundWith f = liftA3 (\u v w -> f u w v)
 
 -- | The version range @-any@. That is, a version range containing all
 -- versions.
@@ -85,6 +153,9 @@ instance NFData VersionRange where rnf = genericRnf
 -- > withinRange v anyVersion = True
 anyVersion :: VersionRange
 anyVersion = OrLaterVersion (mkVersion [0])
+
+anyVersionAnn :: Trivia -> VersionRangeAnn
+anyVersionAnn t = OrLaterVersion (Ann t $ mkVersion [0])
 
 -- | The empty version range @-none@, that is a version range containing no versions.
 --
@@ -95,11 +166,17 @@ anyVersion = OrLaterVersion (mkVersion [0])
 noVersion :: VersionRange
 noVersion = EarlierVersion (mkVersion [0])
 
+noVersionAnn :: Trivia ->  VersionRangeAnn
+noVersionAnn t = EarlierVersion (Ann t $ mkVersion [0])
+
 -- | The version range @== v@.
 --
 -- > withinRange v' (thisVersion v) = v' == v
 thisVersion :: Version -> VersionRange
 thisVersion = ThisVersion
+
+thisVersionAnn :: Ann Version -> VersionRangeAnn
+thisVersionAnn = ThisVersion
 
 -- | The version range @/= v@.
 --
@@ -113,11 +190,17 @@ notThisVersion v = UnionVersionRanges (EarlierVersion v) (LaterVersion v)
 laterVersion :: Version -> VersionRange
 laterVersion = LaterVersion
 
+laterVersionAnn :: VersionAnn -> VersionRangeAnn
+laterVersionAnn = LaterVersion
+
 -- | The version range @>= v@.
 --
 -- > withinRange v' (orLaterVersion v) = v' >= v
 orLaterVersion :: Version -> VersionRange
 orLaterVersion = OrLaterVersion
+
+orLaterVersionAnn :: Ann Version -> VersionRangeAnn
+orLaterVersionAnn = OrLaterVersion
 
 -- | The version range @< v@.
 --
@@ -125,11 +208,17 @@ orLaterVersion = OrLaterVersion
 earlierVersion :: Version -> VersionRange
 earlierVersion = EarlierVersion
 
+earlierVersionAnn :: VersionAnn -> VersionRangeAnn
+earlierVersionAnn = EarlierVersion
+
 -- | The version range @<= v@.
 --
 -- > withinRange v' (orEarlierVersion v) = v' <= v
 orEarlierVersion :: Version -> VersionRange
 orEarlierVersion = OrEarlierVersion
+
+orEarlierVersionAnn :: VersionAnn -> VersionRangeAnn
+orEarlierVersionAnn = OrEarlierVersion
 
 -- | The version range @vr1 || vr2@.
 --
@@ -138,12 +227,18 @@ orEarlierVersion = OrEarlierVersion
 unionVersionRanges :: VersionRange -> VersionRange -> VersionRange
 unionVersionRanges = UnionVersionRanges
 
+unionVersionRangesAnn :: Ann VersionRangeAnn -> Ann VersionRangeAnn -> VersionRangeAnn
+unionVersionRangesAnn = UnionVersionRanges
+
 -- | The version range @vr1 && vr2@.
 --
 -- >   withinRange v' (intersectVersionRanges vr1 vr2)
 -- > = withinRange v' vr1 && withinRange v' vr2
 intersectVersionRanges :: VersionRange -> VersionRange -> VersionRange
 intersectVersionRanges = IntersectVersionRanges
+
+intersectVersionRangesAnn :: Ann VersionRangeAnn -> Ann VersionRangeAnn -> VersionRangeAnn
+intersectVersionRangesAnn = IntersectVersionRanges
 
 -- | The version range @== v.*@.
 --
@@ -159,6 +254,12 @@ withinVersion v =
     (orLaterVersion v)
     (earlierVersion (wildcardUpperBound v))
 
+withinVersionAnn :: Ann Version -> VersionRangeAnn
+withinVersionAnn v =
+  intersectVersionRangesAnn
+    (Ann mempty $ orLaterVersionAnn v)
+    (Ann mempty $ earlierVersionAnn (wildcardUpperBoundAnn v))
+
 -- | The version range @^>= v@.
 --
 -- For example, for version @1.2.3.4@, the version range @^>= 1.2.3.4@
@@ -169,6 +270,9 @@ withinVersion v =
 -- @since 2.0.0.2
 majorBoundVersion :: Version -> VersionRange
 majorBoundVersion = MajorBoundVersion
+
+majorBoundVersionAnn :: VersionAnn -> VersionRangeAnn
+majorBoundVersionAnn = MajorBoundVersion
 
 -- | F-Algebra of 'VersionRange'. See 'cataVersionRange'.
 --
@@ -264,6 +368,13 @@ hyloVersionRange
   -> VersionRange
   -> VersionRange
 hyloVersionRange f g = h where h = f . fmap h . g
+
+hyloVersionRangeAnn
+  :: (VersionRangeF VersionRangeAnn -> VersionRangeAnn)
+  -> (VersionRangeAnn -> VersionRangeF VersionRangeAnn)
+  -> VersionRangeAnn
+  -> VersionRangeAnn
+hyloVersionRangeAnn f g = h where h = f . fmap h . g
 
 -------------------------------------------------------------------------------
 -- Parsec & Pretty
@@ -364,6 +475,9 @@ prettyVersionRange16 vr = prettyVersionRange vr
 instance Parsec VersionRange where
   parsec = askCabalSpecVersion >>= versionRangeParser versionDigitParser
 
+instance Parsec VersionRangeAnn where
+  parsec = askCabalSpecVersion >>= versionRangeAnnParser versionDigitParser
+
 -- | 'VersionRange' parser parametrised by version digit parser.
 --
 -- - 'versionDigitParser' is used for all 'VersionRange'.
@@ -372,72 +486,110 @@ instance Parsec VersionRange where
 --
 -- @since 3.0
 versionRangeParser :: forall m. CabalParsing m => m Int -> CabalSpecVersion -> m VersionRange
-versionRangeParser digitParser csv = expr
+versionRangeParser digitParser csv = unAnnVersionRange <$> versionRangeAnnParser digitParser csv
+
+stringTrivia :: forall m. CabalParsing m => m Trivium -> m Trivia
+stringTrivia p = HasTrivia . NE.singleton <$> p
+
+leadingString :: forall m. CabalParsing m => m String -> m Trivia
+leadingString p = stringTrivia (LeadingTrivium <$> p)
+
+trailingString :: forall m. CabalParsing m => m String -> m Trivia
+trailingString p = stringTrivia (TrailingTrivium <$> p)
+
+-- TODO(leana8959): implement this
+versionRangeAnnParser :: forall m. CabalParsing m => m Int -> CabalSpecVersion -> m VersionRangeAnn
+versionRangeAnnParser digitParser csv = expr
   where
+    expr :: m VersionRangeAnn
     expr = do
-      P.spaces
-      t <- term
-      P.spaces
+      (tEnclosed, tInserted) <-
+        surroundWith
+          (curry decorateTriviaVersionRangeAnn)
+          (leadingString P.spaces')
+          term
+          (trailingString P.spaces')
+
       ( do
           _ <- P.string "||"
           checkOp
-          P.spaces
-          e <- expr
-          return (unionVersionRanges t e)
-          <|> return t
+          (eEnclosed, _eInserted) <-
+            surroundWith
+              (curry decorateTriviaVersionRangeAnn)
+              (leadingString P.spaces')
+              expr
+              (pure mempty)
+
+          return (unionVersionRangesAnn tEnclosed eEnclosed)
+          <|> return tInserted
         )
+
+    term :: m VersionRangeAnn
     term = do
-      f <- factor
-      P.spaces
+      (fEnclosed, fInserted) <-
+        surroundWith
+          (curry decorateTriviaVersionRangeAnn)
+          (pure mempty)
+          factor
+          (trailingString P.spaces')
+
       ( do
           _ <- P.string "&&"
           checkOp
-          P.spaces
-          t <- term
-          return (intersectVersionRanges f t)
-          <|> return f
+          (tEnclosed, _tInserted) <-
+            surroundWith
+              (curry decorateTriviaVersionRangeAnn)
+              (leadingString P.spaces')
+              term
+              (pure mempty)
+
+          return (intersectVersionRangesAnn fEnclosed tEnclosed)
+          <|> return fInserted
         )
+
+    factor :: m VersionRangeAnn
     factor = parens expr <|> prim
 
+    prim :: m VersionRangeAnn
     prim = do
       op <- P.munch1 isOpChar P.<?> "operator"
       case op of
-        "-" -> anyVersion <$ P.string "any" <|> P.string "none" *> noVersion'
+        "-" -> anyVersionAnn (ExactRepresentation "-any") <$ P.string "any"
+              <|> P.string "none" *> noVersion' (ExactRepresentation "-none")
         "==" -> do
-          P.spaces
+          pre <- leadingString P.spaces'
           ( do
               (wild, v) <- verOrWild
               checkWild wild
-              pure $ (if wild then withinVersion else thisVersion) v
-              <|> (verSet' thisVersion =<< verSet)
+              pure $ (if wild then withinVersionAnn else thisVersionAnn) (Ann pre v)
+              <|> (verSet' thisVersionAnn =<< verSet)
             )
         "^>=" -> do
-          P.spaces
+          pre <- leadingString P.spaces'
           ( do
               (wild, v) <- verOrWild
               when wild $
                 P.unexpected $
                   "wild-card version after ^>= operator"
-              majorBoundVersion' v
-              <|> (verSet' majorBoundVersion =<< verSet)
+              majorBoundVersion' (Ann pre v)
+              <|> (verSet' majorBoundVersionAnn =<< verSet)
             )
         _ -> do
-          P.spaces
+          pre <- leadingString P.spaces'
           (wild, v) <- verOrWild
           when wild $
             P.unexpected $
               "wild-card version after non-== operator: " ++ show op
           case op of
-            ">=" -> pure $ orLaterVersion v
-            "<" -> pure $ earlierVersion v
-            "<=" -> pure $ orEarlierVersion v
-            ">" -> pure $ laterVersion v
+            ">=" -> pure $ orLaterVersionAnn (Ann pre v)
+            "<" -> pure $ earlierVersionAnn (Ann pre v)
+            "<=" -> pure $ orEarlierVersionAnn (Ann pre v)
+            ">" -> pure $ laterVersionAnn (Ann pre v)
             _ -> fail $ "Unknown version operator " ++ show op
 
     -- Cannot be warning
     -- On 2020-03-16 there was around 27400 files on Hackage failing to parse due this
     -- For example https://hackage.haskell.org/package/haxr-3000.0.0/haxr.cabal
-    --
     checkOp =
       when (csv < CabalSpecV1_8) $
         parsecWarning PWTVersionOperator $
@@ -449,7 +601,6 @@ versionRangeParser digitParser csv = expr
     -- Cannot be warning
     -- On 2020-03-16 there was 46 files on Hackage failing to parse due this
     -- For example https://hackage.haskell.org/package/derive-0.1.2/derive.cabal
-    --
     checkWild False = pure ()
     checkWild True =
       when (csv < CabalSpecV1_6) $
@@ -473,9 +624,10 @@ versionRangeParser digitParser csv = expr
     isOpChar _ = False
 
     -- -none version range is available since 1.22
-    noVersion' =
+    noVersion' :: Trivia -> m VersionRangeAnn
+    noVersion' t =
       if csv >= CabalSpecV1_22
-        then pure noVersion
+        then pure (noVersionAnn t)
         else
           fail $
             unwords
@@ -486,29 +638,37 @@ versionRangeParser digitParser csv = expr
               ]
 
     -- \^>= is available since 2.0
+    majorBoundVersion' :: VersionAnn -> m VersionRangeAnn
     majorBoundVersion' v =
       if csv >= CabalSpecV2_0
-        then pure $ majorBoundVersion v
+        then pure $ majorBoundVersionAnn v
         else
           fail $
             unwords
               [ "major bounded version syntax (caret, ^>=) used."
               , "To use this syntax the package need to specify at least 'cabal-version: 2.0'."
               , "Alternatively, if broader compatibility is important then use:"
-              , prettyShow $ eliminateMajorBoundSyntax $ majorBoundVersion v
+              -- , prettyShow $ eliminateMajorBoundSyntax $ majorBoundVersionAnn v
               ]
       where
-        eliminateMajorBoundSyntax = hyloVersionRange embed projectVersionRange
-        embed (MajorBoundVersionF u) =
-          intersectVersionRanges
-            (orLaterVersion u)
-            (earlierVersion (majorUpperBound u))
-        embed vr = embedVersionRange vr
+        -- TODO(leana8959): rewrite the hyloVersionRange and VersionRangeF and then deal with this
+        --
+        -- eliminateMajorBoundSyntax :: VersionRangeAnn -> VersionRangeAnn
+        -- eliminateMajorBoundSyntax = undefined
+        --   -- hyloVersionRangeAnn embed projectVersionRange
+        --
+        -- embed (MajorBoundVersionF u) =
+        --   intersectVersionRanges
+        --     (orLaterVersion u)
+        --     (earlierVersion (majorUpperBound u))
+        -- embed vr = embedVersionRange vr
 
     -- version set notation (e.g. "== { 0.0.1.0, 0.0.2.0, 0.1.0.0 }")
+    -- exactprint doesn't support braces
+    verSet' :: (t -> VersionRangeAnn) -> NonEmpty t -> m VersionRangeAnn
     verSet' op vs =
       if csv >= CabalSpecV3_0
-        then pure $ foldr1 unionVersionRanges (fmap op vs)
+        then pure $ foldr1 (\x y -> unionVersionRangesAnn (Ann mempty x) (Ann mempty y)) (fmap op vs)
         else
           fail $
             unwords
@@ -516,16 +676,18 @@ versionRangeParser digitParser csv = expr
               , "To use this syntax the package needs to specify at least 'cabal-version: 3.0'."
               , "Alternatively, if broader compatibility is important then use"
               , "a series of single version constraints joined with the || operator:"
-              , prettyShow (foldr1 unionVersionRanges (fmap op vs))
+              -- TODO(leana8959): fix the pretty instance
+              -- , prettyShow (foldr1 (\x y -> unionVersionRangesAnn (Ann NoTrivia x) y) (fmap op vs))
               ]
 
-    verSet :: CabalParsing m => m (NonEmpty Version)
+    -- TODO(leana8959): register this trivia
+    verSet :: CabalParsing m => m (NonEmpty VersionAnn)
     verSet = do
       _ <- P.char '{'
       P.spaces
       vs <- P.sepByNonEmpty (verPlain <* P.spaces) (P.char ',' *> P.spaces)
       _ <- P.char '}'
-      pure vs
+      pure (Ann mempty <$> vs)
 
     -- a plain version without tags or wildcards
     verPlain :: CabalParsing m => m Version
@@ -550,13 +712,26 @@ versionRangeParser digitParser csv = expr
       let wild = (True, mkVersion (DList.toList acc)) <$ P.char '*'
       digit <|> wild
 
-    parens p = P.between
-      ((P.char '(' P.<?> "opening paren") >> P.spaces)
-      (P.char ')' >> P.spaces)
-      $ do
-        a <- p
-        P.spaces
-        return a
+    parens :: m VersionRangeAnn -> m VersionRangeAnn
+    parens p = do
+      let open :: m String
+          open = liftA2 (:)
+                (P.char '(' P.<?> "opening paren")
+                 P.spaces'
+
+          close :: m String
+          close = liftA3
+                (\u v w -> u ++ [v] ++ w)
+                P.spaces' (P.char ')') P.spaces'
+
+      (_enclosed, inserted) <-
+        surroundWith
+          (\pre post x -> decorateTriviaVersionRangeAnn (pre, post) x)
+          (leadingString open)
+          p
+          (trailingString close)
+
+      pure inserted
 
     tags :: CabalParsing m => m ()
     tags = do
@@ -564,7 +739,6 @@ versionRangeParser digitParser csv = expr
       case ts of
         [] -> pure ()
         (_ : _) -> parsecWarning PWTVersionTag "version with tags"
-
 ----------------------------
 -- Wildcard range utilities
 --
@@ -593,3 +767,6 @@ wildcardUpperBound = alterVersion $
   \lowerBound -> case unsnoc lowerBound of
     Nothing -> []
     Just (xs, x) -> xs ++ [x + 1]
+
+wildcardUpperBoundAnn :: Ann Version -> Ann Version
+wildcardUpperBoundAnn = fmap wildcardUpperBound

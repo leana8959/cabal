@@ -7,8 +7,9 @@
 module Distribution.Types.Version
   ( -- * Package versions
     Version
-  , VersionWith
+  , VersionAnn
   , mkVersion
+  , mkVersionAnn
   , mkVersion'
   , versionNumbers
   , nullVersion
@@ -25,6 +26,7 @@ import Distribution.Compat.Prelude
 import Prelude ()
 
 import Distribution.Parsec
+import Distribution.Trivia
 import Distribution.Pretty
 
 import qualified Data.Version as Base
@@ -45,9 +47,9 @@ import Data.Kind
 -- 'Binary' instance using a different (and more compact) encoding.
 --
 -- @since 2.0.0.2
-type Version = VersionWith Identity
+type VersionAnn = Ann Version
 
-data VersionWith (f :: Type -> Type)
+data Version
   = PV0 {-# UNPACK #-} !Word64
   | PV1 !Int [Int]
   -- NOTE: If a version fits into the packed Word64
@@ -198,6 +200,9 @@ mkVersion (v1 : vs@[v2, v3, v4])
         )
     mkWord64VerRep4 y1 y2 y3 y4 = mkWord64VerRep (y1 + 1) (y2 + 1) (y3 + 1) (y4 + 1)
 mkVersion (v1 : vs) = PV1 v1 vs
+
+mkVersionAnn :: Trivia -> [Int] -> VersionAnn
+mkVersionAnn t vs = Ann t (mkVersion vs)
 
 -- | Version 0. A lower bound of 'Version'.
 --

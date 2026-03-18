@@ -57,7 +57,7 @@ deriving instance Ord (PackageNameWith Ann)
 deriving instance Data (PackageNameWith Ann)
 
 unannotatePackageName :: PackageNameWith Ann -> PackageName
-unannotatePackageName (PackageName pname) = PackageName (unTrivia pname)
+unannotatePackageName (PackageName pname) = PackageName (unAnn pname)
 
 -- | Convert 'PackageName' to 'String'
 unPackageName :: PackageName -> String
