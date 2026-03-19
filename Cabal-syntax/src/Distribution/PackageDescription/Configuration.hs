@@ -1,4 +1,5 @@
 -- -Wno-deprecations for use of Map.foldWithKey
+{-# LANGUAGE FlexibleContexts #-}
 {-# OPTIONS_GHC -Wno-deprecations #-}
 
 -----------------------------------------------------------------------------

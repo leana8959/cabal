@@ -1,8 +1,13 @@
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE DeriveGeneric #-}
 
 module Distribution.Types.Library
-  ( Library (..)
+  ( Library
+  , LibraryAnn
+  , LibraryWith (..)
   , emptyLibrary
   , explicitLibModules
   , libModulesAutogen
@@ -11,6 +16,7 @@ module Distribution.Types.Library
 import Distribution.Compat.Prelude
 import Prelude ()
 
+import Distribution.Trivia
 import Distribution.ModuleName
 import Distribution.Types.BuildInfo
 import Distribution.Types.LibraryName
@@ -19,7 +25,12 @@ import Distribution.Types.ModuleReexport
 
 import qualified Distribution.Types.BuildInfo.Lens as L
 
-data Library = Library
+import Data.Kind
+
+type Library = LibraryWith Identity
+type LibraryAnn = LibraryWith Ann
+
+data LibraryWith (f :: Type -> Type) = Library
   { libName :: LibraryName
   , exposedModules :: [ModuleName]
   , reexportedModules :: [ModuleReexport]
@@ -29,9 +40,16 @@ data Library = Library
   -- ^ Is the lib to be exposed by default? (i.e. whether its modules available in GHCi for example)
   , libVisibility :: LibraryVisibility
   -- ^ Whether this multilib can be used as a dependency for other packages.
-  , libBuildInfo :: BuildInfo
+  , libBuildInfo :: BuildInfoWith f
   }
-  deriving (Generic, Show, Eq, Ord, Read, Data)
+  deriving (Generic)
+
+deriving instance Show Library
+deriving instance Eq Library
+deriving instance Ord Library
+deriving instance Read Library
+deriving instance Data Library
+
 
 instance L.HasBuildInfo Library where
   buildInfo f l = (\x -> l{libBuildInfo = x}) <$> f (libBuildInfo l)
