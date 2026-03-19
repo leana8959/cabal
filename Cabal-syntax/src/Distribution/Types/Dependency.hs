@@ -11,6 +11,7 @@ module Distribution.Types.Dependency
   ( Dependency
   , DependencyAnn
   , DependencyWith (..)
+  , unannotateDependencyAnn
   , mkDependency
   , depPkgName
   , depVerRange
@@ -71,8 +72,8 @@ deriving instance Eq (DependencyWith Ann)
 deriving instance Ord (DependencyWith Ann)
 deriving instance Data (DependencyWith Ann)
 
-unannotateDependency :: DependencyAnn -> Dependency
-unannotateDependency (Dependency pname vrange libs) =
+unannotateDependencyAnn :: DependencyAnn -> Dependency
+unannotateDependencyAnn (Dependency pname vrange libs) =
   Dependency
     (unannotatePackageName pname)
     (unAnnVersionRange vrange)
@@ -174,7 +175,7 @@ instance Pretty DependencyAnn where
 -- >>> map (`simpleParsec'` "mylib:sub") [CabalSpecV2_4, CabalSpecV3_0] :: [Maybe Dependency]
 -- [Nothing,Just (Dependency (PackageName "mylib") (OrLaterVersion (mkVersion [0])) (fromNonEmpty (LSubLibName (UnqualComponentName "sub") :| [])))]
 instance Parsec Dependency where
-  parsec = unannotateDependency <$> parsec
+  parsec = unannotateDependencyAnn <$> parsec
 
 -- TODO(leana8959): proof of concept
 instance Parsec (DependencyAnn) where
