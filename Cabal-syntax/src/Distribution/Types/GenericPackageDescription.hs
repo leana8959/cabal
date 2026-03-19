@@ -54,8 +54,8 @@ type family Modify (f :: Type -> Type) (a :: Type) where
 type GenericPackageDescription = GenericPackageDescriptionWith Identity
 
 data GenericPackageDescriptionWith (f :: Type -> Type) = GenericPackageDescription
-  { packageDescription :: Modify f PackageDescription
-  , gpdScannedVersion :: Modify f (Maybe Version)
+  { packageDescription :: PackageDescription
+  , gpdScannedVersion :: Maybe Version
   -- ^ This is a version as specified in source.
   --   We populate this field in index reading for dummy GPDs,
   --   only when GPD reading failed, but scanning haven't.
@@ -64,18 +64,18 @@ data GenericPackageDescriptionWith (f :: Type -> Type) = GenericPackageDescripti
   --
   --   Perfectly, PackageIndex should have sum type, so we don't need to
   --   have dummy GPDs.
-  , genPackageFlags :: Modify f [PackageFlag]
-  , condLibrary :: Modify f (Maybe (CondTree ConfVar [Dependency] Library))
+  , genPackageFlags :: [PackageFlag]
+  , condLibrary :: (Maybe (CondTree ConfVar [Dependency] (LibraryWith f)))
   , condSubLibraries
-      :: Modify f [(UnqualComponentName, CondTree ConfVar [Dependency] Library)]
+      :: [(UnqualComponentName, CondTree ConfVar [Dependency] Library)]
   , condForeignLibs
-      :: Modify f [(UnqualComponentName, CondTree ConfVar [Dependency] ForeignLib)]
+      :: [(UnqualComponentName, CondTree ConfVar [Dependency] ForeignLib)]
   , condExecutables
-      :: Modify f [(UnqualComponentName, CondTree ConfVar [Dependency] Executable)]
+      :: [(UnqualComponentName, CondTree ConfVar [Dependency] Executable)]
   , condTestSuites
-      :: Modify f [(UnqualComponentName, CondTree ConfVar [Dependency] TestSuite)]
+      :: [(UnqualComponentName, CondTree ConfVar [Dependency] TestSuite)]
   , condBenchmarks
-      :: Modify f [(UnqualComponentName, CondTree ConfVar [Dependency] Benchmark)]
+      :: [(UnqualComponentName, CondTree ConfVar [Dependency] Benchmark)]
   }
 
 deriving instance Eq (GenericPackageDescriptionWith Identity)
