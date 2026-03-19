@@ -22,8 +22,8 @@ module Distribution.Types.Dependency
 import Distribution.Compat.Prelude
 import Prelude ()
 
-import Distribution.Types.VersionRange (isAnyVersionLight)
-import Distribution.Version (VersionRange, anyVersion, simplifyVersionRange)
+import Distribution.Types.VersionRange (isAnyVersionLight, unAnnVersionRange)
+import Distribution.Version (VersionRange, VersionRangeAnn, VersionRangeWith (..), anyVersionAnn, simplifyVersionRange)
 
 import Distribution.CabalSpecVersion
 import Distribution.Compat.CharParsing (char, spaces)
@@ -54,7 +54,7 @@ data DependencyWith (f :: Type -> Type)
     -- It does not affect the cabal-install solver yet.
     Dependency
       (PackageNameWith f)
-      VersionRange
+      (VersionRangeWith f)
       (NonEmptySet LibraryName)
   deriving (Generic)
 
@@ -71,11 +71,11 @@ deriving instance Eq (DependencyWith Ann)
 deriving instance Ord (DependencyWith Ann)
 deriving instance Data (DependencyWith Ann)
 
-unannotateDependency :: DependencyWith Ann -> Dependency
+unannotateDependency :: DependencyAnn -> Dependency
 unannotateDependency (Dependency pname vrange libs) =
   Dependency
     (unannotatePackageName pname)
-    vrange
+    (unAnnVersionRange vrange)
     libs
 
 depPkgName :: Dependency -> PackageName
@@ -103,8 +103,8 @@ mkDependency pn vr lb = Dependency pn vr (NES.map conv lb)
       | otherwise = l
 
 -- TODO(leana8959): a way to not duplicate smart constructor
-mkDependencyWith :: PackageNameWith Ann -> VersionRange -> NonEmptySet LibraryName -> DependencyWith Ann
-mkDependencyWith pn vr lb = Dependency pn vr (NES.map conv lb)
+mkDependencyAnn :: PackageNameAnn -> VersionRangeAnn -> NonEmptySet LibraryName -> DependencyWith Ann
+mkDependencyAnn pn vr lb = Dependency pn vr (NES.map conv lb)
   where
     pn' = packageNameToUnqualComponentNameWith pn
     conv l@LMainLibName = l
@@ -182,8 +182,8 @@ instance Parsec (DependencyWith Ann) where
       NES.singleton <$> parseLib <|> parseMultipleLibs
 
     spaces -- https://github.com/haskell/cabal/issues/5846
-    ver <- parsec <|> pure anyVersion
-    return $ mkDependencyWith name ver libs
+    ver :: VersionRangeAnn <- parsec <|> pure anyVersionAnn
+    return $ mkDependencyAnn name ver libs
     where
       parseLib = LSubLibName <$> parsec
       parseMultipleLibs =

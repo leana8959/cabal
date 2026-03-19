@@ -20,7 +20,9 @@ module Distribution.Types.VersionRange.Internal
   ( VersionRange
   , VersionRangeAnn
   , VersionRangeWith (..)
+  , unAnnVersionRange
   , anyVersion
+  , anyVersionAnn
   , noVersion
   , thisVersion
   , notThisVersion
@@ -89,6 +91,10 @@ deriving instance Data VersionRange
 deriving instance Read VersionRange
 deriving instance Show VersionRange
 
+deriving instance Eq VersionRangeAnn
+deriving instance Ord VersionRangeAnn
+deriving instance Data VersionRangeAnn
+deriving instance Read VersionRangeAnn
 deriving instance Show VersionRangeAnn
 
 instance Binary VersionRange

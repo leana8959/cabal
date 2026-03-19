@@ -8,6 +8,7 @@
 
 module Distribution.Types.PackageName
   ( PackageName
+  , PackageNameAnn
   , PackageNameWith (..)
   , unannotatePackageName
   , unPackageName
@@ -36,6 +37,7 @@ import Data.Kind
 --
 -- @since 2.0.0.2
 type PackageName = PackageNameWith Identity
+type PackageNameAnn = PackageNameWith Ann
 
 type family ModifyPackageName (f :: Type -> Type) (a :: Type) where
   ModifyPackageName Identity a = a
