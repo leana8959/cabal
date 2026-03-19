@@ -52,11 +52,11 @@ deriving instance Eq PackageName
 deriving instance Ord PackageName
 deriving instance Data PackageName
 
-deriving instance Show (PackageNameWith Ann)
-deriving instance Read (PackageNameWith Ann)
-deriving instance Eq (PackageNameWith Ann)
-deriving instance Ord (PackageNameWith Ann)
-deriving instance Data (PackageNameWith Ann)
+deriving instance Show PackageNameAnn
+deriving instance Read PackageNameAnn
+deriving instance Eq PackageNameAnn
+deriving instance Ord PackageNameAnn
+deriving instance Data PackageNameAnn
 
 unannotatePackageName :: PackageNameWith Ann -> PackageName
 unannotatePackageName (PackageName pname) = PackageName (unAnn pname)

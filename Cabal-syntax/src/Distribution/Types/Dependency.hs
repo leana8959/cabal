@@ -137,6 +137,11 @@ instance Pretty Dependency where
         | isAnyVersionLight ver = PP.empty
         | otherwise = pretty ver
 
+-- TODO(leana8959): implement packagename part
+instance Pretty DependencyAnn where
+  pretty (Dependency (PackageName name) ver sublibs) =
+    prettyLibraryNames (PackageName (unAnn name) :: PackageName) (NES.toNonEmpty sublibs) <+> pretty ver
+
 -- |
 --
 -- >>> simpleParsec "mylib:sub" :: Maybe Dependency
@@ -172,7 +177,7 @@ instance Parsec Dependency where
   parsec = unannotateDependency <$> parsec
 
 -- TODO(leana8959): proof of concept
-instance Parsec (DependencyWith Ann) where
+instance Parsec (DependencyAnn) where
   parsec = do
     name <- parsec
 
