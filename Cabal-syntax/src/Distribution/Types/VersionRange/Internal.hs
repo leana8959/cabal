@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE TupleSections #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE FlexibleInstances #-}
@@ -60,6 +61,7 @@ import qualified Text.PrettyPrint as Disp
 
 import Control.Applicative
 import Data.Kind
+import qualified Data.Bifunctor as Bi
 import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.List.NonEmpty as NE
 
@@ -68,7 +70,8 @@ type VersionRangeAnn = VersionRangeWith Ann
 
 type family Modify (f :: Type -> Type) (a :: Type) where
   Modify Identity a = a
-  Modify Ann a = Ann a
+  Modify Ann Version = (Trivia, VersionAnn)
+  Modify Ann VersionRangeAnn = (Trivia, VersionRangeAnn)
 
 -- TODO(leana8959): try to store trivia in this model
 data VersionRangeWith (f :: Type -> Type)
@@ -95,46 +98,57 @@ instance Structured VersionRange
 instance NFData VersionRange where rnf = genericRnf
 
 unAnnVersionRange :: VersionRangeAnn -> VersionRange
-unAnnVersionRange (ThisVersion v) = ThisVersion (unAnn v)
-unAnnVersionRange (LaterVersion v) = LaterVersion (unAnn v)
-unAnnVersionRange (OrLaterVersion v) = OrLaterVersion (unAnn v)
-unAnnVersionRange (EarlierVersion v) = EarlierVersion (unAnn v)
-unAnnVersionRange (OrEarlierVersion v) = OrEarlierVersion (unAnn v)
-unAnnVersionRange (MajorBoundVersion v) = MajorBoundVersion (unAnn v)
-unAnnVersionRange (UnionVersionRanges a b) = UnionVersionRanges (unAnnVersionRange $ unAnn a) (unAnnVersionRange $ unAnn b)
-unAnnVersionRange (IntersectVersionRanges a b) = IntersectVersionRanges (unAnnVersionRange $ unAnn a) (unAnnVersionRange $ unAnn b)
+unAnnVersionRange (ThisVersion v) = ThisVersion (unAnn $ snd v)
+unAnnVersionRange (LaterVersion v) = LaterVersion (unAnn $ snd v)
+unAnnVersionRange (OrLaterVersion v) = OrLaterVersion (unAnn $ snd v)
+unAnnVersionRange (EarlierVersion v) = EarlierVersion (unAnn $ snd v)
+unAnnVersionRange (OrEarlierVersion v) = OrEarlierVersion (unAnn $ snd v)
+unAnnVersionRange (MajorBoundVersion v) = MajorBoundVersion (unAnn $ snd v)
+unAnnVersionRange (UnionVersionRanges a b) = UnionVersionRanges (unAnnVersionRange $ snd a) (unAnnVersionRange $ snd b)
+unAnnVersionRange (IntersectVersionRanges a b) = IntersectVersionRanges (unAnnVersionRange $ snd a) (unAnnVersionRange $ snd b)
 
 -- | Map annotation to a already annotated VersionRange data
 mapVersionRangeAnn
-  :: (Trivia -> Trivia)
-  -> ( Trivia -> Trivia
-     , Trivia -> Trivia
+  :: ( (Trivia, VersionAnn) -> (Trivia, VersionAnn)
+     )
+  -> ( (Trivia, VersionRangeAnn) -> (Trivia, VersionRangeAnn)
+     )
+  -> ( (Trivia, VersionRangeAnn) -> (Trivia, VersionRangeAnn)
      )
   -> VersionRangeAnn
   -> VersionRangeAnn
-mapVersionRangeAnn f (g, h) vr = case vr of
-  ThisVersion v -> ThisVersion (mapAnn f v)
-  LaterVersion v -> LaterVersion (mapAnn f v)
-  OrLaterVersion v -> OrLaterVersion (mapAnn f v)
-  EarlierVersion v -> EarlierVersion (mapAnn f v)
-  OrEarlierVersion v -> OrEarlierVersion (mapAnn f v)
-  MajorBoundVersion v -> MajorBoundVersion (mapAnn f v)
-  UnionVersionRanges a b -> UnionVersionRanges (mapAnn g a) (mapAnn h b)
-  IntersectVersionRanges a b -> IntersectVersionRanges (mapAnn g a) (mapAnn h b)
+mapVersionRangeAnn mapLeaf mapBranchL mapBranchR vr = case vr of
+  ThisVersion v -> ThisVersion (mapLeaf v)
+  LaterVersion v -> LaterVersion (mapLeaf v)
+  OrLaterVersion v -> OrLaterVersion (mapLeaf v)
+  EarlierVersion v -> EarlierVersion (mapLeaf v)
+  OrEarlierVersion v -> OrEarlierVersion (mapLeaf v)
+  MajorBoundVersion v -> MajorBoundVersion (mapLeaf v)
+  UnionVersionRanges a b -> UnionVersionRanges (mapBranchL a) (mapBranchR b)
+  IntersectVersionRanges a b -> IntersectVersionRanges (mapBranchL a) (mapBranchR b)
 
 decorateTriviaVersionRangeAnn
   :: (Trivia, Trivia)
   -> VersionRangeAnn
-  -> (Ann VersionRangeAnn, VersionRangeAnn)
-decorateTriviaVersionRangeAnn (leading, trailing) vr =
-  (enclosed vr, inserted vr)
+  -> ((Trivia, VersionRangeAnn), VersionRangeAnn)
+decorateTriviaVersionRangeAnn (leading, trailing) vr = (enclose vr, insert vr)
   where
-  enclosed = Ann (leading <> trailing)
-  inserted =
+    enclose = (leading <> trailing,)
+    insert =
       mapVersionRangeAnn
-        (\v -> leading <> v <> trailing)
-        ( \vr1 -> leading <> vr1
-        , \vr2 -> vr2 <> trailing
+        ( \(ann, v) -> (leading <> ann <> trailing, v)
+        )
+        ( \(ann, vrl) -> (leading <> ann, vrl)
+        )
+        ( \(ann, vrr) -> (ann, insertTrailing vrr)
+        )
+
+    insertTrailing =
+      mapVersionRangeAnn
+        ( \(ann, v) -> (ann <> trailing, v)
+        )
+        id
+        ( \(ann, vrr) -> (ann, insertTrailing vrr)
         )
 
 -- | LiftA3 with a different ordering
@@ -154,8 +168,8 @@ surroundWith f = liftA3 (\u v w -> f u w v)
 anyVersion :: VersionRange
 anyVersion = OrLaterVersion (mkVersion [0])
 
-anyVersionAnn :: Trivia -> VersionRangeAnn
-anyVersionAnn t = OrLaterVersion (Ann t $ mkVersion [0])
+anyVersionAnn :: VersionRangeAnn
+anyVersionAnn = OrLaterVersion (ExactRepresentation "-any", Ann mempty $ mkVersion [0])
 
 -- | The empty version range @-none@, that is a version range containing no versions.
 --
@@ -166,8 +180,8 @@ anyVersionAnn t = OrLaterVersion (Ann t $ mkVersion [0])
 noVersion :: VersionRange
 noVersion = EarlierVersion (mkVersion [0])
 
-noVersionAnn :: Trivia ->  VersionRangeAnn
-noVersionAnn t = EarlierVersion (Ann t $ mkVersion [0])
+noVersionAnn :: VersionRangeAnn
+noVersionAnn = EarlierVersion (ExactRepresentation "-none", Ann mempty $ mkVersion [0])
 
 -- | The version range @== v@.
 --
@@ -175,7 +189,7 @@ noVersionAnn t = EarlierVersion (Ann t $ mkVersion [0])
 thisVersion :: Version -> VersionRange
 thisVersion = ThisVersion
 
-thisVersionAnn :: Ann Version -> VersionRangeAnn
+thisVersionAnn :: (Trivia, VersionAnn) -> VersionRangeAnn
 thisVersionAnn = ThisVersion
 
 -- | The version range @/= v@.
@@ -190,7 +204,7 @@ notThisVersion v = UnionVersionRanges (EarlierVersion v) (LaterVersion v)
 laterVersion :: Version -> VersionRange
 laterVersion = LaterVersion
 
-laterVersionAnn :: VersionAnn -> VersionRangeAnn
+laterVersionAnn :: (Trivia, VersionAnn) -> VersionRangeAnn
 laterVersionAnn = LaterVersion
 
 -- | The version range @>= v@.
@@ -199,7 +213,7 @@ laterVersionAnn = LaterVersion
 orLaterVersion :: Version -> VersionRange
 orLaterVersion = OrLaterVersion
 
-orLaterVersionAnn :: Ann Version -> VersionRangeAnn
+orLaterVersionAnn :: (Trivia, VersionAnn) -> VersionRangeAnn
 orLaterVersionAnn = OrLaterVersion
 
 -- | The version range @< v@.
@@ -208,7 +222,7 @@ orLaterVersionAnn = OrLaterVersion
 earlierVersion :: Version -> VersionRange
 earlierVersion = EarlierVersion
 
-earlierVersionAnn :: VersionAnn -> VersionRangeAnn
+earlierVersionAnn :: (Trivia, VersionAnn) -> VersionRangeAnn
 earlierVersionAnn = EarlierVersion
 
 -- | The version range @<= v@.
@@ -217,7 +231,7 @@ earlierVersionAnn = EarlierVersion
 orEarlierVersion :: Version -> VersionRange
 orEarlierVersion = OrEarlierVersion
 
-orEarlierVersionAnn :: VersionAnn -> VersionRangeAnn
+orEarlierVersionAnn :: (Trivia, VersionAnn) -> VersionRangeAnn
 orEarlierVersionAnn = OrEarlierVersion
 
 -- | The version range @vr1 || vr2@.
@@ -227,7 +241,7 @@ orEarlierVersionAnn = OrEarlierVersion
 unionVersionRanges :: VersionRange -> VersionRange -> VersionRange
 unionVersionRanges = UnionVersionRanges
 
-unionVersionRangesAnn :: Ann VersionRangeAnn -> Ann VersionRangeAnn -> VersionRangeAnn
+unionVersionRangesAnn :: (Trivia, VersionRangeAnn) -> (Trivia, VersionRangeAnn) -> VersionRangeAnn
 unionVersionRangesAnn = UnionVersionRanges
 
 -- | The version range @vr1 && vr2@.
@@ -237,7 +251,7 @@ unionVersionRangesAnn = UnionVersionRanges
 intersectVersionRanges :: VersionRange -> VersionRange -> VersionRange
 intersectVersionRanges = IntersectVersionRanges
 
-intersectVersionRangesAnn :: Ann VersionRangeAnn -> Ann VersionRangeAnn -> VersionRangeAnn
+intersectVersionRangesAnn :: (Trivia, VersionRangeAnn) -> (Trivia, VersionRangeAnn) -> VersionRangeAnn
 intersectVersionRangesAnn = IntersectVersionRanges
 
 -- | The version range @== v.*@.
@@ -254,11 +268,12 @@ withinVersion v =
     (orLaterVersion v)
     (earlierVersion (wildcardUpperBound v))
 
-withinVersionAnn :: Ann Version -> VersionRangeAnn
+-- TODO(leana8959): how to detect that this is inserted
+withinVersionAnn :: (Trivia, VersionAnn) -> VersionRangeAnn
 withinVersionAnn v =
   intersectVersionRangesAnn
-    (Ann mempty $ orLaterVersionAnn v)
-    (Ann mempty $ earlierVersionAnn (wildcardUpperBoundAnn v))
+    (mempty, orLaterVersionAnn v)
+    (mempty, earlierVersionAnn (wildcardUpperBoundAnn v))
 
 -- | The version range @^>= v@.
 --
@@ -271,7 +286,7 @@ withinVersionAnn v =
 majorBoundVersion :: Version -> VersionRange
 majorBoundVersion = MajorBoundVersion
 
-majorBoundVersionAnn :: VersionAnn -> VersionRangeAnn
+majorBoundVersionAnn :: (Trivia, VersionAnn) -> VersionRangeAnn
 majorBoundVersionAnn = MajorBoundVersion
 
 -- | F-Algebra of 'VersionRange'. See 'cataVersionRange'.
@@ -489,17 +504,23 @@ versionRangeParser :: forall m. CabalParsing m => m Int -> CabalSpecVersion -> m
 versionRangeParser digitParser csv = unAnnVersionRange <$> versionRangeAnnParser digitParser csv
 
 leadingString :: forall m. CabalParsing m => m String -> m Trivia
-leadingString = fmap $ flip HasTrivia mempty
+leadingString = 
+  fmap $
+  (\x -> trace ("leading = " <> show x <> "\n") x) .
+  (flip HasTrivia mempty)
 
 trailingString :: forall m. CabalParsing m => m String -> m Trivia
-trailingString = fmap $ HasTrivia mempty
+trailingString =
+  fmap $
+  (\x -> trace ("traliing = " <> show x <> "\n") x) .
+  (HasTrivia mempty)
 
 -- TODO(leana8959): implement this
 versionRangeAnnParser :: forall m. CabalParsing m => m Int -> CabalSpecVersion -> m VersionRangeAnn
 versionRangeAnnParser digitParser csv = expr
   where
     expr :: m VersionRangeAnn
-    expr = do
+    expr = (\x -> trace ("expr = " <> show x <> "\n") x) <$> do
       (tEnclosed, tInserted) <-
         surroundWith
           (curry decorateTriviaVersionRangeAnn)
@@ -522,7 +543,7 @@ versionRangeAnnParser digitParser csv = expr
         )
 
     term :: m VersionRangeAnn
-    term = do
+    term = (\x -> trace ("term = " <> show x <> "\n") x) <$> do
       (fEnclosed, fInserted) <-
         surroundWith
           (curry decorateTriviaVersionRangeAnn)
@@ -548,18 +569,17 @@ versionRangeAnnParser digitParser csv = expr
     factor = parens expr <|> prim
 
     prim :: m VersionRangeAnn
-    prim = do
+    prim = (\x -> trace ("prim = " <> show x <> "\n") x) <$> do
       op <- P.munch1 isOpChar P.<?> "operator"
       case op of
-        "-" -> anyVersionAnn (ExactRepresentation "-any") <$ P.string "any"
-              <|> P.string "none" *> noVersion' (ExactRepresentation "-none")
+        "-" -> anyVersionAnn <$ P.string "any" <|> P.string "none" *> noVersion'
         "==" -> do
           pre <- leadingString P.spaces'
           ( do
               (wild, v) <- verOrWild
               checkWild wild
-              pure $ (if wild then withinVersionAnn else thisVersionAnn) (Ann pre v)
-              <|> (verSet' thisVersionAnn =<< verSet)
+              pure $ (if wild then withinVersionAnn else thisVersionAnn) (pre, Ann mempty v)
+              <|> (verSet' (thisVersionAnn . (mempty,)) =<< verSet)
             )
         "^>=" -> do
           pre <- leadingString P.spaces'
@@ -568,8 +588,8 @@ versionRangeAnnParser digitParser csv = expr
               when wild $
                 P.unexpected $
                   "wild-card version after ^>= operator"
-              majorBoundVersion' (Ann pre v)
-              <|> (verSet' majorBoundVersionAnn =<< verSet)
+              majorBoundVersion' (pre, Ann mempty v)
+              <|> (verSet' (majorBoundVersionAnn . (mempty,)) =<< verSet)
             )
         _ -> do
           pre <- leadingString P.spaces'
@@ -578,10 +598,10 @@ versionRangeAnnParser digitParser csv = expr
             P.unexpected $
               "wild-card version after non-== operator: " ++ show op
           case op of
-            ">=" -> pure $ orLaterVersionAnn (Ann pre v)
-            "<" -> pure $ earlierVersionAnn (Ann pre v)
-            "<=" -> pure $ orEarlierVersionAnn (Ann pre v)
-            ">" -> pure $ laterVersionAnn (Ann pre v)
+            ">=" -> pure $ orLaterVersionAnn (pre, Ann mempty v)
+            "<" -> pure $ earlierVersionAnn (pre, Ann mempty v)
+            "<=" -> pure $ orEarlierVersionAnn (pre, Ann mempty v)
+            ">" -> pure $ laterVersionAnn (pre, Ann mempty v)
             _ -> fail $ "Unknown version operator " ++ show op
 
     -- Cannot be warning
@@ -621,10 +641,10 @@ versionRangeAnnParser digitParser csv = expr
     isOpChar _ = False
 
     -- -none version range is available since 1.22
-    noVersion' :: Trivia -> m VersionRangeAnn
-    noVersion' t =
+    noVersion' :: m VersionRangeAnn
+    noVersion' =
       if csv >= CabalSpecV1_22
-        then pure (noVersionAnn t)
+        then pure noVersionAnn
         else
           fail $
             unwords
@@ -635,7 +655,7 @@ versionRangeAnnParser digitParser csv = expr
               ]
 
     -- \^>= is available since 2.0
-    majorBoundVersion' :: VersionAnn -> m VersionRangeAnn
+    majorBoundVersion' :: (Trivia, VersionAnn) -> m VersionRangeAnn
     majorBoundVersion' v =
       if csv >= CabalSpecV2_0
         then pure $ majorBoundVersionAnn v
@@ -665,7 +685,7 @@ versionRangeAnnParser digitParser csv = expr
     verSet' :: (t -> VersionRangeAnn) -> NonEmpty t -> m VersionRangeAnn
     verSet' op vs =
       if csv >= CabalSpecV3_0
-        then pure $ foldr1 (\x y -> unionVersionRangesAnn (Ann mempty x) (Ann mempty y)) (fmap op vs)
+        then pure $ foldr1 (\x y -> unionVersionRangesAnn (mempty, x) (mempty, y)) (fmap op vs)
         else
           fail $
             unwords
@@ -765,5 +785,5 @@ wildcardUpperBound = alterVersion $
     Nothing -> []
     Just (xs, x) -> xs ++ [x + 1]
 
-wildcardUpperBoundAnn :: Ann Version -> Ann Version
-wildcardUpperBoundAnn = fmap wildcardUpperBound
+wildcardUpperBoundAnn :: (Trivia, VersionAnn) -> (Trivia, VersionAnn)
+wildcardUpperBoundAnn = (fmap . fmap) wildcardUpperBound
