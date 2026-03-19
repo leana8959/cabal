@@ -61,8 +61,6 @@ import qualified Text.PrettyPrint as Disp
 
 import Control.Applicative
 import Data.Kind
-import qualified Data.Bifunctor as Bi
-import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.List.NonEmpty as NE
 
 type VersionRange = VersionRangeWith Identity
@@ -450,6 +448,33 @@ prettyVersionRange16 (IntersectVersionRanges (OrLaterVersion v) (EarlierVersion 
         <<>> Disp.text ".*"
 prettyVersionRange16 vr = prettyVersionRange vr
 
+instance Pretty VersionRangeAnn where
+  pretty = prettyVersionRangeAnn
+
+-- TODO(leana8959): how do we know if the element is inserted and we need to fallback
+prettyVersionRangeAnn :: VersionRangeAnn -> Disp.Doc
+prettyVersionRangeAnn vr = case vr of
+    ThisVersion vAnn -> applyLeafTrivia (Disp.text "==") vAnn
+    LaterVersion vAnn -> applyLeafTrivia (Disp.text ">") vAnn
+    OrLaterVersion vAnn -> applyLeafTrivia (Disp.text ">=") vAnn
+    EarlierVersion vAnn -> applyLeafTrivia (Disp.text "<") vAnn
+    OrEarlierVersion vAnn -> applyLeafTrivia (Disp.text "<=") vAnn
+    MajorBoundVersion vAnn -> applyLeafTrivia (Disp.text "^>=") vAnn
+    UnionVersionRanges r1 r2 ->
+      applyBranchTrivia (fmap prettyVersionRangeAnn r1)
+      <> "||"
+      <> applyBranchTrivia (fmap prettyVersionRangeAnn r2)
+    IntersectVersionRanges r1 r2 ->
+      applyBranchTrivia (fmap prettyVersionRangeAnn r1)
+      <> "&&"
+      <> applyBranchTrivia (fmap prettyVersionRangeAnn r2)
+  where
+    applyLeafTrivia :: Disp.Doc -> (Trivia, VersionAnn) -> Disp.Doc
+    applyLeafTrivia symb (t, v) = applyTriviaDoc t (symb <> pretty v)
+
+    applyBranchTrivia :: (Trivia, Disp.Doc) -> Disp.Doc
+    applyBranchTrivia = uncurry applyTriviaDoc
+
 -- |
 --
 -- >>> simpleParsec "^>= 3.4" :: Maybe VersionRange
@@ -521,7 +546,6 @@ versionRangeAnnParser digitParser csv = expr
           (leadingString P.spaces')
           term
           (trailingString P.spaces')
-          -- (mempty <$ P.spaces)
 
       ( do
           _ <- P.string "||"
@@ -545,7 +569,6 @@ versionRangeAnnParser digitParser csv = expr
           (pure mempty)
           factor
           (trailingString P.spaces')
-          -- (mempty <$ P.spaces)
 
       ( do
           _ <- P.string "&&"

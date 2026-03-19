@@ -108,6 +108,12 @@ instance Pretty Version where
           (map Disp.int $ versionNumbers ver)
       )
 
+instance Pretty VersionAnn where
+  pretty (Ann t ver) = applyTrivia $ fmap pretty (t, ver)
+    where
+      applyTrivia :: (Trivia, Disp.Doc) -> Disp.Doc
+      applyTrivia = uncurry applyTriviaDoc
+
 instance Parsec Version where
   parsec = mkVersion <$> toList <$> P.sepByNonEmpty versionDigitParser (P.char '.') <* tags
     where

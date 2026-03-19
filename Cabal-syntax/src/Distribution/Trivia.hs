@@ -6,11 +6,13 @@ module Distribution.Trivia
   , Ann (..)
   , mapAnn
   , mapAnnA
+  , applyTriviaDoc
   )
   where
 
 import Data.Data
 import Data.List.NonEmpty (NonEmpty)
+import qualified Text.PrettyPrint as Disp
 
 data Trivia
   = HasTrivia String String
@@ -53,3 +55,13 @@ mapAnnA
   -> Ann a
   -> Ann a
 mapAnnA f g (Ann t x) = Ann (f t) (g x)
+
+applyTriviaDoc
+  :: Trivia
+  -> Disp.Doc
+  -> Disp.Doc
+applyTriviaDoc t = case t of
+  HasTrivia pre post -> \d -> Disp.text pre <> d <> Disp.text post
+  ExactRepresentation repr -> const (Disp.text repr)
+  IsInserted -> const Disp.empty
+  NoTrivia -> id
