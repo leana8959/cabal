@@ -329,5 +329,5 @@ instance HasBuildInfo Mod.Bare (BuildInfoWith Mod.Bare) where
   mixins f s = fmap (\x -> s{T.mixins = x}) (f (T.mixins s))
   {-# INLINE mixins #-}
 
-class HasBuildInfos a where
-  traverseBuildInfos :: Traversal' a BuildInfo
+class HasBuildInfos mod a where
+  traverseBuildInfos :: Traversal' a (BuildInfoWith mod)

@@ -1,4 +1,5 @@
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE FlexibleContexts #-}
@@ -83,6 +84,7 @@ import Distribution.Types.PackageName
 import Distribution.Types.SetupBuildInfo
 import Distribution.Types.SourceRepo
 import Distribution.Types.UnqualComponentName
+import qualified Distribution.Types.Modify as Mod
 
 import Distribution.CabalSpecVersion
 import Distribution.Compiler
@@ -459,7 +461,7 @@ getComponent pkg cname =
 -- -----------------------------------------------------------------------------
 -- Traversal Instances
 
-instance L.HasBuildInfos PackageDescription where
+instance L.HasBuildInfos Mod.Bare PackageDescription where
   traverseBuildInfos
     f
     ( PackageDescription

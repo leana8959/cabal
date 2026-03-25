@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE DeriveGeneric #-}
 
 module Distribution.Types.Benchmark
@@ -16,6 +17,7 @@ import Distribution.Types.BenchmarkInterface
 import Distribution.Types.BenchmarkType
 import Distribution.Types.BuildInfo
 import Distribution.Types.UnqualComponentName
+import qualified Distribution.Types.Modify as Mod
 
 import Distribution.ModuleName
 
@@ -33,7 +35,7 @@ instance Binary Benchmark
 instance Structured Benchmark
 instance NFData Benchmark where rnf = genericRnf
 
-instance L.HasBuildInfo Benchmark where
+instance L.HasBuildInfo Mod.Bare Benchmark where
   buildInfo f (Benchmark x1 x2 x3) = fmap (\y1 -> Benchmark x1 x2 y1) (f x3)
 
 instance Monoid Benchmark where

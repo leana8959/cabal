@@ -1,4 +1,7 @@
 {-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE DeriveDataTypeable #-}
@@ -29,6 +32,7 @@ import Distribution.Types.PackageDescription
 import Distribution.Package
 import Distribution.Types.Benchmark
 import Distribution.Types.CondTree
+import Distribution.Types.BuildInfo
 import Distribution.Types.ConfVar
 import Distribution.Types.Executable
 import Distribution.Types.Flag
@@ -92,7 +96,7 @@ emptyGenericPackageDescription = GenericPackageDescription emptyPackageDescripti
 -- -----------------------------------------------------------------------------
 -- Traversal Instances
 
-instance L.HasBuildInfos GenericPackageDescription where
+instance L.HasBuildInfos Mod.Bare GenericPackageDescription where
   traverseBuildInfos f (GenericPackageDescription p v a1 x1 x2 x3 x4 x5 x6) =
     GenericPackageDescription
       <$> L.traverseBuildInfos f p
@@ -108,12 +112,12 @@ instance L.HasBuildInfos GenericPackageDescription where
 -- We use this traversal to keep [Dependency] field in CondTree up to date.
 traverseCondTreeBuildInfo
   :: forall f comp v
-   . (Applicative f, L.HasBuildInfo comp)
+   . (Applicative f, L.HasBuildInfo Mod.Bare comp)
   => LensLike' f (CondTree v [Dependency] comp) L.BuildInfo
 traverseCondTreeBuildInfo g = node
   where
     mkCondNode :: comp -> [CondBranch v [Dependency] comp] -> CondTree v [Dependency] comp
-    mkCondNode comp = CondNode comp (view L.targetBuildDepends comp)
+    mkCondNode comp = CondNode comp (view (L.targetBuildDepends @Mod.Bare) comp)
 
     node (CondNode comp _ branches) =
       mkCondNode

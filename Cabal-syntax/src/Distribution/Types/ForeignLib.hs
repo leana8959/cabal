@@ -1,4 +1,5 @@
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric #-}
 
@@ -29,6 +30,8 @@ import Distribution.Types.ForeignLibType
 import Distribution.Types.UnqualComponentName
 import Distribution.Utils.Path
 import Distribution.Version
+
+import qualified Distribution.Types.Modify as Mod
 
 import Data.Monoid
 import qualified Distribution.Compat.CharParsing as P
@@ -133,7 +136,7 @@ libVersionNumberShow v =
 libVersionMajor :: LibVersionInfo -> Int
 libVersionMajor (LibVersionInfo c _ a) = c - a
 
-instance L.HasBuildInfo ForeignLib where
+instance L.HasBuildInfo Mod.Bare ForeignLib where
   buildInfo f l = (\x -> l{foreignLibBuildInfo = x}) <$> f (foreignLibBuildInfo l)
 
 instance Binary ForeignLib

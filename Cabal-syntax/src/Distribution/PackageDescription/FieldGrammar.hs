@@ -304,7 +304,7 @@ data TestSuiteStanza = TestSuiteStanza
   , _testStanzaCodeGenerators :: [String]
   }
 
-instance L.HasBuildInfo TestSuiteStanza where
+instance L.HasBuildInfo Mod.Bare TestSuiteStanza where
   buildInfo = testStanzaBuildInfo
 
 testStanzaTestType :: Lens' TestSuiteStanza (Maybe TestType)
@@ -453,7 +453,7 @@ data BenchmarkStanza = BenchmarkStanza
   , _benchmarkStanzaBuildInfo :: BuildInfo
   }
 
-instance L.HasBuildInfo BenchmarkStanza where
+instance L.HasBuildInfo Mod.Bare BenchmarkStanza where
   buildInfo = benchmarkStanzaBuildInfo
 
 benchmarkStanzaBenchmarkType :: Lens' BenchmarkStanza (Maybe BenchmarkType)

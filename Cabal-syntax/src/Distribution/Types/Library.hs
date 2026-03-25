@@ -1,5 +1,6 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE DeriveGeneric #-}
@@ -52,7 +53,7 @@ deriving instance Read Library
 deriving instance Data Library
 
 
-instance L.HasBuildInfo Library where
+instance L.HasBuildInfo Mod.Bare Library where
   buildInfo f l = (\x -> l{libBuildInfo = x}) <$> f (libBuildInfo l)
 
 instance Binary Library
