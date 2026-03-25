@@ -1,5 +1,4 @@
 {-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE UnliftedDatatypes #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE KindSignatures #-}
@@ -32,7 +31,7 @@ import qualified Distribution.Types.Modify as Mod
 type Library = LibraryWith Mod.Bare
 type LibraryAnn = LibraryWith Mod.Ann
 
-data LibraryWith (m :: Mod.Modifier) = Library
+data LibraryWith (m :: Type) = Library
   { libName :: LibraryName
   , exposedModules :: [ModuleName]
   , reexportedModules :: [ModuleReexport]

@@ -1,5 +1,4 @@
 {-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE UnliftedDatatypes #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeSynonymInstances #-}
@@ -41,11 +40,11 @@ import Data.Kind
 type PackageName = PackageNameWith Mod.Bare
 type PackageNameAnn = PackageNameWith Mod.Ann
 
-type family ModifyPackageName (m :: Mod.Modifier) (a :: Type) where
+type family ModifyPackageName (m :: Type) (a :: Type) where
   ModifyPackageName Mod.Bare a = a
   ModifyPackageName Mod.Ann a = Ann a
 
-newtype PackageNameWith (m :: Mod.Modifier) = PackageName (ModifyPackageName m ShortText)
+newtype PackageNameWith (m :: Type) = PackageName (ModifyPackageName m ShortText)
   deriving (Generic)
 
 deriving instance Show PackageName

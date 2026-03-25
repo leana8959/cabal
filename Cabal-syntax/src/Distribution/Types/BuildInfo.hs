@@ -1,5 +1,4 @@
 {-# LANGUAGE DataKinds #-}
-{-# LANGUAGE UnliftedDatatypes #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE KindSignatures #-}
@@ -48,7 +47,7 @@ type BuildInfo = BuildInfoWith Mod.Bare
 type BuildInfoAnn = BuildInfoWith Mod.Ann
 
 -- Consider refactoring into executable and library versions.
-data BuildInfoWith (m :: Mod.Modifier) = BuildInfo
+data BuildInfoWith (m :: Type) = BuildInfo
   { buildable :: Bool
   -- ^ component is buildable here
   , buildTools :: [LegacyExeDependency]

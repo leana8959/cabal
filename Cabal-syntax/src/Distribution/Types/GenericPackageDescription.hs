@@ -1,5 +1,4 @@
 {-# LANGUAGE DeriveAnyClass #-}
-{-# LANGUAGE UnliftedDatatypes #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE DeriveDataTypeable #-}
@@ -49,7 +48,7 @@ import qualified Distribution.Types.Modify as Mod
 
 type GenericPackageDescription = GenericPackageDescriptionWith Mod.Bare
 
-data GenericPackageDescriptionWith (m :: Mod.Modifier) = GenericPackageDescription
+data GenericPackageDescriptionWith (m :: Type) = GenericPackageDescription
   { packageDescription :: PackageDescription
   , gpdScannedVersion :: Maybe Version
   -- ^ This is a version as specified in source.

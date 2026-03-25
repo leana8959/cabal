@@ -1,5 +1,4 @@
 {-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE UnliftedDatatypes #-}
 {-# LANGUAGE TupleSections #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TypeFamilies #-}
@@ -70,12 +69,12 @@ import Data.Kind
 type VersionRange = VersionRangeWith Mod.Bare
 type VersionRangeAnn = VersionRangeWith Mod.Ann
 
-type family Modify (m :: Mod.Modifier) (a :: Type) where
+type family Modify (m :: Type) (a :: Type) where
   Modify Mod.Bare a = a
   Modify Mod.Ann Version = (Trivia, VersionAnn)
   Modify Mod.Ann VersionRangeAnn = (Trivia, VersionRangeAnn)
 
-data VersionRangeWith (m :: Mod.Modifier)
+data VersionRangeWith (m :: Type)
   = ThisVersion (Modify m Version) -- = version
   | LaterVersion (Modify m Version) -- > version  (NB. not >=)
   | OrLaterVersion (Modify m Version) -- >= version
