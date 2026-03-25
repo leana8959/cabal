@@ -32,7 +32,7 @@ import qualified Distribution.Types.Modify as Mod
 type Library = LibraryWith Mod.Bare
 type LibraryAnn = LibraryWith Mod.Ann
 
-data LibraryWith (f :: Mod.Modifier) = Library
+data LibraryWith (m :: Mod.Modifier) = Library
   { libName :: LibraryName
   , exposedModules :: [ModuleName]
   , reexportedModules :: [ModuleReexport]
@@ -42,7 +42,7 @@ data LibraryWith (f :: Mod.Modifier) = Library
   -- ^ Is the lib to be exposed by default? (i.e. whether its modules available in GHCi for example)
   , libVisibility :: LibraryVisibility
   -- ^ Whether this multilib can be used as a dependency for other packages.
-  , libBuildInfo :: BuildInfoWith f
+  , libBuildInfo :: BuildInfoWith m
   }
   deriving (Generic)
 

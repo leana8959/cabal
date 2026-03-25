@@ -49,7 +49,7 @@ import qualified Distribution.Types.Modify as Mod
 
 type GenericPackageDescription = GenericPackageDescriptionWith Mod.Bare
 
-data GenericPackageDescriptionWith (f :: Mod.Modifier) = GenericPackageDescription
+data GenericPackageDescriptionWith (m :: Mod.Modifier) = GenericPackageDescription
   { packageDescription :: PackageDescription
   , gpdScannedVersion :: Maybe Version
   -- ^ This is a version as specified in source.
@@ -61,7 +61,7 @@ data GenericPackageDescriptionWith (f :: Mod.Modifier) = GenericPackageDescripti
   --   Perfectly, PackageIndex should have sum type, so we don't need to
   --   have dummy GPDs.
   , genPackageFlags :: [PackageFlag]
-  , condLibrary :: (Maybe (CondTree ConfVar [Dependency] (LibraryWith f)))
+  , condLibrary :: (Maybe (CondTree ConfVar [Dependency] (LibraryWith m)))
   , condSubLibraries
       :: [(UnqualComponentName, CondTree ConfVar [Dependency] Library)]
   , condForeignLibs

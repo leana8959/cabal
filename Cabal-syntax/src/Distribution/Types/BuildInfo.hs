@@ -48,7 +48,7 @@ type BuildInfo = BuildInfoWith Mod.Bare
 type BuildInfoAnn = BuildInfoWith Mod.Ann
 
 -- Consider refactoring into executable and library versions.
-data BuildInfoWith (f :: Mod.Modifier) = BuildInfo
+data BuildInfoWith (m :: Mod.Modifier) = BuildInfo
   { buildable :: Bool
   -- ^ component is buildable here
   , buildTools :: [LegacyExeDependency]
@@ -159,7 +159,7 @@ data BuildInfoWith (f :: Mod.Modifier) = BuildInfo
   -- ^ Custom fields starting
   --  with x-, stored in a
   --  simple assoc-list.
-  , targetBuildDepends :: [DependencyWith f]
+  , targetBuildDepends :: [DependencyWith m]
   -- ^ Dependencies specific to a library or executable target
   , mixins :: [Mixin]
   }

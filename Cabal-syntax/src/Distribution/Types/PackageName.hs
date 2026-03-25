@@ -41,11 +41,11 @@ import Data.Kind
 type PackageName = PackageNameWith Mod.Bare
 type PackageNameAnn = PackageNameWith Mod.Ann
 
-type family ModifyPackageName (f :: Mod.Modifier) (a :: Type) where
+type family ModifyPackageName (m :: Mod.Modifier) (a :: Type) where
   ModifyPackageName Mod.Bare a = a
   ModifyPackageName Mod.Ann a = Ann a
 
-newtype PackageNameWith (f :: Mod.Modifier) = PackageName (ModifyPackageName f ShortText)
+newtype PackageNameWith (m :: Mod.Modifier) = PackageName (ModifyPackageName m ShortText)
   deriving (Generic)
 
 deriving instance Show PackageName

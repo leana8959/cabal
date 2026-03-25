@@ -70,20 +70,20 @@ import Data.Kind
 type VersionRange = VersionRangeWith Mod.Bare
 type VersionRangeAnn = VersionRangeWith Mod.Ann
 
-type family Modify (f :: Mod.Modifier) (a :: Type) where
+type family Modify (m :: Mod.Modifier) (a :: Type) where
   Modify Mod.Bare a = a
   Modify Mod.Ann Version = (Trivia, VersionAnn)
   Modify Mod.Ann VersionRangeAnn = (Trivia, VersionRangeAnn)
 
-data VersionRangeWith (f :: Mod.Modifier)
-  = ThisVersion (Modify f Version) -- = version
-  | LaterVersion (Modify f Version) -- > version  (NB. not >=)
-  | OrLaterVersion (Modify f Version) -- >= version
-  | EarlierVersion (Modify f Version) -- < version
-  | OrEarlierVersion (Modify f Version) -- <= version
-  | MajorBoundVersion (Modify f Version) -- @^>= ver@ (same as >= ver && < MAJ(ver)+1)
-  | UnionVersionRanges (Modify f (VersionRangeWith f)) (Modify f (VersionRangeWith f))
-  | IntersectVersionRanges (Modify f (VersionRangeWith f)) (Modify f (VersionRangeWith f))
+data VersionRangeWith (m :: Mod.Modifier)
+  = ThisVersion (Modify m Version) -- = version
+  | LaterVersion (Modify m Version) -- > version  (NB. not >=)
+  | OrLaterVersion (Modify m Version) -- >= version
+  | EarlierVersion (Modify m Version) -- < version
+  | OrEarlierVersion (Modify m Version) -- <= version
+  | MajorBoundVersion (Modify m Version) -- @^>= ver@ (same as >= ver && < MAJ(ver)+1)
+  | UnionVersionRanges (Modify m (VersionRangeWith m)) (Modify m (VersionRangeWith m))
+  | IntersectVersionRanges (Modify m (VersionRangeWith m)) (Modify m (VersionRangeWith m))
   deriving (Generic)
 
 deriving instance Eq VersionRange

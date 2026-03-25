@@ -51,13 +51,13 @@ import Data.Kind
 type Dependency = DependencyWith Mod.Bare
 type DependencyAnn = DependencyWith Mod.Ann
 
-data DependencyWith (f :: Mod.Modifier)
+data DependencyWith (m :: Mod.Modifier)
   = -- | The set of libraries required from the package.
     -- Only the selected libraries will be built.
     -- It does not affect the cabal-install solver yet.
     Dependency
-      (PackageNameWith f)
-      (VersionRangeWith f)
+      (PackageNameWith m)
+      (VersionRangeWith m)
       (NonEmptySet LibraryName)
   deriving (Generic)
 
