@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE UnliftedDatatypes #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE DeriveDataTypeable #-}
@@ -41,19 +42,14 @@ import Distribution.Version
 
 import Control.Exception
 import Data.Kind
-
-type family Modify (f :: Type -> Type) (a :: Type) where
-  Modify Identity a = a
-  -- A bad placeholder for Trivia
-  Modify Ann a = ([String], a)
-  Modify _ a = TypeError
+import qualified Distribution.Types.Modify as Mod
 
 -- ---------------------------------------------------------------------------
 -- The 'GenericPackageDescription' type
 
-type GenericPackageDescription = GenericPackageDescriptionWith Identity
+type GenericPackageDescription = GenericPackageDescriptionWith Mod.Bare
 
-data GenericPackageDescriptionWith (f :: Type -> Type) = GenericPackageDescription
+data GenericPackageDescriptionWith (f :: Mod.Modifier) = GenericPackageDescription
   { packageDescription :: PackageDescription
   , gpdScannedVersion :: Maybe Version
   -- ^ This is a version as specified in source.
@@ -78,15 +74,15 @@ data GenericPackageDescriptionWith (f :: Type -> Type) = GenericPackageDescripti
       :: [(UnqualComponentName, CondTree ConfVar [Dependency] Benchmark)]
   }
 
-deriving instance Eq (GenericPackageDescriptionWith Identity)
-deriving instance Show (GenericPackageDescriptionWith Identity)
-deriving instance Data (GenericPackageDescriptionWith Identity)
-deriving instance Generic (GenericPackageDescriptionWith Identity)
+deriving instance Eq (GenericPackageDescriptionWith Mod.Bare)
+deriving instance Show (GenericPackageDescriptionWith Mod.Bare)
+deriving instance Data (GenericPackageDescriptionWith Mod.Bare)
+deriving instance Generic (GenericPackageDescriptionWith Mod.Bare)
 
-instance Package (GenericPackageDescriptionWith Identity) where
+instance Package (GenericPackageDescriptionWith Mod.Bare) where
   packageId = packageId . packageDescription
 
-deriving instance Binary (GenericPackageDescriptionWith Identity)
+deriving instance Binary (GenericPackageDescriptionWith Mod.Bare)
 
 instance Structured GenericPackageDescription
 instance NFData GenericPackageDescription where rnf = genericRnf

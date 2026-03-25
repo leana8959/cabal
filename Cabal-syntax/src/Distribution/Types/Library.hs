@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE UnliftedDatatypes #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE KindSignatures #-}
@@ -26,11 +27,12 @@ import Distribution.Types.ModuleReexport
 import qualified Distribution.Types.BuildInfo.Lens as L
 
 import Data.Kind
+import qualified Distribution.Types.Modify as Mod
 
-type Library = LibraryWith Identity
-type LibraryAnn = LibraryWith Ann
+type Library = LibraryWith Mod.Bare
+type LibraryAnn = LibraryWith Mod.Ann
 
-data LibraryWith (f :: Type -> Type) = Library
+data LibraryWith (f :: Mod.Modifier) = Library
   { libName :: LibraryName
   , exposedModules :: [ModuleName]
   , reexportedModules :: [ModuleReexport]

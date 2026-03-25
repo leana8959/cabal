@@ -1,4 +1,5 @@
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE UnliftedDatatypes #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE KindSignatures #-}
@@ -41,11 +42,13 @@ import Language.Haskell.Extension
 
 import Data.Kind
 
-type BuildInfo = BuildInfoWith Identity
-type BuildInfoAnn = BuildInfoWith Ann
+import qualified Distribution.Types.Modify as Mod
+
+type BuildInfo = BuildInfoWith Mod.Bare
+type BuildInfoAnn = BuildInfoWith Mod.Ann
 
 -- Consider refactoring into executable and library versions.
-data BuildInfoWith (f :: Type -> Type) = BuildInfo
+data BuildInfoWith (f :: Mod.Modifier) = BuildInfo
   { buildable :: Bool
   -- ^ component is buildable here
   , buildTools :: [LegacyExeDependency]

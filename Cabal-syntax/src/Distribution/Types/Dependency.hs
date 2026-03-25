@@ -1,6 +1,7 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE InstanceSigs #-}
+{-# LANGUAGE UnliftedDatatypes #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE FlexibleInstances #-}
@@ -39,6 +40,7 @@ import Distribution.Types.UnqualComponentName
 import qualified Distribution.Compat.NonEmptySet as NES
 import qualified Text.PrettyPrint as PP
 
+import qualified Distribution.Types.Modify as Mod
 import Data.Kind
 
 -- | Describes a dependency on a source package (API)
@@ -46,10 +48,10 @@ import Data.Kind
 -- /Invariant:/ package name does not appear as 'LSubLibName' in
 -- set of library names.
 
-type Dependency = DependencyWith Identity
-type DependencyAnn = DependencyWith Ann
+type Dependency = DependencyWith Mod.Bare
+type DependencyAnn = DependencyWith Mod.Ann
 
-data DependencyWith (f :: Type -> Type)
+data DependencyWith (f :: Mod.Modifier)
   = -- | The set of libraries required from the package.
     -- Only the selected libraries will be built.
     -- It does not affect the cabal-install solver yet.
@@ -66,11 +68,11 @@ deriving instance Ord Dependency
 deriving instance Data Dependency
 
 -- TODO: less instances?
-deriving instance Read (DependencyWith Ann)
-deriving instance Show (DependencyWith Ann)
-deriving instance Eq (DependencyWith Ann)
-deriving instance Ord (DependencyWith Ann)
-deriving instance Data (DependencyWith Ann)
+deriving instance Read (DependencyWith Mod.Ann)
+deriving instance Show (DependencyWith Mod.Ann)
+deriving instance Eq (DependencyWith Mod.Ann)
+deriving instance Ord (DependencyWith Mod.Ann)
+deriving instance Data (DependencyWith Mod.Ann)
 
 unannotateDependencyAnn :: DependencyAnn -> Dependency
 unannotateDependencyAnn (Dependency pname vrange libs) =
@@ -104,7 +106,7 @@ mkDependency pn vr lb = Dependency pn vr (NES.map conv lb)
       | otherwise = l
 
 -- TODO(leana8959): a way to not duplicate smart constructor
-mkDependencyAnn :: PackageNameAnn -> VersionRangeAnn -> NonEmptySet LibraryName -> DependencyWith Ann
+mkDependencyAnn :: PackageNameAnn -> VersionRangeAnn -> NonEmptySet LibraryName -> DependencyWith Mod.Ann
 mkDependencyAnn pn vr lb = Dependency pn vr (NES.map conv lb)
   where
     pn' = packageNameToUnqualComponentNameWith pn

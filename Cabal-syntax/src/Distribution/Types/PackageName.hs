@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE UnliftedDatatypes #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeSynonymInstances #-}
@@ -26,6 +27,7 @@ import Distribution.Trivia
 import Distribution.Pretty
 import qualified Text.PrettyPrint as Disp
 
+import qualified Distribution.Types.Modify as Mod
 import Data.Kind
 
 -- | A package name.
@@ -36,14 +38,14 @@ import Data.Kind
 -- This type is opaque since @Cabal-2.0@
 --
 -- @since 2.0.0.2
-type PackageName = PackageNameWith Identity
-type PackageNameAnn = PackageNameWith Ann
+type PackageName = PackageNameWith Mod.Bare
+type PackageNameAnn = PackageNameWith Mod.Ann
 
-type family ModifyPackageName (f :: Type -> Type) (a :: Type) where
-  ModifyPackageName Identity a = a
-  ModifyPackageName Ann a = Ann a
+type family ModifyPackageName (f :: Mod.Modifier) (a :: Type) where
+  ModifyPackageName Mod.Bare a = a
+  ModifyPackageName Mod.Ann a = Ann a
 
-newtype PackageNameWith (f :: Type -> Type) = PackageName (ModifyPackageName f ShortText)
+newtype PackageNameWith (f :: Mod.Modifier) = PackageName (ModifyPackageName f ShortText)
   deriving (Generic)
 
 deriving instance Show PackageName
@@ -58,7 +60,7 @@ deriving instance Eq PackageNameAnn
 deriving instance Ord PackageNameAnn
 deriving instance Data PackageNameAnn
 
-unannotatePackageName :: PackageNameWith Ann -> PackageName
+unannotatePackageName :: PackageNameWith Mod.Ann -> PackageName
 unannotatePackageName (PackageName pname) = PackageName (unAnn pname)
 
 -- | Convert 'PackageName' to 'String'
@@ -104,7 +106,7 @@ instance Pretty PackageName where
 instance Parsec PackageName where
   parsec = mkPackageName <$> parsecUnqualComponentName
 
-instance Parsec (PackageNameWith Ann) where
+instance Parsec (PackageNameWith Mod.Ann) where
   parsec =
     PackageName . Ann (ExactRepresentation "packagename trivia") . toShortText
       <$> parsecUnqualComponentName

@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE UnliftedDatatypes #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
@@ -20,6 +21,7 @@ import Distribution.Parsec
 import Distribution.Trivia
 import Distribution.Pretty
 import Distribution.Types.PackageName
+import qualified Distribution.Types.Modify as Mod
 
 -- | An unqualified component name, for any kind of component.
 --
@@ -95,7 +97,7 @@ instance NFData UnqualComponentName where
 packageNameToUnqualComponentName :: PackageName -> UnqualComponentName
 packageNameToUnqualComponentName = UnqualComponentName . unPackageNameST
 
-packageNameToUnqualComponentNameWith :: PackageNameWith Ann -> Ann UnqualComponentName
+packageNameToUnqualComponentNameWith :: PackageNameWith Mod.Ann -> Ann UnqualComponentName
 packageNameToUnqualComponentNameWith (PackageName u) = fmap UnqualComponentName u
 
 -- | Converts an unqualified component name to a package name

@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE UnliftedDatatypes #-}
 {-# LANGUAGE TupleSections #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TypeFamilies #-}
@@ -61,20 +62,20 @@ import qualified Distribution.Compat.CharParsing as P
 import qualified Distribution.Compat.DList as DList
 import qualified Text.PrettyPrint as Disp
 
+import qualified Distribution.Types.Modify as Mod
+
 import Control.Applicative
 import Data.Kind
-import qualified Data.List.NonEmpty as NE
 
-type VersionRange = VersionRangeWith Identity
-type VersionRangeAnn = VersionRangeWith Ann
+type VersionRange = VersionRangeWith Mod.Bare
+type VersionRangeAnn = VersionRangeWith Mod.Ann
 
-type family Modify (f :: Type -> Type) (a :: Type) where
-  Modify Identity a = a
-  Modify Ann Version = (Trivia, VersionAnn)
-  Modify Ann VersionRangeAnn = (Trivia, VersionRangeAnn)
+type family Modify (f :: Mod.Modifier) (a :: Type) where
+  Modify Mod.Bare a = a
+  Modify Mod.Ann Version = (Trivia, VersionAnn)
+  Modify Mod.Ann VersionRangeAnn = (Trivia, VersionRangeAnn)
 
--- TODO(leana8959): try to store trivia in this model
-data VersionRangeWith (f :: Type -> Type)
+data VersionRangeWith (f :: Mod.Modifier)
   = ThisVersion (Modify f Version) -- = version
   | LaterVersion (Modify f Version) -- > version  (NB. not >=)
   | OrLaterVersion (Modify f Version) -- >= version
