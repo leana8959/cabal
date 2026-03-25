@@ -32,7 +32,7 @@ data TestSuite = TestSuite
   }
   deriving (Generic, Show, Read, Eq, Ord, Data)
 
-instance L.HasBuildInfo Mod.Bare TestSuite where
+instance L.HasBuildInfoWith Mod.Bare TestSuite where
   buildInfo f l = (\x -> l{testBuildInfo = x}) <$> f (testBuildInfo l)
 
 instance Binary TestSuite

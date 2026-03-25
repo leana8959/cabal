@@ -461,7 +461,7 @@ getComponent pkg cname =
 -- -----------------------------------------------------------------------------
 -- Traversal Instances
 
-instance L.HasBuildInfos Mod.Bare PackageDescription where
+instance L.HasBuildInfosWith Mod.Bare PackageDescription where
   traverseBuildInfos
     f
     ( PackageDescription

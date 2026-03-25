@@ -96,7 +96,7 @@ emptyGenericPackageDescription = GenericPackageDescription emptyPackageDescripti
 -- -----------------------------------------------------------------------------
 -- Traversal Instances
 
-instance L.HasBuildInfos Mod.Bare GenericPackageDescription where
+instance L.HasBuildInfosWith Mod.Bare GenericPackageDescription where
   traverseBuildInfos f (GenericPackageDescription p v a1 x1 x2 x3 x4 x5 x6) =
     GenericPackageDescription
       <$> L.traverseBuildInfos f p
@@ -112,7 +112,7 @@ instance L.HasBuildInfos Mod.Bare GenericPackageDescription where
 -- We use this traversal to keep [Dependency] field in CondTree up to date.
 traverseCondTreeBuildInfo
   :: forall f comp v
-   . (Applicative f, L.HasBuildInfo Mod.Bare comp)
+   . (Applicative f, L.HasBuildInfo comp)
   => LensLike' f (CondTree v [Dependency] comp) L.BuildInfo
 traverseCondTreeBuildInfo g = node
   where

@@ -53,7 +53,7 @@ deriving instance Read Library
 deriving instance Data Library
 
 
-instance L.HasBuildInfo Mod.Bare Library where
+instance L.HasBuildInfoWith Mod.Bare Library where
   buildInfo f l = (\x -> l{libBuildInfo = x}) <$> f (libBuildInfo l)
 
 instance Binary Library

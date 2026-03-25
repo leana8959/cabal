@@ -1,4 +1,5 @@
 {-# LANGUAGE ConstraintKinds #-}
+{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -84,6 +85,8 @@ import Distribution.Parsec
 import Distribution.Pretty (Pretty (..), prettyShow, showToken)
 import Distribution.Utils.Path
 import Distribution.Version (Version, VersionRange)
+
+import qualified Distribution.Types.Modify as Mod
 
 import qualified Data.ByteString.Char8 as BS8
 import qualified Distribution.Compat.CharParsing as P
@@ -304,7 +307,7 @@ data TestSuiteStanza = TestSuiteStanza
   , _testStanzaCodeGenerators :: [String]
   }
 
-instance L.HasBuildInfo Mod.Bare TestSuiteStanza where
+instance L.HasBuildInfoWith Mod.Bare TestSuiteStanza where
   buildInfo = testStanzaBuildInfo
 
 testStanzaTestType :: Lens' TestSuiteStanza (Maybe TestType)
@@ -453,7 +456,7 @@ data BenchmarkStanza = BenchmarkStanza
   , _benchmarkStanzaBuildInfo :: BuildInfo
   }
 
-instance L.HasBuildInfo Mod.Bare BenchmarkStanza where
+instance L.HasBuildInfoWith Mod.Bare BenchmarkStanza where
   buildInfo = benchmarkStanzaBuildInfo
 
 benchmarkStanzaBenchmarkType :: Lens' BenchmarkStanza (Maybe BenchmarkType)
