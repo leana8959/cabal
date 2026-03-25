@@ -144,7 +144,7 @@ import Distribution.System
   )
 import Distribution.Types.BuildInfo
   ( BuildInfo
-  , BuildInfoWith(..)
+  , BuildInfoWith (..)
   )
 import Distribution.Types.ComponentId
   ( mkComponentId

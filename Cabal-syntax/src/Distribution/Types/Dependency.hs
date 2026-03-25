@@ -1,11 +1,11 @@
 {-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE InstanceSigs #-}
+{-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TypeSynonymInstances #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE KindSignatures #-}
-{-# LANGUAGE DeriveGeneric #-}
 
 module Distribution.Types.Dependency
   ( Dependency
@@ -30,8 +30,8 @@ import Distribution.CabalSpecVersion
 import Distribution.Compat.CharParsing (char, spaces)
 import Distribution.Compat.Parsing (between, option)
 import Distribution.Parsec
-import Distribution.Trivia
 import Distribution.Pretty
+import Distribution.Trivia
 import Distribution.Types.LibraryName
 import Distribution.Types.PackageName
 import Distribution.Types.UnqualComponentName
@@ -39,15 +39,15 @@ import Distribution.Types.UnqualComponentName
 import qualified Distribution.Compat.NonEmptySet as NES
 import qualified Text.PrettyPrint as PP
 
-import qualified Distribution.Types.Modify as Mod
 import Data.Kind
+import qualified Distribution.Types.Modify as Mod
 
 -- | Describes a dependency on a source package (API)
 --
 -- /Invariant:/ package name does not appear as 'LSubLibName' in
 -- set of library names.
-
 type Dependency = DependencyWith Mod.Bare
+
 type DependencyAnn = DependencyWith Mod.Ann
 
 data DependencyWith (m :: Type)

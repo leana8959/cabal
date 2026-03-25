@@ -458,7 +458,7 @@ exAvSrcPkg ex =
                 , C.gpdScannedVersion = Nothing
                 , C.genPackageFlags = flags
                 , C.condLibrary =
-                    let mkLib v bi = (mempty :: C.Library) {C.libVisibility = v, C.libBuildInfo = bi}
+                    let mkLib v bi = (mempty :: C.Library){C.libVisibility = v, C.libBuildInfo = bi}
                         -- Avoid using the Monoid instance for [a] when getting
                         -- the library dependencies, to allow for the possibility
                         -- that the package doesn't have a library:
@@ -466,7 +466,7 @@ exAvSrcPkg ex =
                      in mkTopLevelCondTree defaultLib mkLib <$> libDeps
                 , C.condSubLibraries =
                     let mkTree = mkTopLevelCondTree defaultSubLib mkLib
-                        mkLib v bi = (mempty :: C.Library) {C.libVisibility = v, C.libBuildInfo = bi}
+                        mkLib v bi = (mempty :: C.Library){C.libVisibility = v, C.libBuildInfo = bi}
                      in map (second mkTree) subLibraries
                 , C.condForeignLibs =
                     let mkTree = mkTopLevelCondTree (mkLib defaultTopLevelBuildInfo) (const mkLib)

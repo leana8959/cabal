@@ -1,8 +1,8 @@
 {-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE TypeSynonymInstances #-}
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE KindSignatures #-}
-{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE TypeSynonymInstances #-}
 
 module Distribution.Types.Version
   ( -- * Package versions
@@ -26,8 +26,8 @@ import Distribution.Compat.Prelude
 import Prelude ()
 
 import Distribution.Parsec
-import Distribution.Trivia
 import Distribution.Pretty
+import Distribution.Trivia
 
 import qualified Data.Version as Base
 import qualified Distribution.Compat.CharParsing as P

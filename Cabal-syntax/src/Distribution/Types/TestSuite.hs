@@ -1,6 +1,6 @@
 {-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 
 module Distribution.Types.TestSuite
   ( TestSuite (..)
@@ -20,8 +20,8 @@ import Distribution.Types.UnqualComponentName
 
 import Distribution.ModuleName
 
-import qualified Distribution.Types.Modify as Mod
 import qualified Distribution.Types.BuildInfo.Lens as L
+import qualified Distribution.Types.Modify as Mod
 
 -- | A \"test-suite\" stanza in a cabal file.
 data TestSuite = TestSuite

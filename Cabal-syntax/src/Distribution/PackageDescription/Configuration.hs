@@ -56,11 +56,11 @@ import Distribution.Parsec
 import Distribution.Pretty
 import Distribution.System
 import Distribution.Types.Component
-import qualified Distribution.Types.Modify as Mod
 import Distribution.Types.ComponentRequestedSpec
 import Distribution.Types.DependencyMap
 import Distribution.Types.DependencySatisfaction (DependencySatisfaction (..))
 import Distribution.Types.MissingDependency (MissingDependency (..))
+import qualified Distribution.Types.Modify as Mod
 import Distribution.Types.PackageVersionConstraint
 import Distribution.Utils.Generic
 import Distribution.Utils.Path (sameDirectory)

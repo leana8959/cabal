@@ -1,9 +1,9 @@
 {-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE StandaloneDeriving #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE KindSignatures #-}
-{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE StandaloneDeriving #-}
 
 module Distribution.Types.Library
   ( Library
@@ -17,8 +17,8 @@ module Distribution.Types.Library
 import Distribution.Compat.Prelude
 import Prelude ()
 
-import Distribution.Trivia
 import Distribution.ModuleName
+import Distribution.Trivia
 import Distribution.Types.BuildInfo
 import Distribution.Types.LibraryName
 import Distribution.Types.LibraryVisibility
@@ -51,7 +51,6 @@ deriving instance Eq Library
 deriving instance Ord Library
 deriving instance Read Library
 deriving instance Data Library
-
 
 instance L.HasBuildInfoWith Mod.Bare Library where
   buildInfo f l = (\x -> l{libBuildInfo = x}) <$> f (libBuildInfo l)

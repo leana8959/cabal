@@ -1,6 +1,6 @@
 {-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 
 module Distribution.Types.Benchmark
   ( Benchmark (..)
@@ -16,8 +16,8 @@ import Prelude ()
 import Distribution.Types.BenchmarkInterface
 import Distribution.Types.BenchmarkType
 import Distribution.Types.BuildInfo
-import Distribution.Types.UnqualComponentName
 import qualified Distribution.Types.Modify as Mod
+import Distribution.Types.UnqualComponentName
 
 import Distribution.ModuleName
 

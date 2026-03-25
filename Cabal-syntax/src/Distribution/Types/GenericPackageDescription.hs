@@ -1,17 +1,17 @@
-{-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE AllowAmbiguousTypes #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE ConstraintKinds #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
 
 module Distribution.Types.GenericPackageDescription
@@ -30,9 +30,10 @@ import qualified Distribution.Types.BuildInfo.Lens as L
 import Distribution.Types.PackageDescription
 
 import Distribution.Package
+import Distribution.Trivia
 import Distribution.Types.Benchmark
-import Distribution.Types.CondTree
 import Distribution.Types.BuildInfo
+import Distribution.Types.CondTree
 import Distribution.Types.ConfVar
 import Distribution.Types.Executable
 import Distribution.Types.Flag
@@ -40,7 +41,6 @@ import Distribution.Types.ForeignLib
 import Distribution.Types.Library
 import Distribution.Types.TestSuite
 import Distribution.Types.UnqualComponentName
-import Distribution.Trivia
 import Distribution.Version
 
 import Control.Exception

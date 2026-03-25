@@ -125,7 +125,6 @@ import Distribution.Solver.Types.PackageConstraint
 import Distribution.Solver.Types.SourcePackage
   ( SourcePackage (..)
   )
-import qualified Distribution.Types.Modify as Mod
 import Distribution.Types.BuildInfo
   ( BuildInfo
   , BuildInfoWith (..)
@@ -147,6 +146,7 @@ import Distribution.Types.Library
   , LibraryWith (..)
   , emptyLibrary
   )
+import qualified Distribution.Types.Modify as Mod
 import Distribution.Types.ParStrat
 import Distribution.Types.Version
   ( Version

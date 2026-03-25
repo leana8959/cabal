@@ -1,13 +1,13 @@
 {-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE TypeSynonymInstances #-}
-{-# LANGUAGE StandaloneDeriving #-}
-{-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DeriveTraversable #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeSynonymInstances #-}
 
 module Distribution.Types.CondTree
   ( CondTree
@@ -34,8 +34,8 @@ module Distribution.Types.CondTree
 import Distribution.Compat.Prelude
 import Prelude ()
 
-import Distribution.Types.Condition
 import Distribution.Trivia
+import Distribution.Types.Condition
 
 import Control.Exception
 import Data.Kind
@@ -75,8 +75,8 @@ type CondTree = CondTreeWith Identity
 
 data CondTreeWith f v c a = CondNode
   { condTreeData :: Modify f a
-  -- TODO(leana8959): can we remove this
-  , condTreeConstraints :: c
+  , -- TODO(leana8959): can we remove this
+    condTreeConstraints :: c
   , condTreeComponents :: [CondBranch v c a]
   }
 

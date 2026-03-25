@@ -1,10 +1,10 @@
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeSynonymInstances #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE KindSignatures #-}
-{-# LANGUAGE DeriveGeneric #-}
 
 module Distribution.Types.PackageName
   ( PackageName
@@ -22,12 +22,12 @@ import Distribution.Utils.ShortText
 import Prelude ()
 
 import Distribution.Parsec
-import Distribution.Trivia
 import Distribution.Pretty
+import Distribution.Trivia
 import qualified Text.PrettyPrint as Disp
 
-import qualified Distribution.Types.Modify as Mod
 import Data.Kind
+import qualified Distribution.Types.Modify as Mod
 
 -- | A package name.
 --
@@ -38,6 +38,7 @@ import Data.Kind
 --
 -- @since 2.0.0.2
 type PackageName = PackageNameWith Mod.Bare
+
 type PackageNameAnn = PackageNameWith Mod.Ann
 
 type family ModifyPackageName (m :: Type) (a :: Type) where

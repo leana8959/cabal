@@ -1,15 +1,15 @@
 {-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE TupleSections #-}
-{-# LANGUAGE StandaloneDeriving #-}
-{-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DeriveTraversable #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE TupleSections #-}
+{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE ViewPatterns #-}
 
 -- | The only purpose of this module is to prevent the export of
@@ -53,8 +53,8 @@ import Prelude ()
 
 import Distribution.CabalSpecVersion
 import Distribution.Parsec
-import Distribution.Trivia
 import Distribution.Pretty
+import Distribution.Trivia
 import Distribution.Utils.Generic (unsnoc)
 
 import qualified Distribution.Compat.CharParsing as P
@@ -460,18 +460,18 @@ instance Pretty VersionRangeAnn where
 -- TODO(leana8959): how do we know if the element is inserted and we need to fallback
 prettyVersionRangeAnn :: VersionRangeAnn -> Disp.Doc
 prettyVersionRangeAnn vr = case vr of
-    ThisVersion vAnn -> applyLeafTrivia (Disp.text "==") vAnn
-    LaterVersion vAnn -> applyLeafTrivia (Disp.text ">") vAnn
-    OrLaterVersion vAnn -> applyLeafTrivia (Disp.text ">=") vAnn
-    EarlierVersion vAnn -> applyLeafTrivia (Disp.text "<") vAnn
-    OrEarlierVersion vAnn -> applyLeafTrivia (Disp.text "<=") vAnn
-    MajorBoundVersion vAnn -> applyLeafTrivia (Disp.text "^>=") vAnn
-    UnionVersionRanges r1 r2 ->
-      applyBranchTrivia (fmap prettyVersionRangeAnn r1)
+  ThisVersion vAnn -> applyLeafTrivia (Disp.text "==") vAnn
+  LaterVersion vAnn -> applyLeafTrivia (Disp.text ">") vAnn
+  OrLaterVersion vAnn -> applyLeafTrivia (Disp.text ">=") vAnn
+  EarlierVersion vAnn -> applyLeafTrivia (Disp.text "<") vAnn
+  OrEarlierVersion vAnn -> applyLeafTrivia (Disp.text "<=") vAnn
+  MajorBoundVersion vAnn -> applyLeafTrivia (Disp.text "^>=") vAnn
+  UnionVersionRanges r1 r2 ->
+    applyBranchTrivia (fmap prettyVersionRangeAnn r1)
       <> "||"
       <> applyBranchTrivia (fmap prettyVersionRangeAnn r2)
-    IntersectVersionRanges r1 r2 ->
-      applyBranchTrivia (fmap prettyVersionRangeAnn r1)
+  IntersectVersionRanges r1 r2 ->
+    applyBranchTrivia (fmap prettyVersionRangeAnn r1)
       <> "&&"
       <> applyBranchTrivia (fmap prettyVersionRangeAnn r2)
   where
@@ -693,17 +693,18 @@ versionRangeAnnParser digitParser csv = expr
               -- , prettyShow $ eliminateMajorBoundSyntax $ majorBoundVersionAnn v
               ]
       where
-        -- TODO(leana8959): rewrite the hyloVersionRange and VersionRangeF and then deal with this
-        --
-        -- eliminateMajorBoundSyntax :: VersionRangeAnn -> VersionRangeAnn
-        -- eliminateMajorBoundSyntax = undefined
-        --   -- hyloVersionRangeAnn embed projectVersionRange
-        --
-        -- embed (MajorBoundVersionF u) =
-        --   intersectVersionRanges
-        --     (orLaterVersion u)
-        --     (earlierVersion (majorUpperBound u))
-        -- embed vr = embedVersionRange vr
+
+    -- TODO(leana8959): rewrite the hyloVersionRange and VersionRangeF and then deal with this
+    --
+    -- eliminateMajorBoundSyntax :: VersionRangeAnn -> VersionRangeAnn
+    -- eliminateMajorBoundSyntax = undefined
+    --   -- hyloVersionRangeAnn embed projectVersionRange
+    --
+    -- embed (MajorBoundVersionF u) =
+    --   intersectVersionRanges
+    --     (orLaterVersion u)
+    --     (earlierVersion (majorUpperBound u))
+    -- embed vr = embedVersionRange vr
 
     -- version set notation (e.g. "== { 0.0.1.0, 0.0.2.0, 0.1.0.0 }")
     -- exactprint doesn't support braces
@@ -757,14 +758,19 @@ versionRangeAnnParser digitParser csv = expr
     parens :: m VersionRangeAnn -> m VersionRangeAnn
     parens p = do
       let open :: m String
-          open = liftA2 (:)
-                (P.char '(' P.<?> "opening paren")
-                 P.spaces'
+          open =
+            liftA2
+              (:)
+              (P.char '(' P.<?> "opening paren")
+              P.spaces'
 
           close :: m String
-          close = liftA3
-                (\u v w -> u ++ [v] ++ w)
-                P.spaces' (P.char ')') P.spaces'
+          close =
+            liftA3
+              (\u v w -> u ++ [v] ++ w)
+              P.spaces'
+              (P.char ')')
+              P.spaces'
 
       (_enclosed, inserted) <-
         surroundWith
@@ -781,6 +787,7 @@ versionRangeAnnParser digitParser csv = expr
       case ts of
         [] -> pure ()
         (_ : _) -> parsecWarning PWTVersionTag "version with tags"
+
 ----------------------------
 -- Wildcard range utilities
 --

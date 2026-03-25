@@ -17,10 +17,10 @@ import Distribution.Compat.Prelude
 import Distribution.Utils.ShortText
 
 import Distribution.Parsec
-import Distribution.Trivia
 import Distribution.Pretty
-import Distribution.Types.PackageName
+import Distribution.Trivia
 import qualified Distribution.Types.Modify as Mod
+import Distribution.Types.PackageName
 
 -- | An unqualified component name, for any kind of component.
 --

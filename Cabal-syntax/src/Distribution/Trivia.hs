@@ -1,5 +1,5 @@
-{-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DeriveFunctor #-}
 
 module Distribution.Trivia
   ( Trivia (..)
@@ -8,7 +8,7 @@ module Distribution.Trivia
   , mapAnnA
   , applyTriviaDoc
   )
-  where
+where
 
 import Data.Data
 import Data.List.NonEmpty (NonEmpty)
@@ -23,14 +23,11 @@ data Trivia
 
 instance Semigroup Trivia where
   HasTrivia s t <> HasTrivia a b = HasTrivia (s <> a) (t <> b)
-
   ExactRepresentation u <> ExactRepresentation v = ExactRepresentation (u <> v)
   u@(ExactRepresentation _) <> _ = u
   _ <> v@(ExactRepresentation _) = v
-
   NoTrivia <> v = v
   u <> NoTrivia = u
-
   IsInserted <> _ = IsInserted
   _ <> IsInserted = IsInserted
 

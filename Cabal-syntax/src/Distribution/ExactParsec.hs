@@ -1,8 +1,7 @@
 module Distribution.ExactParsec
-  ( ExactParsec(..)
+  ( ExactParsec (..)
   )
-  where
+where
 
 import Distribution.Parsec
 import Distribution.Trivia
-
