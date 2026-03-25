@@ -1,5 +1,6 @@
 -- -Wno-deprecations for use of Map.foldWithKey
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeApplications #-}
 {-# OPTIONS_GHC -Wno-deprecations #-}
 
 -----------------------------------------------------------------------------
@@ -55,6 +56,7 @@ import Distribution.Parsec
 import Distribution.Pretty
 import Distribution.System
 import Distribution.Types.Component
+import qualified Distribution.Types.Modify as Mod
 import Distribution.Types.ComponentRequestedSpec
 import Distribution.Types.DependencyMap
 import Distribution.Types.DependencySatisfaction (DependencySatisfaction (..))
@@ -639,7 +641,7 @@ transformAllBuildDepends
   -> GenericPackageDescription
   -> GenericPackageDescription
 transformAllBuildDepends f =
-  over (L.traverseBuildInfos . L.targetBuildDepends . traverse) f
+  over (L.traverseBuildInfos @Mod.Bare . L.targetBuildDepends @Mod.Bare . traverse) f
     . over (L.packageDescription . L.setupBuildInfo . traverse . L.setupDepends . traverse) f
     -- cannot be point-free as normal because of higher rank
     . over (\f' -> L.allCondTrees $ traverseCondTreeC f') (map f)
@@ -651,7 +653,7 @@ transformAllBuildDependsN
   -> GenericPackageDescription
   -> GenericPackageDescription
 transformAllBuildDependsN f =
-  over (L.traverseBuildInfos . L.targetBuildDepends) f
+  over (L.traverseBuildInfos @Mod.Bare . L.targetBuildDepends @Mod.Bare) f
     . over (L.packageDescription . L.setupBuildInfo . traverse . L.setupDepends) f
     -- cannot be point-free as normal because of higher rank
     . over (\f' -> L.allCondTrees $ traverseCondTreeC f') f

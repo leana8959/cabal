@@ -125,8 +125,10 @@ import Distribution.Solver.Types.PackageConstraint
 import Distribution.Solver.Types.SourcePackage
   ( SourcePackage (..)
   )
+import qualified Distribution.Types.Modify as Mod
 import Distribution.Types.BuildInfo
-  ( BuildInfo (..)
+  ( BuildInfo
+  , BuildInfoWith (..)
   , emptyBuildInfo
   )
 import Distribution.Types.ComponentName
@@ -141,7 +143,8 @@ import Distribution.Types.Dependency
   , mainLibSet
   )
 import Distribution.Types.Library
-  ( Library (..)
+  ( Library
+  , LibraryWith (..)
   , emptyLibrary
   )
 import Distribution.Types.ParStrat
@@ -658,7 +661,7 @@ addDepsToProjectTarget deps pkgId ctx =
                   -- occurrences of the field `targetBuildDepends`. It ensures that
                   -- fields depending on the latter are also consistently updated.
                   srcpkgDescription
-                    & (L.traverseBuildInfos . L.targetBuildDepends)
+                    & (L.traverseBuildInfos @Mod.Bare . L.targetBuildDepends @Mod.Bare)
                       %~ (deps ++)
               }
     addDeps spec = spec

@@ -1,4 +1,5 @@
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE TypeApplications #-}
@@ -42,7 +43,7 @@ import qualified Distribution.Types.BuildInfo as T
 type HasBuildInfo = HasBuildInfoWith Mod.Bare
 type HasBuildInfoAnn = HasBuildInfoWith Mod.Ann
 
-class HasBuildInfoWith mod a where
+class HasBuildInfoWith mod a | a -> mod where
   buildInfo :: Lens' a (BuildInfoWith mod)
 
   buildable :: (HasBuildInfoWith mod (BuildInfoWith mod)) => Lens' a Bool
