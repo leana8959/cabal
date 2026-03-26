@@ -5,7 +5,6 @@
 module Distribution.Types.Modify where
 
 import Data.Data
-import Data.Kind
 
 data Bare = Bare
   deriving (Show, Read, Eq, Ord, Data)

@@ -34,8 +34,6 @@ import qualified Distribution.Compat.CharParsing as P
 import qualified Text.PrettyPrint as Disp
 import qualified Text.Read as Read
 
-import Data.Kind
-
 -- | A 'Version' represents the version of a software entity.
 --
 -- Instances of 'Eq' and 'Ord' are provided, which gives exact

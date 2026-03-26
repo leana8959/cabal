@@ -26,8 +26,6 @@ module Distribution.Types.BuildInfo
 import Distribution.Compat.Prelude
 import Prelude ()
 
-import Distribution.Trivia
-
 import Distribution.Types.Dependency
 import Distribution.Types.ExeDependency
 import Distribution.Types.LegacyExeDependency

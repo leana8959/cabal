@@ -89,7 +89,7 @@ instance Functor (CondTree v c) where
   fmap f (CondNode x c bs) = CondNode (f x) c ((fmap . fmap) f bs)
 
 instance Foldable (CondTree v c) where
-  foldMap f (CondNode x cs bs) = f x <> (foldMap . foldMap) f bs
+  foldMap f (CondNode x _cs bs) = f x <> (foldMap . foldMap) f bs
 
 instance Traversable (CondTree v c) where
   traverse f (CondNode x cs bs) = CondNode <$> f x <*> pure cs <*> (traverse . traverse) f bs

@@ -11,7 +11,6 @@ module Distribution.Trivia
 where
 
 import Data.Data
-import Data.List.NonEmpty (NonEmpty)
 import qualified Text.PrettyPrint as Disp
 
 data Trivia
