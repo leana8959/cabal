@@ -1,4 +1,5 @@
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE Rank2Types #-}
@@ -56,6 +57,7 @@ import Distribution.Parsec.Warning (PWarnType (..))
 import Distribution.Pretty (prettyShow)
 import Distribution.Utils.Generic (breakMaybe, fromUTF8BS, toUTF8BS, unfoldrM, validateUTF8)
 import Distribution.Version (Version, mkVersion, versionNumbers)
+import qualified Distribution.Types.Modify as Mod
 
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Char8 as BS8
@@ -926,7 +928,7 @@ data Syntax = OldSyntax | NewSyntax
 
 -- TODO:
 libFieldNames :: [FieldName]
-libFieldNames = fieldGrammarKnownFieldList (libraryFieldGrammar LMainLibName)
+libFieldNames = fieldGrammarKnownFieldList (libraryFieldGrammar @Mod.Bare LMainLibName)
 
 -------------------------------------------------------------------------------
 -- Supplementary build information

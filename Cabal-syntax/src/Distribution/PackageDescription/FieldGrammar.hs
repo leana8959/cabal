@@ -170,14 +170,16 @@ packageDescriptionFieldGrammar =
 -------------------------------------------------------------------------------
 
 libraryFieldGrammar
-  :: ( FieldGrammar c g
-     , Applicative (g Library)
-     , Applicative (g BuildInfo)
+  :: forall mod c g
+   . ( FieldGrammar c g
+     , Applicative (g (LibraryWith mod))
+     , Applicative (g (BuildInfoWith mod))
+     , L.HasBuildInfoWith mod (BuildInfoWith mod)
      , c (Identity LibraryVisibility)
      , c (List CommaFSep (Identity ExeDependency) ExeDependency)
      , c (List CommaFSep (Identity LegacyExeDependency) LegacyExeDependency)
      , c (List CommaFSep (Identity PkgconfigDependency) PkgconfigDependency)
-     , c (List CommaVCat (Identity Dependency) Dependency)
+     , c (List CommaVCat (Identity (DependencyWith mod)) (DependencyWith mod))
      , c (List CommaVCat (Identity Mixin) Mixin)
      , c (List CommaVCat (Identity ModuleReexport) ModuleReexport)
      , c (List FSep (MQuoted Extension) Extension)
@@ -192,7 +194,7 @@ libraryFieldGrammar
      , c (MQuoted Language)
      )
   => LibraryName
-  -> g Library Library
+  -> g (LibraryWith mod) (LibraryWith mod)
 libraryFieldGrammar n =
   Library n
     <$> monoidalFieldAla "exposed-modules" formatExposedModules L.exposedModules
@@ -210,8 +212,8 @@ libraryFieldGrammar n =
       LSubLibName _ ->
         optionalFieldDef "visibility" L.libVisibility LibraryVisibilityPrivate
           ^^^ availableSince CabalSpecV3_0 LibraryVisibilityPrivate
-{-# SPECIALIZE libraryFieldGrammar :: LibraryName -> ParsecFieldGrammar' Library #-}
-{-# SPECIALIZE libraryFieldGrammar :: LibraryName -> PrettyFieldGrammar' Library #-}
+{-# SPECIALIZE libraryFieldGrammar :: LibraryName -> ParsecFieldGrammar' LibraryAnn #-}
+{-# SPECIALIZE libraryFieldGrammar :: LibraryName -> PrettyFieldGrammar' LibraryAnn #-}
 
 -------------------------------------------------------------------------------
 -- Foreign library
@@ -928,7 +930,7 @@ _syntaxFieldNames =
           sort $
             mconcat
               [ fieldGrammarKnownFieldList packageDescriptionFieldGrammar
-              , fieldGrammarKnownFieldList $ libraryFieldGrammar LMainLibName
+              , fieldGrammarKnownFieldList $ (libraryFieldGrammar @Mod.Bare) LMainLibName
               , fieldGrammarKnownFieldList $ executableFieldGrammar "exe"
               , fieldGrammarKnownFieldList $ foreignLibFieldGrammar "flib"
               , fieldGrammarKnownFieldList testSuiteFieldGrammar
