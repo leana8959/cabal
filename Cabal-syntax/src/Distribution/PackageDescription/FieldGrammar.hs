@@ -1,12 +1,12 @@
 {-# LANGUAGE ConstraintKinds #-}
-{-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuantifiedConstraints #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications #-}
 
 -- | 'GenericPackageDescription' Field descriptions
 module Distribution.PackageDescription.FieldGrammar
@@ -716,9 +716,11 @@ hsSourceDirsGrammar =
 
 optionsFieldGrammar
   :: forall mod c g
-  . ( FieldGrammar c g, Applicative (g (BuildInfoWith mod)), c (List NoCommaFSep Token' String)
-    , L.HasBuildInfoWith mod (BuildInfoWith mod)
-    )
+   . ( FieldGrammar c g
+     , Applicative (g (BuildInfoWith mod))
+     , c (List NoCommaFSep Token' String)
+     , L.HasBuildInfoWith mod (BuildInfoWith mod)
+     )
   => g (BuildInfoWith mod) (PerCompilerFlavor [String])
 optionsFieldGrammar =
   PerCompilerFlavor
@@ -737,7 +739,9 @@ optionsFieldGrammar =
 
 profOptionsFieldGrammar
   :: forall mod c g
-   . ( FieldGrammar c g, Applicative (g (BuildInfoWith mod)), c (List NoCommaFSep Token' String)
+   . ( FieldGrammar c g
+     , Applicative (g (BuildInfoWith mod))
+     , c (List NoCommaFSep Token' String)
      , L.HasBuildInfoWith mod (BuildInfoWith mod)
      )
   => g (BuildInfoWith mod) (PerCompilerFlavor [String])
@@ -752,7 +756,9 @@ profOptionsFieldGrammar =
 
 sharedOptionsFieldGrammar
   :: forall mod c g
-   . ( FieldGrammar c g, Applicative (g (BuildInfoWith mod)), c (List NoCommaFSep Token' String)
+   . ( FieldGrammar c g
+     , Applicative (g (BuildInfoWith mod))
+     , c (List NoCommaFSep Token' String)
      , L.HasBuildInfoWith mod (BuildInfoWith mod)
      )
   => g (BuildInfoWith mod) (PerCompilerFlavor [String])
@@ -765,7 +771,9 @@ sharedOptionsFieldGrammar =
 
 profSharedOptionsFieldGrammar
   :: forall mod c g
-   . ( FieldGrammar c g, Applicative (g (BuildInfoWith mod)), c (List NoCommaFSep Token' String)
+   . ( FieldGrammar c g
+     , Applicative (g (BuildInfoWith mod))
+     , c (List NoCommaFSep Token' String)
      , L.HasBuildInfoWith mod (BuildInfoWith mod)
      )
   => g (BuildInfoWith mod) (PerCompilerFlavor [String])
