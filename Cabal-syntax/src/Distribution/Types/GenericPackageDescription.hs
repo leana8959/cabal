@@ -16,6 +16,7 @@
 
 module Distribution.Types.GenericPackageDescription
   ( GenericPackageDescription
+  , GenericPackageDescriptionAnn
   , GenericPackageDescriptionWith (..)
   , emptyGenericPackageDescription
   ) where
@@ -51,6 +52,7 @@ import qualified Distribution.Types.Modify as Mod
 -- The 'GenericPackageDescription' type
 
 type GenericPackageDescription = GenericPackageDescriptionWith Mod.Bare
+type GenericPackageDescriptionAnn = GenericPackageDescriptionWith Mod.Ann
 
 data GenericPackageDescriptionWith (m :: Type) = GenericPackageDescription
   { packageDescription :: PackageDescription
