@@ -30,6 +30,10 @@ module Distribution.PackageDescription.Parsec
 
     -- ** Supplementary build information
   , parseHookedBuildInfo
+
+    -- * Pre-processing utilities
+  , sectionizeFields
+  , takeFields
   ) where
 
 import Distribution.Compat.Prelude

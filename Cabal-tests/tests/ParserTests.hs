@@ -1,4 +1,8 @@
 {-# LANGUAGE CPP #-}
+{-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications #-}
+
 module Main
     ( main
     ) where
@@ -13,6 +17,7 @@ import Test.Tasty.HUnit
 import Control.Monad                               (void)
 import Data.Algorithm.Diff                         (PolyDiff (..), getGroupedDiff)
 import Data.Maybe                                  (isNothing)
+import Distribution.CabalSpecVersion
 import Distribution.Fields                         (pwarning)
 import Distribution.PackageDescription
   ( GenericPackageDescription
@@ -26,17 +31,26 @@ import Distribution.PackageDescription
   , condTestSuites
   , condBenchmarks
   )
-import Distribution.PackageDescription.Parsec      (parseGenericPackageDescription)
+import Distribution.PackageDescription.FieldGrammar(buildInfoFieldGrammar)
+import Distribution.PackageDescription.Parsec      (parseGenericPackageDescription, sectionizeFields, takeFields)
 import Distribution.PackageDescription.PrettyPrint (showGenericPackageDescription)
-import Distribution.Parsec                         (PWarnType (..), PWarning (..), showPErrorWithSource, showPWarningWithSource)
-import Distribution.Pretty                         (prettyShow)
+import Distribution.Parsec                         (Parsec (..), explicitEitherParsec', PWarnType (..), PWarning (..), showPErrorWithSource, showPWarningWithSource)
+import Distribution.Pretty                         (Pretty (..), prettyShow)
+import Distribution.Fields.Parser                  (readFields')
 import Distribution.Fields.ParseResult
+import Distribution.FieldGrammar.Parsec            (ParsecFieldGrammar, parseFieldGrammar)
+import Distribution.FieldGrammar.Pretty            (prettyFieldGrammar)
 import Distribution.Utils.Generic                  (fromUTF8BS, toUTF8BS)
+import qualified Distribution.Types.Modify as Mod
 import System.Directory                            (setCurrentDirectory)
 import System.Environment                          (getArgs, withArgs)
 import System.FilePath                             (replaceExtension, (</>))
 import Distribution.Parsec.Source
 
+import Distribution.Types.Dependency (DependencyAnn)
+
+import Data.Functor ((<&>))
+import Control.Monad (unless)
 import qualified Data.ByteString       as BS
 import qualified Data.ByteString.Char8 as BS8
 import qualified Data.List.NonEmpty    as NE
@@ -45,6 +59,7 @@ import qualified Distribution.InstalledPackageInfo as IPI
 
 #ifdef MIN_VERSION_tree_diff
 import Data.TreeDiff                 (ansiWlEditExpr, ediff, toExpr)
+import Data.TreeDiff.Class           (ToExpr)
 import Data.TreeDiff.Golden          (ediffGolden)
 import Data.TreeDiff.Instances.Cabal ()
 #endif
@@ -55,6 +70,7 @@ tests = testGroup "parsec tests"
     , warningTests
     , errorTests
     , ipiTests
+    , parsecPrettyTests
     ]
 
 -------------------------------------------------------------------------------
@@ -162,6 +178,54 @@ errorTest fp = cabalGoldenTest fp correct $ do
     correct = replaceExtension input "errors"
 
 -------------------------------------------------------------------------------
+-- Parsec/Pretty roundtrip test
+-------------------------------------------------------------------------------
+
+forCabalVersions :: CabalSpecVersion -> CabalSpecVersion -> (CabalSpecVersion -> [TestTree]) -> [TestTree]
+forCabalVersions start end tests = [ start .. end ] <&> \specVer -> testGroup (show specVer) (tests specVer)
+
+parsecPrettyTests :: TestTree
+parsecPrettyTests = testGroup "parsec pretty roundtrip" $
+  ( forCabalVersions CabalSpecV2_0 cabalSpecLatest $ \specVer ->
+      [ parsecPrettyTest @DependencyAnn specVer "Dependency" "text   ^>=   1"
+      ]
+  )
+  ++
+  ( forCabalVersions CabalSpecV2_0 cabalSpecLatest $ \specVer ->
+      [ parsecPrettyTest @DependencyAnn specVer "Dependency" "text  ==  1"
+      ]
+  )
+
+ -- TODO(leana8959): due to how things should compose, we test list parser instances independently :)
+
+parsecPrettyTest :: forall a. (Parsec a, Pretty a) => CabalSpecVersion -> String -> String -> TestTree
+parsecPrettyTest specVer testName input = testCase testName $ do
+    parsed <- case explicitEitherParsec' specVer parsec input of
+      Left err -> fail $ unlines $ "ERROR" : show err : []
+      Right ok -> pure $ ok
+
+    -- TODO(leana8959): should we handle different layout configurations?
+    let reprinted = show (pretty @a parsed)
+
+{- FOURMOLU_DISABLE -}
+    unless (input == reprinted) $
+#ifdef MIN_VERSION_tree_diff
+        assertFailure $ unlines
+            [ "re-parsed doesn't match"
+            , show $ ansiWlEditExpr $ ediff input reprinted
+            ]
+#else
+        assertFailure $ unlines
+            [ "re-printed doesn't match"
+            , "expected"
+            , show input
+            , "actual"
+            , show reprinted
+            ]
+#endif
+{- FOURMOLU_ENABLE -}
+
+-------------------------------------------------------------------------------
 -- Regressions
 -------------------------------------------------------------------------------
 
@@ -217,7 +281,7 @@ regressionTest fp = testGroup fp
     [ formatGoldenTest fp
     , formatRoundTripTest fp
 #ifdef MIN_VERSION_tree_diff
-    , treeDiffGoldenTest fp
+    , mkTreeDiffGoldenTest "regressions" fp
 #endif
     ]
 {- FOURMOLU_ENABLE -}
@@ -242,8 +306,8 @@ formatGoldenTest fp = cabalGoldenTest "format" correct $ do
     correct = replaceExtension input "format"
 
 #ifdef MIN_VERSION_tree_diff
-treeDiffGoldenTest :: FilePath -> TestTree
-treeDiffGoldenTest fp = ediffGolden goldenTest "expr" exprFile $ do
+mkTreeDiffGoldenTest :: FilePath -> FilePath -> TestTree
+mkTreeDiffGoldenTest goldenFileDir fp = ediffGolden goldenTest "expr" exprFile $ do
   contents <- BS.readFile input
   let res = withSource (PCabalFile (fp, contents)) $ parseGenericPackageDescription contents
   let (_, x) = runParseResult res
@@ -251,7 +315,7 @@ treeDiffGoldenTest fp = ediffGolden goldenTest "expr" exprFile $ do
       Right gpd -> pure (toExpr gpd)
       Left (_, errs) -> fail $ unlines $ "ERROR" : map (showPErrorWithSource . fmap renderCabalFileSource) (NE.toList errs)
   where
-    input = "tests" </> "ParserTests" </> "regressions" </> fp
+    input = "tests" </> "ParserTests" </> goldenFileDir </> fp
     exprFile = replaceExtension input "expr"
 #endif
 
