@@ -106,6 +106,8 @@ data FSepAnn = FSepAnn
 -- | Paragraph fill list without commas. Displayed with 'fsep'.
 data NoCommaFSep = NoCommaFSep
 
+data NoCommaFSepAnn = NoCommaFSepAnn
+
 type family Modify (mod :: Type) (a :: Type) where
   Modify Mod.Bare a = a
   Modify Mod.Ann a = Ann a
@@ -203,6 +205,17 @@ instance Sep Mod.Bare NoCommaFSep where
   prettySep _ = fsep
   parseSep _ p = many (p <* P.spaces)
   parseSepNE _ p = NE.some1 (p <* P.spaces)
+
+instance Sep Mod.Ann NoCommaFSepAnn where
+  prettySep _ = mconcat . map (\(Ann t doc) -> applyTriviaDoc t doc)
+  parseSep _ p = many $ do
+    x <- p
+    post <- P.spaces'
+    pure (Ann (HasTrivia mempty post) x)
+  parseSepNE _ p = NE.some1 $ do
+    x <- p
+    post <- P.spaces'
+    pure (Ann (HasTrivia mempty post) x)
 
 -- | List separated with optional commas. Displayed with @sep@, arguments of
 -- type @a@ are parsed and pretty-printed as @b@.
