@@ -1,4 +1,5 @@
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FunctionalDependencies #-}
@@ -21,6 +22,14 @@ module Distribution.FieldGrammar.Newtypes
   , VCat (..)
   , FSep (..)
   , NoCommaFSep (..)
+
+  , CommaVCatAnn (..)
+  , CommaFSepAnn (..)
+  , VCatAnn (..)
+  , FSepAnn (..)
+  , NoCommaFSepAnn (..)
+
+  -- ** Separator class
   , Sep (..)
 
     -- ** Type
@@ -219,7 +228,10 @@ instance Sep Mod.Ann NoCommaFSepAnn where
 
 -- | List separated with optional commas. Displayed with @sep@, arguments of
 -- type @a@ are parsed and pretty-printed as @b@.
-newtype List sep b a = List {_getList :: [a]}
+newtype ListWith mod sep b a = List {_getList :: [Modify mod a]}
+
+type List = ListWith Mod.Bare
+type ListAnn = ListWith Mod.Ann
 
 -- | 'alaList' and 'alaList'' are simply 'List', with additional phantom
 -- arguments to constrain the resulting type
@@ -237,9 +249,13 @@ alaList' :: sep -> (a -> b) -> [a] -> List sep b a
 alaList' _ _ = List
 
 instance Newtype [a] (List sep wrapper a)
+instance Newtype [Ann a] (ListAnn sep wrapper a)
 
 instance (Newtype a b, Sep Mod.Bare sep, Parsec b) => Parsec (List sep b a) where
   parsec = pack . map (unpack :: b -> a) <$> parseSep (Proxy :: Proxy sep) parsec
+
+instance (Newtype a b, Sep Mod.Ann sep, Parsec b) => Parsec (ListAnn sep b a) where
+  parsec = pack . (map . fmap) (unpack :: b -> a) <$> parseSep (Proxy :: Proxy sep) parsec
 
 instance (Newtype a b, Sep Mod.Bare sep, Pretty b) => Pretty (List sep b a) where
   pretty = prettySep (Proxy :: Proxy sep) . map (pretty . (pack :: a -> b)) . unpack
