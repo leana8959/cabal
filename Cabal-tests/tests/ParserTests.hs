@@ -184,8 +184,14 @@ parsecPrettyTests :: TestTree
 parsecPrettyTests = testGroup "parsec pretty roundtrip" $
   [ CabalSpecV1_0 .. ] <&> \specVer -> testGroup (show specVer) $
     optionals (specVer >= CabalSpecV2_0)
-      [ parsecPrettyTest @DependencyAnn specVer "Dependency" "text   ^>=   1"
-      , parsecPrettyTest @DependencyAnn specVer "Dependency" "text  ==  1"
+      [ parsecPrettyTest @DependencyAnn specVer "Dependency" "text   == 1"
+      , parsecPrettyTest @DependencyAnn specVer "Dependency" "text >   1"
+      , parsecPrettyTest @DependencyAnn specVer "Dependency" "text >=   1"
+      , parsecPrettyTest @DependencyAnn specVer "Dependency" "text<   1"
+      , parsecPrettyTest @DependencyAnn specVer "Dependency" "text  <=  1"
+      , parsecPrettyTest @DependencyAnn specVer "Dependency" "text ^>=   1"
+      , parsecPrettyTest @DependencyAnn specVer "Dependency" "text ^>=   1 ||    >  2"
+      , parsecPrettyTest @DependencyAnn specVer "Dependency" "text (^>=   1 ||    >  2) && == 3"
       ]
   where
     optionals cond ifTrue = if cond then ifTrue else []
