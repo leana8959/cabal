@@ -1,5 +1,4 @@
 {-# LANGUAGE DataKinds #-}
-{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FunctionalDependencies #-}
@@ -8,6 +7,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
 
 -- | This module provides @newtype@ wrappers to be used with "Distribution.FieldGrammar".
@@ -22,18 +22,19 @@ module Distribution.FieldGrammar.Newtypes
   , VCat (..)
   , FSep (..)
   , NoCommaFSep (..)
-
   , CommaVCatAnn (..)
   , CommaFSepAnn (..)
   , VCatAnn (..)
   , FSepAnn (..)
   , NoCommaFSepAnn (..)
 
-  -- ** Separator class
+    -- ** Separator class
   , Sep (..)
 
     -- ** Type
   , List
+  , ListAnn
+  , ListWith
 
     -- ** Set
   , alaSet
