@@ -85,14 +85,17 @@ import qualified Distribution.SPDX as SPDX
 
 -- | Vertical list with commas. Displayed with 'vcat'
 data CommaVCat = CommaVCat
+
 data CommaVCatAnn = CommaVCatAnn
 
 -- | Paragraph fill list with commas. Displayed with 'fsep'
 data CommaFSep = CommaFSep
+
 data CommaFSepAnn = CommaFSepAnn
 
 -- | Vertical list with optional commas. Displayed with 'vcat'.
 data VCat = VCat
+
 data VCatAnn = VCatAnn
 
 -- | Paragraph fill list with optional commas. Displayed with 'fsep'.
