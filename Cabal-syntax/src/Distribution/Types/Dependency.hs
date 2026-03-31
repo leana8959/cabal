@@ -21,13 +21,14 @@ module Distribution.Types.Dependency
   ) where
 
 import Distribution.Compat.Prelude
+import Distribution.Utils.ShortText
 import Prelude ()
 
 import Distribution.Types.VersionRange (isAnyVersionLight, unAnnVersionRange)
 import Distribution.Version (VersionRange, VersionRangeAnn, VersionRangeWith (..), anyVersionAnn, simplifyVersionRange)
 
 import Distribution.CabalSpecVersion
-import Distribution.Compat.CharParsing (char, spaces)
+import Distribution.Compat.CharParsing (char, spaces, spaces')
 import Distribution.Compat.Parsing (between, option)
 import Distribution.Parsec
 import Distribution.Pretty
@@ -104,11 +105,12 @@ mkDependency pn vr lb = Dependency pn vr (NES.map conv lb)
       | ln == pn' = LMainLibName
       | otherwise = l
 
--- TODO(leana8959): a way to not duplicate smart constructor
 mkDependencyAnn :: PackageNameAnn -> VersionRangeAnn -> NonEmptySet LibraryName -> DependencyWith Mod.Ann
 mkDependencyAnn pn vr lb = Dependency pn vr (NES.map conv lb)
   where
     pn' = packageNameToUnqualComponentNameWith pn
+
+    -- TODO(leana8959): lossy?
     conv l@LMainLibName = l
     conv l@(LSubLibName ln)
       | ln == unAnn pn' = LMainLibName
@@ -141,8 +143,7 @@ instance Pretty Dependency where
 
 -- TODO(leana8959): implement packagename part
 instance Pretty DependencyAnn where
-  pretty (Dependency (PackageName name) ver sublibs) =
-    prettyLibraryNames (PackageName (unAnn name) :: PackageName) (NES.toNonEmpty sublibs) <+> pretty ver
+  pretty dep@(Dependency name ver sublibs) = prettyLibraryNames name (NES.toNonEmpty sublibs) <> pretty ver
 
 -- |
 --
@@ -178,19 +179,20 @@ instance Pretty DependencyAnn where
 instance Parsec Dependency where
   parsec = unannotateDependencyAnn <$> parsec
 
--- TODO(leana8959): proof of concept
 instance Parsec (DependencyAnn) where
   parsec = do
-    name <- parsec
+    (pname :: PackageNameAnn, libraries) <- do
+      name <- unPackageNameST <$> parsec
+      libs <- option mainLibSet $ do
+        _ <- char ':'
+        versionGuardMultilibs
+        NES.singleton <$> parseLib <|> parseMultipleLibs
 
-    libs <- option mainLibSet $ do
-      _ <- char ':'
-      versionGuardMultilibs
-      NES.singleton <$> parseLib <|> parseMultipleLibs
+      postSpaces <- spaces' -- https://github.com/haskell/cabal/issues/5846
+      pure (PackageName $ Ann (HasTrivia mempty postSpaces) name, libs)
 
-    spaces -- https://github.com/haskell/cabal/issues/5846
-    ver :: VersionRangeAnn <- parsec <|> pure anyVersionAnn
-    return $ mkDependencyAnn name ver libs
+    ver <- parsec <|> pure anyVersionAnn
+    return $ mkDependencyAnn pname ver libraries
     where
       parseLib = LSubLibName <$> parsec
       parseMultipleLibs =

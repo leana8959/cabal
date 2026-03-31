@@ -103,13 +103,14 @@ instance Structured PackageName
 instance Pretty PackageName where
   pretty = Disp.text . unPackageName
 
+instance Pretty PackageNameAnn where
+  pretty (PackageName (Ann t x)) = applyTriviaDoc t $ Disp.text $ fromShortText x
+
 instance Parsec PackageName where
   parsec = mkPackageName <$> parsecUnqualComponentName
 
 instance Parsec (PackageNameWith Mod.Ann) where
-  parsec =
-    PackageName . Ann (ExactRepresentation "packagename trivia") . toShortText
-      <$> parsecUnqualComponentName
+  parsec = PackageName . Ann mempty . toShortText <$> parsecUnqualComponentName
 
 instance NFData PackageName where
   rnf (PackageName pkg) = rnf pkg
