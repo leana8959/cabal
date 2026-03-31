@@ -1,5 +1,7 @@
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -72,7 +74,10 @@ import Distribution.Version
   , versionNumbers
   )
 import Text.PrettyPrint (Doc, comma, fsep, punctuate, text, vcat)
+import Distribution.Trivia
+import qualified Distribution.Types.Modify as Mod
 
+import Data.Kind (Type)
 import qualified Data.List.NonEmpty as NE
 import qualified Data.Set as Set
 import qualified Distribution.Compat.CharParsing as P
@@ -80,6 +85,7 @@ import qualified Distribution.SPDX as SPDX
 
 -- | Vertical list with commas. Displayed with 'vcat'
 data CommaVCat = CommaVCat
+data CommaVCatAnn = CommaVCatAnn
 
 -- | Paragraph fill list with commas. Displayed with 'fsep'
 data CommaFSep = CommaFSep
@@ -93,13 +99,29 @@ data FSep = FSep
 -- | Paragraph fill list without commas. Displayed with 'fsep'.
 data NoCommaFSep = NoCommaFSep
 
+type family Modify (mod :: Type) (a :: Type) where
+  Modify Mod.Bare a = a
+  Modify Mod.Ann a = Ann a
+
+class Sep mod sep | sep -> mod where
+  prettySep :: Proxy sep -> [(Modify mod Doc)] -> Doc
+
+  parseSep :: CabalParsing m => Proxy sep -> m a -> m [(Modify mod a)]
+  parseSepNE :: CabalParsing m => Proxy sep -> m a -> m (NonEmpty (Modify mod a))
+
+{- TODO(leana8959): implement trivia for combinators
+
+-- prototype for "ExactSep"
+-- we annotate each element with Ann
 class Sep sep where
-  prettySep :: Proxy sep -> [Doc] -> Doc
+  prettySep :: Proxy sep -> [Ann Doc] -> Doc
 
-  parseSep :: CabalParsing m => Proxy sep -> m a -> m [a]
-  parseSepNE :: CabalParsing m => Proxy sep -> m a -> m (NonEmpty a)
+  parseSep :: CabalParsing m => Proxy sep -> m a -> m [Ann a]
+  parseSepNE :: CabalParsing m => Proxy sep -> m a -> m (NonEmpty (Ann a))
 
-instance Sep CommaVCat where
+-}
+
+instance Sep Mod.Bare CommaVCat where
   prettySep _ = vcat . punctuate comma
   parseSep _ p = do
     v <- askCabalSpecVersion
@@ -107,7 +129,18 @@ instance Sep CommaVCat where
   parseSepNE _ p = do
     v <- askCabalSpecVersion
     if v >= CabalSpecV2_2 then parsecLeadingCommaNonEmpty p else parsecCommaNonEmpty p
-instance Sep CommaFSep where
+
+-- instance Sep CommaVCatAnn where
+--   prettySep _ = vcat . punctuate comma
+--   parseSep _ p = do
+--     v <- askCabalSpecVersion
+--     if v >= CabalSpecV2_2 then parsecLeadingCommaList p else parsecCommaList p
+--   parseSepNE _ p = do
+--     v <- askCabalSpecVersion
+--     if v >= CabalSpecV2_2 then parsecLeadingCommaNonEmpty p else parsecCommaNonEmpty p
+
+
+instance Sep Mod.Bare CommaFSep where
   prettySep _ = fsep . punctuate comma
   parseSep _ p = do
     v <- askCabalSpecVersion
@@ -115,19 +148,19 @@ instance Sep CommaFSep where
   parseSepNE _ p = do
     v <- askCabalSpecVersion
     if v >= CabalSpecV2_2 then parsecLeadingCommaNonEmpty p else parsecCommaNonEmpty p
-instance Sep VCat where
+instance Sep Mod.Bare VCat where
   prettySep _ = vcat
   parseSep _ p = do
     v <- askCabalSpecVersion
     if v >= CabalSpecV3_0 then parsecLeadingOptCommaList p else parsecOptCommaList p
   parseSepNE _ p = NE.some1 (p <* P.spaces)
-instance Sep FSep where
+instance Sep Mod.Bare FSep where
   prettySep _ = fsep
   parseSep _ p = do
     v <- askCabalSpecVersion
     if v >= CabalSpecV3_0 then parsecLeadingOptCommaList p else parsecOptCommaList p
   parseSepNE _ p = NE.some1 (p <* P.spaces)
-instance Sep NoCommaFSep where
+instance Sep Mod.Bare NoCommaFSep where
   prettySep _ = fsep
   parseSep _ p = many (p <* P.spaces)
   parseSepNE _ p = NE.some1 (p <* P.spaces)
@@ -153,10 +186,10 @@ alaList' _ _ = List
 
 instance Newtype [a] (List sep wrapper a)
 
-instance (Newtype a b, Sep sep, Parsec b) => Parsec (List sep b a) where
+instance (Newtype a b, Sep Mod.Bare sep, Parsec b) => Parsec (List sep b a) where
   parsec = pack . map (unpack :: b -> a) <$> parseSep (Proxy :: Proxy sep) parsec
 
-instance (Newtype a b, Sep sep, Pretty b) => Pretty (List sep b a) where
+instance (Newtype a b, Sep Mod.Bare sep, Pretty b) => Pretty (List sep b a) where
   pretty = prettySep (Proxy :: Proxy sep) . map (pretty . (pack :: a -> b)) . unpack
 
 --
@@ -190,10 +223,10 @@ alaSet' _ _ = Set'
 
 instance Newtype (Set a) (Set' sep wrapper a)
 
-instance (Newtype a b, Ord a, Sep sep, Parsec b) => Parsec (Set' sep b a) where
+instance (Newtype a b, Ord a, Sep Mod.Bare sep, Parsec b) => Parsec (Set' sep b a) where
   parsec = pack . Set.fromList . map (unpack :: b -> a) <$> parseSep (Proxy :: Proxy sep) parsec
 
-instance (Newtype a b, Sep sep, Pretty b) => Pretty (Set' sep b a) where
+instance (Newtype a b, Sep Mod.Bare sep, Pretty b) => Pretty (Set' sep b a) where
   pretty = prettySep (Proxy :: Proxy sep) . map (pretty . (pack :: a -> b)) . Set.toList . unpack
 
 --
@@ -224,10 +257,10 @@ alaNonEmpty' _ _ = NonEmpty'
 
 instance Newtype (NonEmpty a) (NonEmpty' sep wrapper a)
 
-instance (Newtype a b, Sep sep, Parsec b) => Parsec (NonEmpty' sep b a) where
+instance (Newtype a b, Sep Mod.Bare sep, Parsec b) => Parsec (NonEmpty' sep b a) where
   parsec = pack . fmap (unpack :: b -> a) <$> parseSepNE (Proxy :: Proxy sep) parsec
 
-instance (Newtype a b, Sep sep, Pretty b) => Pretty (NonEmpty' sep b a) where
+instance (Newtype a b, Sep Mod.Bare sep, Pretty b) => Pretty (NonEmpty' sep b a) where
   pretty = prettySep (Proxy :: Proxy sep) . map (pretty . (pack :: a -> b)) . NE.toList . unpack
 
 -------------------------------------------------------------------------------
