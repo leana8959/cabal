@@ -180,21 +180,15 @@ errorTest fp = cabalGoldenTest fp correct $ do
 -------------------------------------------------------------------------------
 -- Parsec/Pretty roundtrip test
 -------------------------------------------------------------------------------
-
-forCabalVersions :: CabalSpecVersion -> CabalSpecVersion -> (CabalSpecVersion -> [TestTree]) -> [TestTree]
-forCabalVersions start end tests = [ start .. end ] <&> \specVer -> testGroup (show specVer) (tests specVer)
-
 parsecPrettyTests :: TestTree
 parsecPrettyTests = testGroup "parsec pretty roundtrip" $
-  ( forCabalVersions CabalSpecV2_0 cabalSpecLatest $ \specVer ->
+  [ CabalSpecV1_0 .. ] <&> \specVer -> testGroup (show specVer) $
+    optionals (specVer >= CabalSpecV2_0)
       [ parsecPrettyTest @DependencyAnn specVer "Dependency" "text   ^>=   1"
+      , parsecPrettyTest @DependencyAnn specVer "Dependency" "text  ==  1"
       ]
-  )
-  ++
-  ( forCabalVersions CabalSpecV2_0 cabalSpecLatest $ \specVer ->
-      [ parsecPrettyTest @DependencyAnn specVer "Dependency" "text  ==  1"
-      ]
-  )
+  where
+    optionals cond ifTrue = if cond then ifTrue else []
 
  -- TODO(leana8959): due to how things should compose, we test list parser instances independently :)
 
