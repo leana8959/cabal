@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveFunctor         #-}
+{-# LANGUAGE TypeApplications      #-}
 {-# LANGUAGE DeriveGeneric         #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 module Main (main) where
@@ -31,6 +32,7 @@ import Distribution.Utils.GrammarRegex
 import Distribution.ModuleName         (ModuleName)
 import Distribution.Types.Version      (Version)
 import Distribution.Types.VersionRange (VersionRange)
+import qualified Distribution.Types.Modify as Mod
 
 -------------------------------------------------------------------------------
 -- Main
@@ -44,9 +46,9 @@ main = do
             -- TODO: getArgs
             run <- Z.parseAndCompileTemplateIO tmpl
             contents <- run $ Z
-                { zBuildInfoFields          = fromReference buildInfoFieldGrammar
+                { zBuildInfoFields          = fromReference (buildInfoFieldGrammar @Mod.Bare)
                 , zPackageDescriptionFields = fromReference packageDescriptionFieldGrammar
-                , zTestSuiteFields          = fromReference $ testSuiteFieldGrammar // buildInfoFieldGrammar
+                , zTestSuiteFields          = fromReference $ testSuiteFieldGrammar // (buildInfoFieldGrammar @Mod.Bare)
                 , zProductions              =
                     [ zproduction "hs-string"       reHsString
                         "String as in Haskell; it's recommended to avoid using Haskell-specific escapes."

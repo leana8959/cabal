@@ -1,4 +1,5 @@
 {-# LANGUAGE FlexibleInstances   #-}
+{-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 module Distribution.Described (
@@ -56,6 +57,7 @@ import Test.Tasty.QuickCheck (testProperty)
 import Data.Semigroup                (Semigroup (..))
 import Distribution.Parsec           (Parsec, eitherParsec)
 import Distribution.Pretty           (Pretty, prettyShow)
+import qualified Distribution.Types.Modify as Mod
 
 import qualified Distribution.Utils.CharSet as CS
 import qualified RERE                       as RE
@@ -546,7 +548,7 @@ instance Described UnqualComponentName where
 -- Instances: Newtypes
 -------------------------------------------------------------------------------
 
-class Sep sep => DescribeSep sep where
+class Sep Mod.Bare sep => DescribeSep sep where
     describeSep :: Proxy sep -> GrammarRegex a -> GrammarRegex a
 
 instance DescribeSep CommaVCat   where describeSep _ = reCommaList
