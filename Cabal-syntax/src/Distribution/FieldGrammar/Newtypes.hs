@@ -85,11 +85,11 @@ import qualified Distribution.SPDX as SPDX
 
 -- | Vertical list with commas. Displayed with 'vcat'
 data CommaVCat = CommaVCat
-
 data CommaVCatAnn = CommaVCatAnn
 
 -- | Paragraph fill list with commas. Displayed with 'fsep'
 data CommaFSep = CommaFSep
+data CommaFSepAnn = CommaFSepAnn
 
 -- | Vertical list with optional commas. Displayed with 'vcat'.
 data VCat = VCat
@@ -139,6 +139,18 @@ instance Sep Mod.Bare CommaFSep where
   parseSepNE _ p = do
     v <- askCabalSpecVersion
     if v >= CabalSpecV2_2 then parsecLeadingCommaNonEmpty p else parsecCommaNonEmpty p
+
+instance Sep Mod.Ann CommaFSepAnn where
+  prettySep _ = mconcat . map (\(Ann t doc) -> applyTriviaDoc t doc)
+  parseSep _ p = do
+    v <- askCabalSpecVersion
+    let p' = Ann mempty <$> p
+    if v >= CabalSpecV2_2 then parsecLeadingCommaListAnn p' else parsecCommaListAnn p'
+  parseSepNE _ p = do
+    v <- askCabalSpecVersion
+    let p' = Ann mempty <$> p
+    if v >= CabalSpecV2_2 then parsecLeadingCommaNonEmptyAnn p' else parsecCommaNonEmptyAnn p'
+
 instance Sep Mod.Bare VCat where
   prettySep _ = vcat
   parseSep _ p = do
