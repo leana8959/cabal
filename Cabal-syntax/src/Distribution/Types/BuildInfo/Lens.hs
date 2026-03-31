@@ -15,8 +15,8 @@ module Distribution.Types.BuildInfo.Lens
   , HasBuildInfo
   , HasBuildInfoAnn
   , HasBuildInfoWith (..)
-  , HasBuildInfos (..)
-  , HasBuildInfosAnn (..)
+  , HasBuildInfos
+  , HasBuildInfosAnn
   , HasBuildInfosWith (..)
   ) where
 
@@ -27,7 +27,7 @@ import Prelude ()
 import Distribution.Compiler (PerCompilerFlavor)
 import Distribution.ModuleName (ModuleName)
 import Distribution.Types.BuildInfo (BuildInfo, BuildInfoWith)
-import Distribution.Types.Dependency (Dependency, DependencyWith)
+import Distribution.Types.Dependency (DependencyWith)
 import Distribution.Types.ExeDependency (ExeDependency)
 import Distribution.Types.LegacyExeDependency (LegacyExeDependency)
 import Distribution.Types.Mixin (Mixin)
@@ -35,7 +35,6 @@ import Distribution.Types.PkgconfigDependency (PkgconfigDependency)
 import Distribution.Utils.Path
 import Language.Haskell.Extension (Extension, Language)
 
-import Data.Kind
 import qualified Distribution.Types.BuildInfo as T
 import qualified Distribution.Types.Modify as Mod
 

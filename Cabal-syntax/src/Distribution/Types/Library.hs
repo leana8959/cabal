@@ -18,7 +18,6 @@ import Distribution.Compat.Prelude
 import Prelude ()
 
 import Distribution.ModuleName
-import Distribution.Trivia
 import Distribution.Types.BuildInfo
 import Distribution.Types.LibraryName
 import Distribution.Types.LibraryVisibility

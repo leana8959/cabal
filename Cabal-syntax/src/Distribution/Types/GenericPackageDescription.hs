@@ -31,9 +31,7 @@ import qualified Distribution.Types.BuildInfo.Lens as L
 import Distribution.Types.PackageDescription
 
 import Distribution.Package
-import Distribution.Trivia
 import Distribution.Types.Benchmark
-import Distribution.Types.BuildInfo
 import Distribution.Types.CondTree
 import Distribution.Types.ConfVar
 import Distribution.Types.Executable
@@ -44,7 +42,6 @@ import Distribution.Types.TestSuite
 import Distribution.Types.UnqualComponentName
 import Distribution.Version
 
-import Control.Exception
 import Data.Kind
 import qualified Distribution.Types.Modify as Mod
 

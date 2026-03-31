@@ -8,7 +8,7 @@ import Distribution.Compat.Prelude
 import Prelude ()
 
 import Distribution.ModuleName (ModuleName)
-import Distribution.Types.BuildInfo (BuildInfo, BuildInfoWith)
+import Distribution.Types.BuildInfo (BuildInfoWith)
 import Distribution.Types.Library (Library, LibraryWith)
 import Distribution.Types.LibraryName (LibraryName)
 import Distribution.Types.LibraryVisibility (LibraryVisibility)
