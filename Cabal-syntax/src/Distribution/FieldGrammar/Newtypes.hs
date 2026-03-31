@@ -103,23 +103,12 @@ type family Modify (mod :: Type) (a :: Type) where
   Modify Mod.Bare a = a
   Modify Mod.Ann a = Ann a
 
+-- TODO(leana8959): implement trivia for combinators
 class Sep mod sep | sep -> mod where
-  prettySep :: Proxy sep -> [(Modify mod Doc)] -> Doc
+  prettySep :: Proxy sep -> [Modify mod Doc] -> Doc
 
-  parseSep :: CabalParsing m => Proxy sep -> m a -> m [(Modify mod a)]
+  parseSep :: CabalParsing m => Proxy sep -> m a -> m [Modify mod a]
   parseSepNE :: CabalParsing m => Proxy sep -> m a -> m (NonEmpty (Modify mod a))
-
-{- TODO(leana8959): implement trivia for combinators
-
--- prototype for "ExactSep"
--- we annotate each element with Ann
-class Sep sep where
-  prettySep :: Proxy sep -> [Ann Doc] -> Doc
-
-  parseSep :: CabalParsing m => Proxy sep -> m a -> m [Ann a]
-  parseSepNE :: CabalParsing m => Proxy sep -> m a -> m (NonEmpty (Ann a))
-
--}
 
 instance Sep Mod.Bare CommaVCat where
   prettySep _ = vcat . punctuate comma
@@ -130,15 +119,16 @@ instance Sep Mod.Bare CommaVCat where
     v <- askCabalSpecVersion
     if v >= CabalSpecV2_2 then parsecLeadingCommaNonEmpty p else parsecCommaNonEmpty p
 
--- instance Sep CommaVCatAnn where
---   prettySep _ = vcat . punctuate comma
---   parseSep _ p = do
---     v <- askCabalSpecVersion
---     if v >= CabalSpecV2_2 then parsecLeadingCommaList p else parsecCommaList p
---   parseSepNE _ p = do
---     v <- askCabalSpecVersion
---     if v >= CabalSpecV2_2 then parsecLeadingCommaNonEmpty p else parsecCommaNonEmpty p
-
+instance Sep Mod.Ann CommaVCatAnn where
+  prettySep _ = mconcat . map (\(Ann t doc) -> applyTriviaDoc t doc)
+  parseSep _ p = do
+    v <- askCabalSpecVersion
+    let p' = Ann mempty <$> p
+    if v >= CabalSpecV2_2 then parsecLeadingCommaListAnn p' else parsecCommaListAnn p'
+  parseSepNE _ p = do
+    v <- askCabalSpecVersion
+    let p' = Ann mempty <$> p
+    if v >= CabalSpecV2_2 then parsecLeadingCommaNonEmptyAnn p' else parsecCommaNonEmptyAnn p'
 
 instance Sep Mod.Bare CommaFSep where
   prettySep _ = fsep . punctuate comma

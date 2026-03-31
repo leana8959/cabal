@@ -13,6 +13,7 @@ where
 import Data.Data
 import qualified Text.PrettyPrint as Disp
 
+-- TODO(leana8959): implement position trivia somewhere
 data Trivia
   = HasTrivia String String
   | ExactRepresentation String
