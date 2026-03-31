@@ -93,6 +93,7 @@ data CommaFSepAnn = CommaFSepAnn
 
 -- | Vertical list with optional commas. Displayed with 'vcat'.
 data VCat = VCat
+data VCatAnn = VCatAnn
 
 -- | Paragraph fill list with optional commas. Displayed with 'fsep'.
 data FSep = FSep
@@ -157,6 +158,21 @@ instance Sep Mod.Bare VCat where
     v <- askCabalSpecVersion
     if v >= CabalSpecV3_0 then parsecLeadingOptCommaList p else parsecOptCommaList p
   parseSepNE _ p = NE.some1 (p <* P.spaces)
+
+instance Sep Mod.Ann VCatAnn where
+  prettySep _ = mconcat . map (\(Ann t doc) -> applyTriviaDoc t doc)
+  parseSep _ p = do
+    v <- askCabalSpecVersion
+    let p' = Ann mempty <$> p
+    if v >= CabalSpecV3_0 then parsecLeadingOptCommaListAnn p' else parsecOptCommaListAnn p'
+  parseSepNE _ p =
+    NE.some1
+      ( do
+          x <- p
+          post <- P.spaces'
+          pure (Ann (HasTrivia mempty post) x)
+      )
+
 instance Sep Mod.Bare FSep where
   prettySep _ = fsep
   parseSep _ p = do

@@ -35,6 +35,7 @@ module Distribution.Compat.Parsing
   , sepEndByNonEmpty
   , sepEndByNonEmptyAnn
   , sepEndBy
+  , sepEndByAnn
   , endByNonEmpty
   , endBy
   , count

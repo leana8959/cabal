@@ -59,7 +59,9 @@ module Distribution.Parsec
   , parsecLeadingCommaNonEmpty
   , parsecLeadingCommaNonEmptyAnn
   , parsecOptCommaList
+  , parsecOptCommaListAnn
   , parsecLeadingOptCommaList
+  , parsecLeadingOptCommaListAnn
   , parsecStandard
   , parsecUnqualComponentName
   ) where
@@ -397,19 +399,31 @@ parsecLeadingCommaNonEmptyAnn p =
     Nothing -> P.sepEndByNonEmptyAnn lp comma
     Just _ -> P.sepByNonEmptyAnn lp comma
   where
-    lp :: CabalParsing m => m (Ann a)
+    lp :: m (Ann a)
     lp = do
       x <- p
       postSpaces <- P.spaces'
       pure (mapAnn (<> HasTrivia mempty postSpaces) x)
 
-    comma :: CabalParsing m => m String
+    comma :: m String
     comma = (:) <$> (P.char ',') <*> P.spaces' P.<?> "comma"
 
 parsecOptCommaList :: CabalParsing m => m a -> m [a]
 parsecOptCommaList p = P.sepBy (p <* P.spaces) (P.optional comma)
   where
     comma = P.char ',' *> P.spaces
+
+parsecOptCommaListAnn :: forall m a. CabalParsing m => m (Ann a) -> m [Ann a]
+parsecOptCommaListAnn p = P.sepByAnn lp (comma <|> pure "")
+  where
+    lp :: m (Ann a)
+    lp = do
+      x <- p
+      postSpaces <- P.spaces'
+      pure (mapAnn (<> HasTrivia mempty postSpaces) x)
+
+    comma :: m String
+    comma = (:) <$> (P.char ',') <*> P.spaces' P.<?> "comma"
 
 -- | Like 'parsecOptCommaList' but
 --
@@ -440,6 +454,30 @@ parsecLeadingOptCommaList p = do
       case c of
         Nothing -> (x :) <$> many lp
         Just _ -> (x :) <$> P.sepEndBy lp comma
+
+parsecLeadingOptCommaListAnn :: forall m a. CabalParsing m => m (Ann a) -> m [Ann a]
+parsecLeadingOptCommaListAnn p = P.optional comma >>= \case
+  Nothing -> sepEndBy1StartAnn <|> pure []
+  Just c ->
+    let insertTriviaHead (x :| xs) = mapAnn (HasTrivia c mempty <>) x :| xs
+    in  toList . insertTriviaHead <$> P.sepByNonEmptyAnn lp comma
+  where
+    lp :: m (Ann a)
+    lp = do
+      x <- p
+      post <- P.spaces'
+      pure (mapAnn (<> HasTrivia mempty post) x)
+
+    comma :: m String
+    comma = (:) <$> (P.char ',') <*> P.spaces' P.<?> "comma"
+
+    sepEndBy1StartAnn :: m [Ann a]
+    sepEndBy1StartAnn = do
+      x <- lp
+      c <- P.optional comma
+      case c of
+        Nothing -> (x :) <$> many lp
+        Just _ -> (x :) <$> P.sepEndByAnn lp comma
 
 -- | Content isn't unquoted
 parsecQuoted :: CabalParsing m => m a -> m a
