@@ -260,7 +260,8 @@ instance (Newtype a b, Sep Mod.Ann sep, Parsec b) => Parsec (ListAnn sep b a) wh
 instance (Newtype a b, Sep Mod.Bare sep, Pretty b) => Pretty (List sep b a) where
   pretty = prettySep (Proxy :: Proxy sep) . map (pretty . (pack :: a -> b)) . unpack
 
---
+instance (Newtype a b, Sep Mod.Ann sep, Pretty b) => Pretty (ListAnn sep b a) where
+  pretty = prettySep (Proxy :: Proxy sep) . (map . fmap) (pretty . (pack :: a -> b)) . unpack
 
 -- | Like 'List', but for 'Set'.
 --
