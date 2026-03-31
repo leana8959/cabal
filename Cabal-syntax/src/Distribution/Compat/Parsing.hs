@@ -1,5 +1,5 @@
-{-# LANGUAGE GADTs #-}
 {-# LANGUAGE ApplicativeDo #-}
+{-# LANGUAGE GADTs #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE UndecidableInstances #-}
 
@@ -123,9 +123,9 @@ sepByNonEmptyAnn p sep =
     <$> p
     <*> many
       ( do
-            leading <- sep
-            x <- p
-            pure (mapAnn (HasTrivia leading mempty <>) x)
+          leading <- sep
+          x <- p
+          pure (mapAnn (HasTrivia leading mempty <>) x)
       )
 
 -- | @sepEndByNonEmpty p sep@ parses /one/ or more occurrences of @p@,
@@ -138,13 +138,12 @@ sepEndByNonEmptyAnn :: Alternative m => m (Ann a) -> m String -> m (NonEmpty (An
 sepEndByNonEmptyAnn p sep =
   (:|)
     <$> p
-    <*>
-      ( do
-          leading <- sep
-          rest <- sepEndByAnn p sep
-          pure (insertTriviaHead leading rest)
-        <|> pure []
-      )
+    <*> ( do
+            leading <- sep
+            rest <- sepEndByAnn p sep
+            pure (insertTriviaHead leading rest)
+            <|> pure []
+        )
   where
     insertTriviaHead _ [] = []
     insertTriviaHead t (x : xs) = mapAnn (HasTrivia t mempty <>) x : xs

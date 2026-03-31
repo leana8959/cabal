@@ -1,8 +1,8 @@
 {-# LANGUAGE BangPatterns #-}
-{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
@@ -361,11 +361,12 @@ parsecLeadingCommaList p = do
 
 -- | Like 'parsecCommaList' but stores trivia.
 parsecLeadingCommaListAnn :: forall m a. CabalParsing m => m (Ann a) -> m [Ann a]
-parsecLeadingCommaListAnn p = P.optional comma >>= \case
+parsecLeadingCommaListAnn p =
+  P.optional comma >>= \case
     Nothing -> toList <$> P.sepEndByNonEmptyAnn lp comma <|> pure []
     Just c ->
       let insertTriviaHead (x :| xs) = mapAnn (HasTrivia c mempty <>) x :| xs
-      in  toList . insertTriviaHead <$> P.sepByNonEmptyAnn lp comma
+       in toList . insertTriviaHead <$> P.sepByNonEmptyAnn lp comma
   where
     lp :: CabalParsing m => m (Ann a)
     lp = do
@@ -391,7 +392,8 @@ parsecLeadingCommaNonEmpty p = do
 
 -- | Like @parsecLeadingCommaNonEmpty@ but stores trivia.
 parsecLeadingCommaNonEmptyAnn :: forall m a. CabalParsing m => m (Ann a) -> m (NonEmpty (Ann a))
-parsecLeadingCommaNonEmptyAnn p = P.optional comma >>= \case
+parsecLeadingCommaNonEmptyAnn p =
+  P.optional comma >>= \case
     Nothing -> P.sepEndByNonEmptyAnn lp comma
     Just _ -> P.sepByNonEmptyAnn lp comma
   where

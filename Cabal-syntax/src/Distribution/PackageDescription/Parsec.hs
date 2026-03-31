@@ -1,9 +1,9 @@
 {-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE Rank2Types #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications #-}
 
 -- |
 -- Module      :  Distribution.PackageDescription.Parsec
@@ -59,9 +59,9 @@ import Distribution.Parsec.FieldLineStream (fieldLineStreamFromBS)
 import Distribution.Parsec.Position (Position (..), incPos, zeroPos)
 import Distribution.Parsec.Warning (PWarnType (..))
 import Distribution.Pretty (prettyShow)
+import qualified Distribution.Types.Modify as Mod
 import Distribution.Utils.Generic (breakMaybe, fromUTF8BS, toUTF8BS, unfoldrM, validateUTF8)
 import Distribution.Version (Version, mkVersion, versionNumbers)
-import qualified Distribution.Types.Modify as Mod
 
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Char8 as BS8

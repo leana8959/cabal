@@ -1,13 +1,13 @@
 {-# LANGUAGE DataKinds #-}
-{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeFamilies #-}
 
 -- | This module provides @newtype@ wrappers to be used with "Distribution.FieldGrammar".
 module Distribution.FieldGrammar.Newtypes
@@ -59,6 +59,8 @@ import Distribution.Compiler (CompilerFlavor)
 import Distribution.License (License)
 import Distribution.Parsec
 import Distribution.Pretty
+import Distribution.Trivia
+import qualified Distribution.Types.Modify as Mod
 import Distribution.Utils.Path
 import Distribution.Version
   ( LowerBound (..)
@@ -74,8 +76,6 @@ import Distribution.Version
   , versionNumbers
   )
 import Text.PrettyPrint (Doc, comma, fsep, punctuate, text, vcat)
-import Distribution.Trivia
-import qualified Distribution.Types.Modify as Mod
 
 import Data.Kind (Type)
 import qualified Data.List.NonEmpty as NE
@@ -85,6 +85,7 @@ import qualified Distribution.SPDX as SPDX
 
 -- | Vertical list with commas. Displayed with 'vcat'
 data CommaVCat = CommaVCat
+
 data CommaVCatAnn = CommaVCatAnn
 
 -- | Paragraph fill list with commas. Displayed with 'fsep'
