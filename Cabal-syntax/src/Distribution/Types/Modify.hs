@@ -11,3 +11,8 @@ data HasAnnotation
   = HasAnn
   | HasNoAnn
   deriving (Show, Read, Eq, Ord, Data)
+
+-- | Toggle whether a Pretty instance should in position in its output.
+data HasPosition
+  = HasPos
+  | HasNoPos

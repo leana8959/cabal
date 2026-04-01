@@ -1,3 +1,10 @@
+{-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeFamilyDependencies #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE DataKinds #-}
+
 module Distribution.Pretty
   ( Pretty (..)
   , prettyShow
@@ -21,28 +28,37 @@ import Distribution.CabalSpecVersion
 import Distribution.Compat.Prelude
 import Prelude ()
 
+import Data.Kind
+import Distribution.Parsec.Position
+
+import qualified Distribution.Types.Modify as Mod
+
 import qualified Text.PrettyPrint as PP
 
-class Pretty a where
-  pretty :: a -> PP.Doc
+type family ModifyPretty (hasPos :: Mod.HasPosition) (a :: Type) where
+  ModifyPretty Mod.HasNoPos a = a
+  ModifyPretty Mod.HasPos a = (Position, a)
 
-  prettyVersioned :: CabalSpecVersion -> a -> PP.Doc
+class Pretty (hasPos :: Mod.HasPosition) a | a -> hasPos where
+  pretty :: a -> ModifyPretty hasPos PP.Doc
+
+  prettyVersioned :: CabalSpecVersion -> a -> ModifyPretty hasPos PP.Doc
   prettyVersioned _ = pretty
 
 -- | @since 3.4.0.0
-instance Pretty PP.Doc where
+instance Pretty Mod.HasNoPos PP.Doc where
   pretty = id
 
-instance Pretty Bool where
+instance Pretty Mod.HasNoPos Bool where
   pretty = PP.text . show
 
-instance Pretty Int where
+instance Pretty Mod.HasNoPos Int where
   pretty = PP.text . show
 
-instance Pretty a => Pretty (Identity a) where
+instance Pretty Mod.HasNoPos a => Pretty Mod.HasNoPos (Identity a) where
   pretty = pretty . runIdentity
 
-prettyShow :: Pretty a => a -> String
+prettyShow :: Pretty Mod.HasNoPos a => a -> String
 prettyShow = PP.renderStyle defaultStyle . pretty
 
 -- | The default rendering style used in Cabal for console
@@ -122,9 +138,9 @@ lines_ s =
         (_ : s'') -> lines_ s''
 
 -- | Separate a list of documents by commas and spaces.
-commaSpaceSep :: Pretty a => [a] -> PP.Doc
+commaSpaceSep :: Pretty Mod.HasNoPos a => [a] -> PP.Doc
 commaSpaceSep = PP.hsep . PP.punctuate PP.comma . map pretty
 
 -- | Separate a list of documents by commas.
-commaSep :: Pretty a => [a] -> PP.Doc
+commaSep :: Pretty Mod.HasNoPos a => [a] -> PP.Doc
 commaSep = PP.hcat . PP.punctuate PP.comma . map pretty
