@@ -6,8 +6,8 @@ module Distribution.Types.Modify where
 
 import Data.Data
 
-data Bare = Bare
-  deriving (Show, Read, Eq, Ord, Data)
-
-data Ann = Ann
+-- | Toggle whether a GPD component has annotation or not.
+data HasAnnotation
+  = HasAnn
+  | HasNoAnn
   deriving (Show, Read, Eq, Ord, Data)

@@ -46,9 +46,9 @@ main = do
             -- TODO: getArgs
             run <- Z.parseAndCompileTemplateIO tmpl
             contents <- run $ Z
-                { zBuildInfoFields          = fromReference (buildInfoFieldGrammar @Mod.Bare)
+                { zBuildInfoFields          = fromReference (buildInfoFieldGrammar @Mod.HasNoAnn)
                 , zPackageDescriptionFields = fromReference packageDescriptionFieldGrammar
-                , zTestSuiteFields          = fromReference $ testSuiteFieldGrammar // (buildInfoFieldGrammar @Mod.Bare)
+                , zTestSuiteFields          = fromReference $ testSuiteFieldGrammar // (buildInfoFieldGrammar @Mod.HasNoAnn)
                 , zProductions              =
                     [ zproduction "hs-string"       reHsString
                         "String as in Haskell; it's recommended to avoid using Haskell-specific escapes."

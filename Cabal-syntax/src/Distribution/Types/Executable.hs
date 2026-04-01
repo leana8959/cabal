@@ -31,7 +31,7 @@ data Executable = Executable
   }
   deriving (Generic, Show, Read, Eq, Ord, Data)
 
-instance L.HasBuildInfoWith Mod.Bare Executable where
+instance L.HasBuildInfoWith Mod.HasNoAnn Executable where
   buildInfo f l = (\x -> l{buildInfo = x}) <$> f (buildInfo l)
 
 instance Binary Executable

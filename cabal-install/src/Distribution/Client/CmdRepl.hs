@@ -661,7 +661,7 @@ addDepsToProjectTarget deps pkgId ctx =
                   -- occurrences of the field `targetBuildDepends`. It ensures that
                   -- fields depending on the latter are also consistently updated.
                   srcpkgDescription
-                    & (L.traverseBuildInfos @Mod.Bare . L.targetBuildDepends @Mod.Bare)
+                    & (L.traverseBuildInfos @Mod.HasNoAnn . L.targetBuildDepends @Mod.HasNoAnn)
                       %~ (deps ++)
               }
     addDeps spec = spec

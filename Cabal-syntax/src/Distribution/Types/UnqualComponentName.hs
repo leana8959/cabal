@@ -1,3 +1,4 @@
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
@@ -96,7 +97,7 @@ instance NFData UnqualComponentName where
 packageNameToUnqualComponentName :: PackageName -> UnqualComponentName
 packageNameToUnqualComponentName = UnqualComponentName . unPackageNameST
 
-packageNameToUnqualComponentNameWith :: PackageNameWith Mod.Ann -> Ann UnqualComponentName
+packageNameToUnqualComponentNameWith :: PackageNameWith Mod.HasAnn -> Ann UnqualComponentName
 packageNameToUnqualComponentNameWith (PackageName u) = fmap UnqualComponentName u
 
 -- | Converts an unqualified component name to a package name

@@ -1,3 +1,4 @@
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -35,7 +36,7 @@ instance Binary Benchmark
 instance Structured Benchmark
 instance NFData Benchmark where rnf = genericRnf
 
-instance L.HasBuildInfoWith Mod.Bare Benchmark where
+instance L.HasBuildInfoWith Mod.HasNoAnn Benchmark where
   buildInfo f (Benchmark x1 x2 x3) = fmap (\y1 -> Benchmark x1 x2 y1) (f x3)
 
 instance Monoid Benchmark where

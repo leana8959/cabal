@@ -311,7 +311,7 @@ data TestSuiteStanza = TestSuiteStanza
   , _testStanzaCodeGenerators :: [String]
   }
 
-instance L.HasBuildInfoWith Mod.Bare TestSuiteStanza where
+instance L.HasBuildInfoWith Mod.HasNoAnn TestSuiteStanza where
   buildInfo = testStanzaBuildInfo
 
 testStanzaTestType :: Lens' TestSuiteStanza (Maybe TestType)
@@ -460,7 +460,7 @@ data BenchmarkStanza = BenchmarkStanza
   , _benchmarkStanzaBuildInfo :: BuildInfo
   }
 
-instance L.HasBuildInfoWith Mod.Bare BenchmarkStanza where
+instance L.HasBuildInfoWith Mod.HasNoAnn BenchmarkStanza where
   buildInfo = benchmarkStanzaBuildInfo
 
 benchmarkStanzaBenchmarkType :: Lens' BenchmarkStanza (Maybe BenchmarkType)
@@ -930,7 +930,7 @@ _syntaxFieldNames =
           sort $
             mconcat
               [ fieldGrammarKnownFieldList packageDescriptionFieldGrammar
-              , fieldGrammarKnownFieldList $ (libraryFieldGrammar @Mod.Bare) LMainLibName
+              , fieldGrammarKnownFieldList $ (libraryFieldGrammar @Mod.HasNoAnn) LMainLibName
               , fieldGrammarKnownFieldList $ executableFieldGrammar "exe"
               , fieldGrammarKnownFieldList $ foreignLibFieldGrammar "flib"
               , fieldGrammarKnownFieldList testSuiteFieldGrammar

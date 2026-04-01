@@ -1,3 +1,4 @@
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE FlexibleInstances #-}
@@ -28,10 +29,10 @@ import qualified Distribution.Types.BuildInfo.Lens as L
 import Data.Kind
 import qualified Distribution.Types.Modify as Mod
 
-type Library = LibraryWith Mod.Bare
-type LibraryAnn = LibraryWith Mod.Ann
+type Library = LibraryWith Mod.HasNoAnn
+type LibraryAnn = LibraryWith Mod.HasAnn
 
-data LibraryWith (m :: Type) = Library
+data LibraryWith (m :: Mod.HasAnnotation) = Library
   { libName :: LibraryName
   , exposedModules :: [ModuleName]
   , reexportedModules :: [ModuleReexport]
@@ -51,7 +52,7 @@ deriving instance Ord Library
 deriving instance Read Library
 deriving instance Data Library
 
-instance L.HasBuildInfoWith Mod.Bare Library where
+instance L.HasBuildInfoWith Mod.HasNoAnn Library where
   buildInfo f l = (\x -> l{libBuildInfo = x}) <$> f (libBuildInfo l)
 
 instance Binary Library

@@ -1,3 +1,4 @@
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE OverloadedStrings #-}
@@ -932,7 +933,7 @@ data Syntax = OldSyntax | NewSyntax
 
 -- TODO:
 libFieldNames :: [FieldName]
-libFieldNames = fieldGrammarKnownFieldList (libraryFieldGrammar @Mod.Bare LMainLibName)
+libFieldNames = fieldGrammarKnownFieldList (libraryFieldGrammar @Mod.HasNoAnn LMainLibName)
 
 -------------------------------------------------------------------------------
 -- Supplementary build information

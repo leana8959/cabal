@@ -48,10 +48,10 @@ import qualified Distribution.Types.Modify as Mod
 -- ---------------------------------------------------------------------------
 -- The 'GenericPackageDescription' type
 
-type GenericPackageDescription = GenericPackageDescriptionWith Mod.Bare
-type GenericPackageDescriptionAnn = GenericPackageDescriptionWith Mod.Ann
+type GenericPackageDescription = GenericPackageDescriptionWith Mod.HasNoAnn
+type GenericPackageDescriptionAnn = GenericPackageDescriptionWith Mod.HasAnn
 
-data GenericPackageDescriptionWith (m :: Type) = GenericPackageDescription
+data GenericPackageDescriptionWith (m :: Mod.HasAnnotation) = GenericPackageDescription
   { packageDescription :: PackageDescription
   , gpdScannedVersion :: Maybe Version
   -- ^ This is a version as specified in source.
@@ -76,15 +76,15 @@ data GenericPackageDescriptionWith (m :: Type) = GenericPackageDescription
       :: [(UnqualComponentName, CondTree ConfVar [Dependency] Benchmark)]
   }
 
-deriving instance Eq (GenericPackageDescriptionWith Mod.Bare)
-deriving instance Show (GenericPackageDescriptionWith Mod.Bare)
-deriving instance Data (GenericPackageDescriptionWith Mod.Bare)
-deriving instance Generic (GenericPackageDescriptionWith Mod.Bare)
+deriving instance Eq (GenericPackageDescriptionWith Mod.HasNoAnn)
+deriving instance Show (GenericPackageDescriptionWith Mod.HasNoAnn)
+deriving instance Data (GenericPackageDescriptionWith Mod.HasNoAnn)
+deriving instance Generic (GenericPackageDescriptionWith Mod.HasNoAnn)
 
-instance Package (GenericPackageDescriptionWith Mod.Bare) where
+instance Package (GenericPackageDescriptionWith Mod.HasNoAnn) where
   packageId = packageId . packageDescription
 
-deriving instance Binary (GenericPackageDescriptionWith Mod.Bare)
+deriving instance Binary (GenericPackageDescriptionWith Mod.HasNoAnn)
 
 instance Structured GenericPackageDescription
 instance NFData GenericPackageDescription where rnf = genericRnf
@@ -95,7 +95,7 @@ emptyGenericPackageDescription = GenericPackageDescription emptyPackageDescripti
 -- -----------------------------------------------------------------------------
 -- Traversal Instances
 
-instance L.HasBuildInfosWith Mod.Bare GenericPackageDescription where
+instance L.HasBuildInfosWith Mod.HasNoAnn GenericPackageDescription where
   traverseBuildInfos f (GenericPackageDescription p v a1 x1 x2 x3 x4 x5 x6) =
     GenericPackageDescription
       <$> L.traverseBuildInfos f p
@@ -116,7 +116,7 @@ traverseCondTreeBuildInfo
 traverseCondTreeBuildInfo g = node
   where
     mkCondNode :: comp -> [CondBranch v [Dependency] comp] -> CondTree v [Dependency] comp
-    mkCondNode comp = CondNode comp (view (L.targetBuildDepends @Mod.Bare) comp)
+    mkCondNode comp = CondNode comp (view (L.targetBuildDepends @Mod.HasNoAnn) comp)
 
     node (CondNode comp _ branches) =
       mkCondNode

@@ -136,7 +136,7 @@ libVersionNumberShow v =
 libVersionMajor :: LibVersionInfo -> Int
 libVersionMajor (LibVersionInfo c _ a) = c - a
 
-instance L.HasBuildInfoWith Mod.Bare ForeignLib where
+instance L.HasBuildInfoWith Mod.HasNoAnn ForeignLib where
   buildInfo f l = (\x -> l{foreignLibBuildInfo = x}) <$> f (foreignLibBuildInfo l)
 
 instance Binary ForeignLib

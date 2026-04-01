@@ -548,7 +548,7 @@ instance Described UnqualComponentName where
 -- Instances: Newtypes
 -------------------------------------------------------------------------------
 
-class Sep Mod.Bare sep => DescribeSep sep where
+class Sep Mod.HasNoAnn sep => DescribeSep sep where
     describeSep :: Proxy sep -> GrammarRegex a -> GrammarRegex a
 
 instance DescribeSep CommaVCat   where describeSep _ = reCommaList

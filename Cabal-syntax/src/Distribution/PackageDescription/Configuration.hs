@@ -1,3 +1,4 @@
+{-# LANGUAGE DataKinds #-}
 -- -Wno-deprecations for use of Map.foldWithKey
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE TypeApplications #-}
@@ -641,7 +642,7 @@ transformAllBuildDepends
   -> GenericPackageDescription
   -> GenericPackageDescription
 transformAllBuildDepends f =
-  over (L.traverseBuildInfos @Mod.Bare . L.targetBuildDepends @Mod.Bare . traverse) f
+  over (L.traverseBuildInfos @Mod.HasNoAnn . L.targetBuildDepends @Mod.HasNoAnn . traverse) f
     . over (L.packageDescription . L.setupBuildInfo . traverse . L.setupDepends . traverse) f
     -- cannot be point-free as normal because of higher rank
     . over (\f' -> L.allCondTrees $ traverseCondTreeC f') (map f)
@@ -653,7 +654,7 @@ transformAllBuildDependsN
   -> GenericPackageDescription
   -> GenericPackageDescription
 transformAllBuildDependsN f =
-  over (L.traverseBuildInfos @Mod.Bare . L.targetBuildDepends @Mod.Bare) f
+  over (L.traverseBuildInfos @Mod.HasNoAnn . L.targetBuildDepends @Mod.HasNoAnn) f
     . over (L.packageDescription . L.setupBuildInfo . traverse . L.setupDepends) f
     -- cannot be point-free as normal because of higher rank
     . over (\f' -> L.allCondTrees $ traverseCondTreeC f') f

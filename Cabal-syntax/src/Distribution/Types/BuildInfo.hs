@@ -41,11 +41,11 @@ import Data.Kind
 
 import qualified Distribution.Types.Modify as Mod
 
-type BuildInfo = BuildInfoWith Mod.Bare
-type BuildInfoAnn = BuildInfoWith Mod.Ann
+type BuildInfo = BuildInfoWith Mod.HasNoAnn
+type BuildInfoAnn = BuildInfoWith Mod.HasAnn
 
 -- Consider refactoring into executable and library versions.
-data BuildInfoWith (m :: Type) = BuildInfo
+data BuildInfoWith (m :: Mod.HasAnnotation) = BuildInfo
   { buildable :: Bool
   -- ^ component is buildable here
   , buildTools :: [LegacyExeDependency]

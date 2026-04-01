@@ -1,3 +1,4 @@
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DeriveTraversable #-}
@@ -66,15 +67,15 @@ import qualified Distribution.Types.Modify as Mod
 import Control.Applicative
 import Data.Kind
 
-type VersionRange = VersionRangeWith Mod.Bare
-type VersionRangeAnn = VersionRangeWith Mod.Ann
+type VersionRange = VersionRangeWith Mod.HasNoAnn
+type VersionRangeAnn = VersionRangeWith Mod.HasAnn
 
-type family Modify (m :: Type) (a :: Type) where
-  Modify Mod.Bare a = a
-  Modify Mod.Ann Version = (Trivia, VersionAnn)
-  Modify Mod.Ann VersionRangeAnn = (Trivia, VersionRangeAnn)
+type family Modify (m :: Mod.HasAnnotation) (a :: Type) where
+  Modify Mod.HasNoAnn a = a
+  Modify Mod.HasAnn Version = (Trivia, VersionAnn)
+  Modify Mod.HasAnn VersionRangeAnn = (Trivia, VersionRangeAnn)
 
-data VersionRangeWith (m :: Type)
+data VersionRangeWith (m :: Mod.HasAnnotation)
   = ThisVersion (Modify m Version) -- = version
   | LaterVersion (Modify m Version) -- > version  (NB. not >=)
   | OrLaterVersion (Modify m Version) -- >= version

@@ -1,3 +1,4 @@
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE FlexibleInstances #-}
@@ -47,11 +48,11 @@ import qualified Distribution.Types.Modify as Mod
 --
 -- /Invariant:/ package name does not appear as 'LSubLibName' in
 -- set of library names.
-type Dependency = DependencyWith Mod.Bare
+type Dependency = DependencyWith Mod.HasNoAnn
 
-type DependencyAnn = DependencyWith Mod.Ann
+type DependencyAnn = DependencyWith Mod.HasAnn
 
-data DependencyWith (m :: Type)
+data DependencyWith (m :: Mod.HasAnnotation)
   = -- | The set of libraries required from the package.
     -- Only the selected libraries will be built.
     -- It does not affect the cabal-install solver yet.
@@ -68,11 +69,11 @@ deriving instance Ord Dependency
 deriving instance Data Dependency
 
 -- TODO: less instances?
-deriving instance Read (DependencyWith Mod.Ann)
-deriving instance Show (DependencyWith Mod.Ann)
-deriving instance Eq (DependencyWith Mod.Ann)
-deriving instance Ord (DependencyWith Mod.Ann)
-deriving instance Data (DependencyWith Mod.Ann)
+deriving instance Read (DependencyWith Mod.HasAnn)
+deriving instance Show (DependencyWith Mod.HasAnn)
+deriving instance Eq (DependencyWith Mod.HasAnn)
+deriving instance Ord (DependencyWith Mod.HasAnn)
+deriving instance Data (DependencyWith Mod.HasAnn)
 
 unannotateDependencyAnn :: DependencyAnn -> Dependency
 unannotateDependencyAnn (Dependency pname vrange libs) =
@@ -105,7 +106,7 @@ mkDependency pn vr lb = Dependency pn vr (NES.map conv lb)
       | ln == pn' = LMainLibName
       | otherwise = l
 
-mkDependencyAnn :: PackageNameAnn -> VersionRangeAnn -> NonEmptySet LibraryName -> DependencyWith Mod.Ann
+mkDependencyAnn :: PackageNameAnn -> VersionRangeAnn -> NonEmptySet LibraryName -> DependencyWith Mod.HasAnn
 mkDependencyAnn pn vr lb = Dependency pn vr (NES.map conv lb)
   where
     pn' = packageNameToUnqualComponentNameWith pn

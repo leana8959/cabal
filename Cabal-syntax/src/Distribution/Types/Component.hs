@@ -1,3 +1,4 @@
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 
@@ -44,7 +45,7 @@ instance Semigroup Component where
   CBench b <> CBench b' = CBench (b <> b')
   _ <> _ = error "Cannot merge Component"
 
-instance L.HasBuildInfoWith Mod.Bare Component where
+instance L.HasBuildInfoWith Mod.HasNoAnn Component where
   buildInfo f (CLib l) = CLib <$> L.buildInfo f l
   buildInfo f (CFLib l) = CFLib <$> L.buildInfo f l
   buildInfo f (CExe e) = CExe <$> L.buildInfo f e

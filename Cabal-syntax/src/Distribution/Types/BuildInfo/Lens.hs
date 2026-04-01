@@ -38,8 +38,8 @@ import Language.Haskell.Extension (Extension, Language)
 import qualified Distribution.Types.BuildInfo as T
 import qualified Distribution.Types.Modify as Mod
 
-type HasBuildInfo = HasBuildInfoWith Mod.Bare
-type HasBuildInfoAnn = HasBuildInfoWith Mod.Ann
+type HasBuildInfo = HasBuildInfoWith Mod.HasNoAnn
+type HasBuildInfoAnn = HasBuildInfoWith Mod.HasAnn
 
 class HasBuildInfoWith mod a | a -> mod where
   buildInfo :: Lens' a (BuildInfoWith mod)
@@ -188,7 +188,7 @@ class HasBuildInfoWith mod a | a -> mod where
   mixins :: HasBuildInfoWith mod (BuildInfoWith mod) => Lens' a [Mixin]
   mixins = buildInfo @mod . mixins @mod
 
-instance HasBuildInfoWith Mod.Bare (BuildInfoWith Mod.Bare) where
+instance HasBuildInfoWith Mod.HasNoAnn (BuildInfoWith Mod.HasNoAnn) where
   buildInfo = id
   {-# INLINE buildInfo #-}
 
@@ -336,10 +336,10 @@ instance HasBuildInfoWith Mod.Bare (BuildInfoWith Mod.Bare) where
   mixins f s = fmap (\x -> s{T.mixins = x}) (f (T.mixins s))
   {-# INLINE mixins #-}
 
-type HasBuildInfos = HasBuildInfoWith Mod.Bare
-type HasBuildInfosAnn = HasBuildInfoWith Mod.Ann
+type HasBuildInfos = HasBuildInfoWith Mod.HasNoAnn
+type HasBuildInfosAnn = HasBuildInfoWith Mod.HasAnn
 
-instance HasBuildInfoWith Mod.Ann (BuildInfoWith Mod.Ann) where
+instance HasBuildInfoWith Mod.HasAnn (BuildInfoWith Mod.HasAnn) where
   buildInfo = id
   {-# INLINE buildInfo #-}
 

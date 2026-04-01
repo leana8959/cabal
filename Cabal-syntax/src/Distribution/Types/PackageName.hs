@@ -1,3 +1,4 @@
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE FlexibleInstances #-}
@@ -37,15 +38,15 @@ import qualified Distribution.Types.Modify as Mod
 -- This type is opaque since @Cabal-2.0@
 --
 -- @since 2.0.0.2
-type PackageName = PackageNameWith Mod.Bare
+type PackageName = PackageNameWith Mod.HasNoAnn
 
-type PackageNameAnn = PackageNameWith Mod.Ann
+type PackageNameAnn = PackageNameWith Mod.HasAnn
 
-type family ModifyPackageName (m :: Type) (a :: Type) where
-  ModifyPackageName Mod.Bare a = a
-  ModifyPackageName Mod.Ann a = Ann a
+type family ModifyPackageName (m :: Mod.HasAnnotation) (a :: Type) where
+  ModifyPackageName Mod.HasNoAnn a = a
+  ModifyPackageName Mod.HasAnn a = Ann a
 
-newtype PackageNameWith (m :: Type) = PackageName (ModifyPackageName m ShortText)
+newtype PackageNameWith (m :: Mod.HasAnnotation) = PackageName (ModifyPackageName m ShortText)
   deriving (Generic)
 
 deriving instance Show PackageName
@@ -60,7 +61,7 @@ deriving instance Eq PackageNameAnn
 deriving instance Ord PackageNameAnn
 deriving instance Data PackageNameAnn
 
-unannotatePackageName :: PackageNameWith Mod.Ann -> PackageName
+unannotatePackageName :: PackageNameWith Mod.HasAnn -> PackageName
 unannotatePackageName (PackageName pname) = PackageName (unAnn pname)
 
 -- | Convert 'PackageName' to 'String'
@@ -109,7 +110,7 @@ instance Pretty PackageNameAnn where
 instance Parsec PackageName where
   parsec = mkPackageName <$> parsecUnqualComponentName
 
-instance Parsec (PackageNameWith Mod.Ann) where
+instance Parsec (PackageNameWith Mod.HasAnn) where
   parsec = PackageName . Ann mempty . toShortText <$> parsecUnqualComponentName
 
 instance NFData PackageName where
