@@ -476,7 +476,7 @@ parsecLeadingOptCommaListAnn p = P.optional comma >>= \case
       x <- lp
       P.optional comma >>= \case
         Nothing -> (x :) <$> many lp
-        Just c -> (mapAnn (HasTrivia c mempty <>) x :) <$> P.sepEndByAnn lp comma
+        Just c -> (mapAnn (<> HasTrivia mempty c) x :) <$> P.sepEndByAnn lp comma
 
 -- | Content isn't unquoted
 parsecQuoted :: CabalParsing m => m a -> m a

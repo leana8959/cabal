@@ -210,10 +210,13 @@ parsecPrettyTests = testGroup "parsec pretty roundtrip" $
       -- Test list combinators using PackageName because it has a simple Parsec instance.
       parsecPrettyTest @PackageName specVer "PackageName simple" "foo" -- make sure PackageName itself parses.
       :
-      optionals (specVer >= CabalSpecV2_2) -- leading commas allowed
+      optionals (specVer >= CabalSpecV2_2)
         [ parsecPrettyTest @(ListAnn CommaVCatAnn (Identity PackageName) PackageName) specVer "CommaVCat leading" ", foo , bar"
         , parsecPrettyTest @(ListAnn CommaFSepAnn (Identity PackageName) PackageName) specVer "CommaFSepAnn leading" ", foo , bar"
-        , parsecPrettyTest @(ListAnn VCatAnn (Identity PackageName) PackageName) specVer "VCatAnn leading" ", foo , bar"
+        ]
+      ++
+      optionals (specVer >= CabalSpecV3_0)
+        [ parsecPrettyTest @(ListAnn VCatAnn (Identity PackageName) PackageName) specVer "VCatAnn leading" ", foo , bar"
         , parsecPrettyTest @(ListAnn FSepAnn (Identity PackageName) PackageName) specVer "FSepAnn leading" ", foo , bar"
         ]
       ++
@@ -234,14 +237,12 @@ parsecPrettyTests = testGroup "parsec pretty roundtrip" $
         , parsecPrettyTest @(ListAnn VCatAnn (Identity PackageName) PackageName) specVer "VCatAnn simple" "foo \n bar"
         , parsecPrettyTest @(ListAnn VCatAnn (Identity PackageName) PackageName) specVer "VCatAnn trailing" "foo \n bar   \n"
         , parsecPrettyTest @(ListAnn VCatAnn (Identity PackageName) PackageName) specVer "VCatAnn trailing" "foo \n bar  \n\n"
-        -- FIXME(leana8959): optional comma isn't reproduced
-        -- , parsecPrettyTest @(ListAnn VCatAnn (Identity PackageName) PackageName) specVer "VCatAnn trailing" "foo , \n bar  \n\n"
+        , parsecPrettyTest @(ListAnn VCatAnn (Identity PackageName) PackageName) specVer "VCatAnn optional comma" "foo , \n bar  \n\n"
 
         , parsecPrettyTest @(ListAnn FSepAnn (Identity PackageName) PackageName) specVer "VCatAnn simple" "foo \n bar"
         , parsecPrettyTest @(ListAnn FSepAnn (Identity PackageName) PackageName) specVer "VCatAnn trailing" "foo \n bar   \n"
         , parsecPrettyTest @(ListAnn FSepAnn (Identity PackageName) PackageName) specVer "VCatAnn trailing" "foo \n bar  \n\n"
-        -- FIXME(leana8959): optional comma isn't reproduced
-        -- , parsecPrettyTest @(ListAnn FSepAnn (Identity PackageName) PackageName) specVer "VCatAnn trailing" "foo , \n bar  \n\n"
+        , parsecPrettyTest @(ListAnn FSepAnn (Identity PackageName) PackageName) specVer "FSepAnn optional comma" "foo , \n bar  \n\n"
 
         -- TODO:(leana8959): NoCommaFSepAnn
       ]
