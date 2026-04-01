@@ -1,4 +1,6 @@
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE OverloadedStrings #-}
 
@@ -14,6 +16,7 @@ import Prelude ()
 
 import Distribution.Parsec
 import Distribution.Pretty
+import qualified Distribution.Types.Modify as Mod
 
 import qualified Distribution.Compat.CharParsing as P
 import qualified Text.PrettyPrint as Disp
@@ -29,7 +32,7 @@ data ForeignLibType
     ForeignLibTypeUnknown
   deriving (Generic, Show, Read, Eq, Ord, Data)
 
-instance Pretty ForeignLibType where
+instance Pretty Mod.HasNoPos ForeignLibType where
   pretty ForeignLibNativeShared = Disp.text "native-shared"
   pretty ForeignLibNativeStatic = Disp.text "native-static"
   pretty ForeignLibTypeUnknown = Disp.text "unknown"

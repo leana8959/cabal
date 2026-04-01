@@ -1,4 +1,6 @@
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE RankNTypes #-}
 
@@ -20,6 +22,7 @@ import Distribution.Pretty
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 import qualified Distribution.Compat.CharParsing as P
+import qualified Distribution.Types.Modify as Mod
 import Text.PrettyPrint (comma, hsep, parens, punctuate, text)
 
 -- | Renaming applied to the modules provided by a package.
@@ -72,7 +75,7 @@ instance NFData ModuleRenaming where rnf = genericRnf
 
 -- NB: parentheses are mandatory, because later we may extend this syntax
 -- to allow "hiding (A, B)" or other modifier words.
-instance Pretty ModuleRenaming where
+instance Pretty Mod.HasNoPos ModuleRenaming where
   pretty DefaultRenaming = mempty
   pretty (HidingRenaming hides) =
     text "hiding" <+> parens (hsep (punctuate comma (map pretty hides)))

@@ -1,4 +1,6 @@
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 
 module Distribution.Types.AbiDependency where
 
@@ -7,6 +9,7 @@ import Prelude ()
 
 import Distribution.Parsec
 import Distribution.Pretty
+import qualified Distribution.Types.Modify as Mod
 
 import qualified Distribution.Compat.CharParsing as P
 import qualified Distribution.Package as Package
@@ -28,7 +31,7 @@ data AbiDependency = AbiDependency
   }
   deriving (Eq, Generic, Read, Show)
 
-instance Pretty AbiDependency where
+instance Pretty Mod.HasNoPos AbiDependency where
   pretty (AbiDependency uid abi) =
     pretty uid <<>> Disp.char '=' <<>> pretty abi
 

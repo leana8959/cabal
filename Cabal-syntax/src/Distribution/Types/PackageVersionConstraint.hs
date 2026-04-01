@@ -1,4 +1,6 @@
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE DeriveGeneric #-}
 
 module Distribution.Types.PackageVersionConstraint
@@ -12,6 +14,7 @@ import Prelude ()
 
 import Distribution.Parsec
 import Distribution.Pretty
+import qualified Distribution.Types.Modify as Mod
 import Distribution.Types.PackageId
 import Distribution.Types.PackageName
 import Distribution.Types.Version
@@ -32,7 +35,7 @@ instance Binary PackageVersionConstraint
 instance Structured PackageVersionConstraint
 instance NFData PackageVersionConstraint where rnf = genericRnf
 
-instance Pretty PackageVersionConstraint where
+instance Pretty Mod.HasNoPos PackageVersionConstraint where
   -- Cannot do: PackageVersionConstraint have to be parseable
   -- as Dependency, due roundtrip problems. (e.g. talking to old ./Setup).
   --

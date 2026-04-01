@@ -1,4 +1,6 @@
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE OverloadedStrings #-}
 
@@ -15,6 +17,7 @@ import Prelude ()
 
 import Distribution.Parsec
 import Distribution.Pretty
+import qualified Distribution.Types.Modify as Mod
 import Text.PrettyPrint (char, text)
 
 -- | The \"test-type\" field in the test suite stanza.
@@ -44,7 +47,7 @@ testTypeExe = TestTypeExe (mkVersion [1, 0])
 testTypeLib :: TestType
 testTypeLib = TestTypeLib (mkVersion [0, 9])
 
-instance Pretty TestType where
+instance Pretty Mod.HasNoPos TestType where
   pretty (TestTypeExe ver) = text "exitcode-stdio-" <<>> pretty ver
   pretty (TestTypeLib ver) = text "detailed-" <<>> pretty ver
   pretty (TestTypeUnknown name ver) = text name <<>> char '-' <<>> pretty ver

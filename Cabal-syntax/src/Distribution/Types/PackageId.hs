@@ -1,4 +1,6 @@
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE DeriveGeneric #-}
 
 module Distribution.Types.PackageId
@@ -11,6 +13,7 @@ import Prelude ()
 
 import Distribution.Parsec (Parsec (..), simpleParsec)
 import Distribution.Pretty
+import qualified Distribution.Types.Modify as Mod
 import Distribution.Types.PackageName
 import Distribution.Version (Version, nullVersion)
 
@@ -33,7 +36,7 @@ data PackageIdentifier = PackageIdentifier
 instance Binary PackageIdentifier
 instance Structured PackageIdentifier
 
-instance Pretty PackageIdentifier where
+instance Pretty Mod.HasNoPos PackageIdentifier where
   pretty (PackageIdentifier n v)
     | v == nullVersion = pretty n -- if no version, don't show version.
     | otherwise = pretty n <<>> Disp.char '-' <<>> pretty v

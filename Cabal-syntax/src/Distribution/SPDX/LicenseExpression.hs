@@ -1,4 +1,6 @@
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE DeriveGeneric #-}
 
 module Distribution.SPDX.LicenseExpression
@@ -17,6 +19,7 @@ import Distribution.SPDX.LicenseId
 import Distribution.SPDX.LicenseListVersion
 import Distribution.SPDX.LicenseReference
 import Distribution.Utils.Generic (isAsciiAlphaNum)
+import qualified Distribution.Types.Modify as Mod
 
 import qualified Distribution.Compat.CharParsing as P
 import qualified Text.PrettyPrint as Disp
@@ -63,7 +66,7 @@ instance Binary SimpleLicenseExpression
 instance Structured SimpleLicenseExpression
 instance Structured LicenseExpression
 
-instance Pretty LicenseExpression where
+instance Pretty Mod.HasNoPos LicenseExpression where
   pretty = go 0
     where
       go :: Int -> LicenseExpression -> Disp.Doc
@@ -76,7 +79,7 @@ instance Pretty LicenseExpression where
       parens False doc = doc
       parens True doc = Disp.parens doc
 
-instance Pretty SimpleLicenseExpression where
+instance Pretty Mod.HasNoPos SimpleLicenseExpression where
   pretty (ELicenseId i) = pretty i
   pretty (ELicenseIdPlus i) = pretty i <<>> Disp.char '+'
   pretty (ELicenseRef r) = pretty r

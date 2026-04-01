@@ -27,7 +27,7 @@ instance Parsec OverwritePolicy where
       "prompt" -> pure PromptOverwrite
       _ -> P.unexpected $ "OverwritePolicy: " ++ name
 
-instance Pretty OverwritePolicy where
+instance Pretty Mod.HasNoPos OverwritePolicy where
   pretty NeverOverwrite = PP.text "never"
   pretty AlwaysOverwrite = PP.text "always"
   pretty PromptOverwrite = PP.text "prompt"

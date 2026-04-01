@@ -1,4 +1,6 @@
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE PatternSynonyms #-}
 
 module Distribution.Types.ComponentName
@@ -14,6 +16,7 @@ import Prelude ()
 
 import Distribution.Parsec
 import Distribution.Pretty
+import qualified Distribution.Types.Modify as Mod
 import Distribution.Types.LibraryName
 import Distribution.Types.UnqualComponentName
 
@@ -53,7 +56,7 @@ instance Binary ComponentName
 instance Structured ComponentName
 
 -- Build-target-ish syntax
-instance Pretty ComponentName where
+instance Pretty Mod.HasNoPos ComponentName where
   pretty (CLibName lib) = prettyLibraryNameComponent lib
   pretty (CFLibName str) = Disp.text "flib:" <<>> pretty str
   pretty (CExeName str) = Disp.text "exe:" <<>> pretty str

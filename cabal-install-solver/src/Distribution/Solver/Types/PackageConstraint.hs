@@ -80,7 +80,7 @@ constraintScopeMatches (ScopeAnySetupQualifier pn) (Q pp pn') =
   in setup pp && pn == pn'
 constraintScopeMatches (ScopeAnyQualifier pn) (Q _ pn') = pn == pn'
 
-instance Pretty ConstraintScope where
+instance Pretty Mod.HasNoPos ConstraintScope where
   pretty (ScopeTarget pn) = pretty pn <<>> Disp.text "." <<>> pretty pn
   pretty (ScopeQualified q pn) = dispQualifier q <<>> pretty pn
   pretty (ScopeAnySetupQualifier pn) = Disp.text "setup." <<>> pretty pn
@@ -100,7 +100,7 @@ instance Binary PackageProperty
 instance NFData PackageProperty
 instance Structured PackageProperty
 
-instance Pretty PackageProperty where
+instance Pretty Mod.HasNoPos PackageProperty where
   pretty (PackagePropertyVersion verrange) = pretty verrange
   pretty PackagePropertyInstalled          = Disp.text "installed"
   pretty (PackagePropertyInstalledSpecificUnitId unitId) = Disp.text "installed(" <> pretty unitId <> Disp.text ")"
@@ -114,7 +114,7 @@ instance Pretty PackageProperty where
 data PackageConstraint = PackageConstraint ConstraintScope PackageProperty
   deriving (Eq, Show)
 
-instance Pretty PackageConstraint where
+instance Pretty Mod.HasNoPos PackageConstraint where
   pretty (PackageConstraint scope prop) =
     pretty scope <+> pretty prop
 

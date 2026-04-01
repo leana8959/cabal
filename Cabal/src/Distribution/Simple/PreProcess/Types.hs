@@ -115,7 +115,7 @@ type PreProcessCommand =
 newtype Suffix = Suffix String
   deriving (Eq, Ord, Show, Generic, IsString)
 
-instance Pretty Suffix where
+instance Pretty Mod.HasNoPos Suffix where
   pretty (Suffix s) = Disp.text s
 
 instance Binary Suffix

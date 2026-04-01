@@ -1,4 +1,6 @@
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE OverloadedStrings #-}
 
@@ -13,6 +15,7 @@ import Prelude ()
 
 import Distribution.Parsec
 import Distribution.Pretty
+import qualified Distribution.Types.Modify as Mod
 import Distribution.Version
 import Text.PrettyPrint (char, text)
 
@@ -34,7 +37,7 @@ knownBenchmarkTypes = [benchmarkTypeExe]
 benchmarkTypeExe :: BenchmarkType
 benchmarkTypeExe = BenchmarkTypeExe (mkVersion [1, 0])
 
-instance Pretty BenchmarkType where
+instance Pretty Mod.HasNoPos BenchmarkType where
   pretty (BenchmarkTypeExe ver) = text "exitcode-stdio-" <<>> pretty ver
   pretty (BenchmarkTypeUnknown name ver) = text name <<>> char '-' <<>> pretty ver
 

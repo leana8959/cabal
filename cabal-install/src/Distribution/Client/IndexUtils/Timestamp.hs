@@ -81,7 +81,7 @@ showTimestamp ts = case timestampToUTCTime ts of
 instance Binary Timestamp
 instance Structured Timestamp
 
-instance Pretty Timestamp where
+instance Pretty Mod.HasNoPos Timestamp where
   pretty = Disp.text . showTimestamp
 
 instance Parsec Timestamp where

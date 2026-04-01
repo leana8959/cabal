@@ -1,4 +1,6 @@
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE DeriveGeneric #-}
 
 module Distribution.Types.Module
@@ -12,6 +14,7 @@ import qualified Distribution.Compat.CharParsing as P
 import Distribution.ModuleName
 import Distribution.Parsec
 import Distribution.Pretty
+import qualified Distribution.Types.Modify as Mod
 import Distribution.Types.UnitId
 import qualified Text.PrettyPrint as Disp
 
@@ -30,7 +33,7 @@ data Module
 instance Binary Module
 instance Structured Module
 
-instance Pretty Module where
+instance Pretty Mod.HasNoPos Module where
   pretty (Module uid mod_name) =
     pretty uid <<>> Disp.text ":" <<>> pretty mod_name
 

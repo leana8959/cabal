@@ -1,4 +1,6 @@
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE DeriveGeneric #-}
 
 module Distribution.Types.LegacyExeDependency
@@ -10,6 +12,7 @@ import Prelude ()
 
 import Distribution.Parsec
 import Distribution.Pretty
+import qualified Distribution.Types.Modify as Mod
 import Distribution.Version (VersionRange, anyVersion)
 
 import qualified Distribution.Compat.CharParsing as P
@@ -32,7 +35,7 @@ instance Binary LegacyExeDependency
 instance Structured LegacyExeDependency
 instance NFData LegacyExeDependency where rnf = genericRnf
 
-instance Pretty LegacyExeDependency where
+instance Pretty Mod.HasNoPos LegacyExeDependency where
   pretty (LegacyExeDependency name ver) =
     Disp.text name <+> pretty ver
 

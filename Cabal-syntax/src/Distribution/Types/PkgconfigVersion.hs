@@ -1,4 +1,6 @@
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE DeriveGeneric #-}
 
 -- @since 3.0
@@ -12,6 +14,7 @@ import Prelude ()
 
 import Distribution.Parsec
 import Distribution.Pretty
+import qualified Distribution.Types.Modify as Mod
 import Distribution.Utils.Generic (isAsciiAlphaNum)
 
 import qualified Data.ByteString as BS
@@ -38,7 +41,7 @@ instance Binary PkgconfigVersion
 instance Structured PkgconfigVersion
 instance NFData PkgconfigVersion where rnf = genericRnf
 
-instance Pretty PkgconfigVersion where
+instance Pretty Mod.HasNoPos PkgconfigVersion where
   pretty (PkgconfigVersion bs) = PP.text (BS8.unpack bs)
 
 -- |

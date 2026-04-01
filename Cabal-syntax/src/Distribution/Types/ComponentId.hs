@@ -1,4 +1,6 @@
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE DeriveGeneric #-}
 
 module Distribution.Types.ComponentId
@@ -13,6 +15,7 @@ import Prelude ()
 
 import Distribution.Parsec
 import Distribution.Pretty
+import qualified Distribution.Types.Modify as Mod
 
 import qualified Distribution.Compat.CharParsing as P
 import Text.PrettyPrint (text)
@@ -59,7 +62,7 @@ instance IsString ComponentId where
 instance Binary ComponentId
 instance Structured ComponentId
 
-instance Pretty ComponentId where
+instance Pretty Mod.HasNoPos ComponentId where
   pretty = text . unComponentId
 
 instance Parsec ComponentId where

@@ -29,6 +29,6 @@ instance Parsec InstallMethod where
       "symlink" -> pure InstallMethodSymlink
       _ -> P.unexpected $ "InstallMethod: " ++ name
 
-instance Pretty InstallMethod where
+instance Pretty Mod.HasNoPos InstallMethod where
   pretty InstallMethodCopy = PP.text "copy"
   pretty InstallMethodSymlink = PP.text "symlink"

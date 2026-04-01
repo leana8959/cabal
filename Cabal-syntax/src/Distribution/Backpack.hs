@@ -1,5 +1,7 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE RankNTypes #-}
 
@@ -38,6 +40,7 @@ module Distribution.Backpack
 import Distribution.Compat.Prelude hiding (mod)
 import Distribution.Parsec
 import Distribution.Pretty
+import qualified Distribution.Types.Modify as Mod
 import Text.PrettyPrint (hcat)
 import Prelude ()
 
@@ -99,7 +102,7 @@ instance NFData OpenUnitId where
   rnf (IndefFullUnitId cid subst) = rnf cid `seq` rnf subst
   rnf (DefiniteUnitId uid) = rnf uid
 
-instance Pretty OpenUnitId where
+instance Pretty Mod.HasNoPos OpenUnitId where
   pretty (IndefFullUnitId cid insts)
     -- TODO: arguably a smart constructor to enforce invariant would be
     -- better
@@ -172,7 +175,7 @@ instance NFData OpenModule where
   rnf (OpenModule uid mod_name) = rnf uid `seq` rnf mod_name
   rnf (OpenModuleVar mod_name) = rnf mod_name
 
-instance Pretty OpenModule where
+instance Pretty Mod.HasNoPos OpenModule where
   pretty (OpenModule uid mod_name) =
     hcat [pretty uid, Disp.text ":", pretty mod_name]
   pretty (OpenModuleVar mod_name) =

@@ -142,7 +142,7 @@ data UpdateRequest = UpdateRequest
   }
   deriving (Show)
 
-instance Pretty UpdateRequest where
+instance Pretty Mod.HasNoPos UpdateRequest where
   pretty (UpdateRequest n s) = pretty n <<>> Disp.comma <<>> pretty s
 
 instance Parsec UpdateRequest where

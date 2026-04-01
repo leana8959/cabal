@@ -1,4 +1,7 @@
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE DeriveGeneric #-}
 
 module Distribution.Types.LibraryName
@@ -20,6 +23,7 @@ import Prelude ()
 
 import Distribution.Parsec
 import Distribution.Pretty
+import qualified Distribution.Types.Modify as Mod
 import Distribution.Types.UnqualComponentName
 
 import qualified Data.List.NonEmpty as NEL
@@ -47,7 +51,7 @@ prettyLibraryNameComponent (LSubLibName str) = Disp.text "lib:" <<>> pretty str
 -- | Pretty print a 'LibraryName' after a package name.
 --
 -- Produces output like @foo@, @foo:bar@, or @foo:{bar,baz}@
-prettyLibraryNames :: Pretty a => a -> NonEmpty LibraryName -> Disp.Doc
+prettyLibraryNames :: Pretty Mod.HasNoPos a => a -> NonEmpty LibraryName -> Disp.Doc
 prettyLibraryNames package libraries =
   let doc = pretty package
 

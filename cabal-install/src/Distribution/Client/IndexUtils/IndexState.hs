@@ -43,7 +43,7 @@ instance Binary TotalIndexState
 instance Structured TotalIndexState
 instance NFData TotalIndexState
 
-instance Pretty TotalIndexState where
+instance Pretty Mod.HasNoPos TotalIndexState where
   pretty (TIS IndexStateHead m)
     | not (Map.null m) =
         Disp.hsep $
@@ -134,7 +134,7 @@ instance Binary RepoIndexState
 instance Structured RepoIndexState
 instance NFData RepoIndexState
 
-instance Pretty RepoIndexState where
+instance Pretty Mod.HasNoPos RepoIndexState where
   pretty IndexStateHead = Disp.text "HEAD"
   pretty (IndexStateTime ts) = pretty ts
 

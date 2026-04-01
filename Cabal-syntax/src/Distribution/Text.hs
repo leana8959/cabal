@@ -1,3 +1,6 @@
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 -- Since @3.0@ this is a compat module.
 module Distribution.Text (display, simpleParse) where
 
@@ -5,8 +8,9 @@ module Distribution.Text (display, simpleParse) where
 
 import Distribution.Parsec
 import Distribution.Pretty
+import qualified Distribution.Types.Modify as Mod
 
-display :: Pretty a => a -> String
+display :: Pretty Mod.HasNoPos a => a -> String
 display = prettyShow
 
 simpleParse :: Parsec a => String -> Maybe a

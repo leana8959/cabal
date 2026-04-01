@@ -1,4 +1,6 @@
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
@@ -22,6 +24,7 @@ import Prelude ()
 import qualified Distribution.Compat.CharParsing as P
 import Distribution.Parsec
 import Distribution.Pretty
+import qualified Distribution.Types.Modify as Mod
 import Distribution.Types.ComponentId
 import Distribution.Types.PackageId
 
@@ -71,7 +74,7 @@ instance Structured UnitId
 
 -- | The textual format for 'UnitId' coincides with the format
 -- GHC accepts for @-package-id@.
-instance Pretty UnitId where
+instance Pretty Mod.HasNoPos UnitId where
   pretty = text . unUnitId
 
 -- | The textual format for 'UnitId' coincides with the format
@@ -118,7 +121,7 @@ getHSLibraryName uid = "HS" ++ prettyShow uid
 -- that a 'UnitId' identified this way is definite; i.e., it has no
 -- unfilled holes.
 newtype DefUnitId = DefUnitId {unDefUnitId :: UnitId}
-  deriving (Generic, Read, Show, Eq, Ord, Data, Binary, NFData, Pretty)
+  deriving (Generic, Read, Show, Eq, Ord, Data, Binary, NFData, Pretty Mod.HasNoPos)
 
 instance Structured DefUnitId
 

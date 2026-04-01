@@ -60,7 +60,7 @@ instance Structured GlobPiece
 --------------------------------------------------------------------------------
 -- Parsing & pretty-printing
 
-instance Pretty Glob where
+instance Pretty Mod.HasNoPos Glob where
   pretty (GlobDir glob pathglob) =
     dispGlobPieces glob
       Disp.<> Disp.char '/'

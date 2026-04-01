@@ -46,7 +46,7 @@ instance Binary LicenseExceptionId where
 instance Structured LicenseExceptionId where
     structure p = set typeVersion 307 $ nominalStructure p
 
-instance Pretty LicenseExceptionId where
+instance Pretty Mod.HasNoPos LicenseExceptionId where
     pretty = Disp.text . licenseExceptionId
 
 instance Parsec LicenseExceptionId where

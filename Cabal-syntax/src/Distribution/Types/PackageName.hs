@@ -1,4 +1,5 @@
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE FlexibleInstances #-}
@@ -101,10 +102,10 @@ instance IsString PackageName where
 instance Binary PackageName
 instance Structured PackageName
 
-instance Pretty PackageName where
+instance Pretty Mod.HasNoPos PackageName where
   pretty = Disp.text . unPackageName
 
-instance Pretty PackageNameAnn where
+instance Pretty Mod.HasNoPos PackageNameAnn where
   pretty (PackageName (Ann t x)) = applyTriviaDoc t $ Disp.text $ fromShortText x
 
 instance Parsec PackageName where

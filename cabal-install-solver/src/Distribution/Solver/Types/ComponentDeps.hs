@@ -70,7 +70,7 @@ data Component =
 instance Binary Component
 instance Structured Component
 
-instance Pretty Component where
+instance Pretty Mod.HasNoPos Component where
     pretty ComponentLib        = PP.text "lib"
     pretty (ComponentSubLib n) = PP.text "lib:" <<>> pretty n
     pretty (ComponentFLib n)   = PP.text "flib:" <<>> pretty n

@@ -670,7 +670,7 @@ readUserConstraint str =
         ++ "constraint, which is either a version range, 'installed', "
         ++ "'source', 'test', 'bench', or flags. "
 
-instance Pretty UserConstraint where
+instance Pretty Mod.HasNoPos UserConstraint where
   pretty (UserConstraint scope prop) =
     pretty $ PackageConstraint (fromUserConstraintScope scope) prop
 

@@ -895,7 +895,7 @@ instance Parsec CompatDataDir where
       parsecWarning PWTEmptyFilePath "empty FilePath"
     return (CompatDataDir $ makeSymbolicPath token)
 
-instance Pretty CompatDataDir where
+instance Pretty Mod.HasNoPos CompatDataDir where
   pretty = showToken . getSymbolicPath . getCompatDataDir
 
 newtype CompatLicenseFile = CompatLicenseFile {getCompatLicenseFile :: [RelativePath Pkg File]}
@@ -912,7 +912,7 @@ instance Parsec CompatLicenseFile where
           then return (CompatLicenseFile [])
           else P.unexpected "non-empty-token"
 
-instance Pretty CompatLicenseFile where
+instance Pretty Mod.HasNoPos CompatLicenseFile where
   pretty = pretty . pack' (alaList FSep) . getCompatLicenseFile
 
 -------------------------------------------------------------------------------

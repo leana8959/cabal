@@ -1,4 +1,6 @@
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DeriveGeneric #-}
 
 -----------------------------------------------------------------------------
@@ -54,6 +56,7 @@ import Prelude ()
 
 import Distribution.Parsec
 import Distribution.Pretty
+import qualified Distribution.Types.Modify as Mod
 import Distribution.Version
 
 import qualified Data.Map.Strict as Map
@@ -215,7 +218,7 @@ licenseFromSPDX l =
       | isAlphaNum c = Just c
       | otherwise = Nothing
 
-instance Pretty License where
+instance Pretty Mod.HasNoPos License where
   pretty (GPL version) = Disp.text "GPL" <<>> dispOptVersion version
   pretty (LGPL version) = Disp.text "LGPL" <<>> dispOptVersion version
   pretty (AGPL version) = Disp.text "AGPL" <<>> dispOptVersion version

@@ -52,7 +52,7 @@ instance Binary ActiveRepos
 instance Structured ActiveRepos
 instance NFData ActiveRepos
 
-instance Pretty ActiveRepos where
+instance Pretty Mod.HasNoPos ActiveRepos where
   pretty (ActiveRepos []) =
     Disp.text ":none"
   pretty (ActiveRepos repos) =
@@ -91,7 +91,7 @@ instance Binary ActiveRepoEntry
 instance Structured ActiveRepoEntry
 instance NFData ActiveRepoEntry
 
-instance Pretty ActiveRepoEntry where
+instance Pretty Mod.HasNoPos ActiveRepoEntry where
   pretty (ActiveRepoRest s) =
     Disp.text ":rest" <<>> Disp.colon <<>> pretty s
   pretty (ActiveRepo r s) =
@@ -129,7 +129,7 @@ instance Binary CombineStrategy
 instance Structured CombineStrategy
 instance NFData CombineStrategy
 
-instance Pretty CombineStrategy where
+instance Pretty Mod.HasNoPos CombineStrategy where
   pretty CombineStrategySkip = Disp.text "skip"
   pretty CombineStrategyMerge = Disp.text "merge"
   pretty CombineStrategyOverride = Disp.text "override"

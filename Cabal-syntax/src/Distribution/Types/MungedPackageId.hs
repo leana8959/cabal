@@ -1,4 +1,6 @@
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE DeriveGeneric #-}
 
 module Distribution.Types.MungedPackageId
@@ -11,6 +13,7 @@ import Prelude ()
 
 import Distribution.Parsec
 import Distribution.Pretty
+import qualified Distribution.Types.Modify as Mod
 import Distribution.Types.LibraryName
 import Distribution.Types.MungedPackageName
 import Distribution.Types.PackageId
@@ -40,7 +43,7 @@ instance Structured MungedPackageId
 --
 -- >>> prettyShow $ MungedPackageId (MungedPackageName "servant" (LSubLibName "lackey")) (mkVersion [0,1,2])
 -- "z-servant-z-lackey-0.1.2"
-instance Pretty MungedPackageId where
+instance Pretty Mod.HasNoPos MungedPackageId where
   pretty (MungedPackageId n v)
     | v == nullVersion = pretty n -- if no version, don't show version.
     | otherwise = pretty n <<>> Disp.char '-' <<>> pretty v

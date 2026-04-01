@@ -23,7 +23,7 @@ instance Binary RepoName
 instance Structured RepoName
 instance NFData RepoName
 
-instance Pretty RepoName where
+instance Pretty Mod.HasNoPos RepoName where
   pretty = Disp.text . unRepoName
 
 -- |

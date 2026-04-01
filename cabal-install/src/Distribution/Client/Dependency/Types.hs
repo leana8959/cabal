@@ -29,7 +29,7 @@ instance NFData PreSolver
 instance Structured PreSolver
 instance Structured Solver
 
-instance Pretty PreSolver where
+instance Pretty Mod.HasNoPos PreSolver where
   pretty AlwaysModular = text "modular"
 
 instance Parsec PreSolver where

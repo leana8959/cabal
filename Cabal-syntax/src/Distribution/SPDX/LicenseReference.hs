@@ -1,4 +1,6 @@
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE DeriveGeneric #-}
 
 module Distribution.SPDX.LicenseReference
@@ -14,6 +16,7 @@ import Prelude ()
 
 import Distribution.Parsec
 import Distribution.Pretty
+import qualified Distribution.Types.Modify as Mod
 import Distribution.Utils.Generic (isAsciiAlphaNum)
 
 import qualified Distribution.Compat.CharParsing as P
@@ -40,7 +43,7 @@ instance Structured LicenseRef
 instance NFData LicenseRef where
   rnf (LicenseRef d l) = rnf d `seq` rnf l
 
-instance Pretty LicenseRef where
+instance Pretty Mod.HasNoPos LicenseRef where
   pretty (LicenseRef Nothing l) = Disp.text "LicenseRef-" <<>> Disp.text l
   pretty (LicenseRef (Just d) l) =
     Disp.text "DocumentRef-" <<>> Disp.text d <<>> Disp.char ':' <<>> Disp.text "LicenseRef-" <<>> Disp.text l

@@ -51,7 +51,7 @@ instance Binary LicenseId where
 instance Structured LicenseId where
     structure p = set typeVersion 307 $ nominalStructure p
 
-instance Pretty LicenseId where
+instance Pretty Mod.HasNoPos LicenseId where
     pretty = Disp.text . licenseId
 
 -- |

@@ -61,7 +61,7 @@ import Distribution.System (OS(Windows), buildOS)
 newtype ProjectConfigPath = ProjectConfigPath (NonEmpty FilePath)
     deriving (Eq, Show, Generic)
 
-instance Pretty ProjectConfigPath where
+instance Pretty Mod.HasNoPos ProjectConfigPath where
   pretty = docProjectConfigPath
 
 -- | Sorts URIs after local file paths and longer file paths after shorter ones

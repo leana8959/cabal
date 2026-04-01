@@ -272,7 +272,7 @@ intToVerbosity _ = Nothing
 instance Parsec VerbosityFlags where
   parsec = parsecVerbosity
 
-instance Pretty VerbosityFlags where
+instance Pretty Mod.HasNoPos VerbosityFlags where
   pretty = PP.text . showForCabal
 
 parsecVerbosity :: CabalParsing m => m VerbosityFlags

@@ -1,4 +1,6 @@
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE OverloadedStrings #-}
 
@@ -30,6 +32,7 @@ import Data.Array (Array, Ix (inRange), accumArray, bounds, (!))
 
 import Distribution.Parsec
 import Distribution.Pretty
+import qualified Distribution.Types.Modify as Mod
 
 import qualified Distribution.Compat.CharParsing as P
 import qualified Text.PrettyPrint as Disp
@@ -70,7 +73,7 @@ instance NFData Language where rnf = genericRnf
 knownLanguages :: [Language]
 knownLanguages = [Haskell98, Haskell2010, GHC2021, GHC2024]
 
-instance Pretty Language where
+instance Pretty Mod.HasNoPos Language where
   pretty (UnknownLanguage other) = Disp.text other
   pretty other = Disp.text (show other)
 
@@ -578,7 +581,7 @@ deprecatedExtensions =
 -- name to the old one for older compilers. Otherwise we are in danger
 -- of the scenario in ticket #689.
 
-instance Pretty Extension where
+instance Pretty Mod.HasNoPos Extension where
   pretty (UnknownExtension other) = Disp.text other
   pretty (EnableExtension ke) = Disp.text (show ke)
   pretty (DisableExtension ke) = Disp.text ("No" ++ show ke)
@@ -586,7 +589,7 @@ instance Pretty Extension where
 instance Parsec Extension where
   parsec = classifyExtension <$> P.munch1 isAlphaNum
 
-instance Pretty KnownExtension where
+instance Pretty Mod.HasNoPos KnownExtension where
   pretty ke = Disp.text (show ke)
 
 classifyExtension :: String -> Extension

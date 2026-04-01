@@ -1,4 +1,6 @@
 {-# LANGUAGE ConstraintKinds #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings #-}
@@ -22,6 +24,7 @@ import Distribution.ModuleName
 import Distribution.Package
 import Distribution.Parsec
 import Distribution.Pretty
+import qualified Distribution.Types.Modify as Mod
 import Distribution.Types.LibraryName
 import Distribution.Types.LibraryVisibility
 import Distribution.Types.MungedPackageName
@@ -204,14 +207,14 @@ instance Newtype [ExposedModule] ExposedModules
 instance Parsec ExposedModules where
   parsec = ExposedModules <$> parsecOptCommaList parsec
 
-instance Pretty ExposedModules where
+instance Pretty Mod.HasNoPos ExposedModules where
   pretty = showExposedModules . getExposedModules
 
 newtype CompatPackageKey = CompatPackageKey {getCompatPackageKey :: String}
 
 instance Newtype String CompatPackageKey
 
-instance Pretty CompatPackageKey where
+instance Pretty Mod.HasNoPos CompatPackageKey where
   pretty = Disp.text . getCompatPackageKey
 
 instance Parsec CompatPackageKey where
@@ -223,7 +226,7 @@ newtype InstWith = InstWith {getInstWith :: [(ModuleName, OpenModule)]}
 
 instance Newtype [(ModuleName, OpenModule)] InstWith
 
-instance Pretty InstWith where
+instance Pretty Mod.HasNoPos InstWith where
   pretty = dispOpenModuleSubst . Map.fromList . getInstWith
 
 instance Parsec InstWith where
@@ -237,7 +240,7 @@ instance Newtype (Either SPDX.License License) SpecLicenseLenient
 instance Parsec SpecLicenseLenient where
   parsec = fmap SpecLicenseLenient $ Left <$> P.try parsec <|> Right <$> parsec
 
-instance Pretty SpecLicenseLenient where
+instance Pretty Mod.HasNoPos SpecLicenseLenient where
   pretty = either pretty pretty . getSpecLicenseLenient
 
 -------------------------------------------------------------------------------

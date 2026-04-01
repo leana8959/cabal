@@ -258,10 +258,10 @@ instance (Newtype a b, Sep Mod.HasNoAnn sep, Parsec b) => Parsec (List sep b a) 
 instance (Newtype a b, Sep Mod.HasAnn sep, Parsec b) => Parsec (ListAnn sep b a) where
   parsec = pack . (map . fmap) (unpack :: b -> a) <$> parseSep (Proxy :: Proxy sep) parsec
 
-instance (Newtype a b, Sep Mod.HasNoAnn sep, Pretty b) => Pretty (List sep b a) where
+instance (Newtype a b, Sep Mod.HasNoAnn sep, Pretty Mod.HasNoPos b) => Pretty Mod.HasNoPos (List sep b a) where
   pretty = prettySep (Proxy :: Proxy sep) . map (pretty . (pack :: a -> b)) . unpack
 
-instance (Newtype a b, Sep Mod.HasAnn sep, Pretty b) => Pretty (ListAnn sep b a) where
+instance (Newtype a b, Sep Mod.HasAnn sep, Pretty Mod.HasNoPos b) => Pretty Mod.HasNoPos (ListAnn sep b a) where
   pretty = prettySep (Proxy :: Proxy sep) . (map . fmap) (pretty . (pack :: a -> b)) . unpack
 
 -- | Like 'List', but for 'Set'.
@@ -296,7 +296,7 @@ instance Newtype (Set a) (Set' sep wrapper a)
 instance (Newtype a b, Ord a, Sep Mod.HasNoAnn sep, Parsec b) => Parsec (Set' sep b a) where
   parsec = pack . Set.fromList . map (unpack :: b -> a) <$> parseSep (Proxy :: Proxy sep) parsec
 
-instance (Newtype a b, Sep Mod.HasNoAnn sep, Pretty b) => Pretty (Set' sep b a) where
+instance (Newtype a b, Sep Mod.HasNoAnn sep, Pretty Mod.HasNoPos b) => Pretty Mod.HasNoPos (Set' sep b a) where
   pretty = prettySep (Proxy :: Proxy sep) . map (pretty . (pack :: a -> b)) . Set.toList . unpack
 
 --
@@ -330,7 +330,7 @@ instance Newtype (NonEmpty a) (NonEmpty' sep wrapper a)
 instance (Newtype a b, Sep Mod.HasNoAnn sep, Parsec b) => Parsec (NonEmpty' sep b a) where
   parsec = pack . fmap (unpack :: b -> a) <$> parseSepNE (Proxy :: Proxy sep) parsec
 
-instance (Newtype a b, Sep Mod.HasNoAnn sep, Pretty b) => Pretty (NonEmpty' sep b a) where
+instance (Newtype a b, Sep Mod.HasNoAnn sep, Pretty Mod.HasNoPos b) => Pretty Mod.HasNoPos (NonEmpty' sep b a) where
   pretty = prettySep (Proxy :: Proxy sep) . map (pretty . (pack :: a -> b)) . NE.toList . unpack
 
 -------------------------------------------------------------------------------
@@ -345,7 +345,7 @@ instance Newtype String Token
 instance Parsec Token where
   parsec = pack <$> parsecToken
 
-instance Pretty Token where
+instance Pretty Mod.HasNoPos Token where
   pretty = showToken . unpack
 
 -- | Haskell string or @[^ ]+@
@@ -356,7 +356,7 @@ instance Newtype String Token'
 instance Parsec Token' where
   parsec = pack <$> parsecToken'
 
-instance Pretty Token' where
+instance Pretty Mod.HasNoPos Token' where
   pretty = showToken . unpack
 
 -- | Either @"quoted"@ or @un-quoted@.
@@ -367,7 +367,7 @@ instance Newtype a (MQuoted a)
 instance Parsec a => Parsec (MQuoted a) where
   parsec = pack <$> parsecMaybeQuoted parsec
 
-instance Pretty a => Pretty (MQuoted a) where
+instance Pretty Mod.HasNoPos a => Pretty Mod.HasNoPos (MQuoted a) where
   pretty = pretty . unpack
 
 -- | Filepath are parsed as 'Token'.
@@ -382,7 +382,7 @@ instance Parsec FilePathNT where
       then P.unexpected "empty FilePath"
       else return (FilePathNT token)
 
-instance Pretty FilePathNT where
+instance Pretty Mod.HasNoPos FilePathNT where
   pretty = showFilePath . unpack
 
 -- | Newtype for 'SymbolicPath', with a different 'Parsec' instance
@@ -398,7 +398,7 @@ instance Parsec (SymbolicPathNT from to) where
       then P.unexpected "empty FilePath"
       else return (SymbolicPathNT $ makeSymbolicPath token)
 
-instance Pretty (SymbolicPathNT from to) where
+instance Pretty Mod.HasNoPos (SymbolicPathNT from to) where
   pretty = showFilePath . getSymbolicPath . getSymbolicPathNT
 
 -- | Newtype for 'RelativePath', with a different 'Parsec' instance
@@ -417,7 +417,7 @@ instance Parsec (RelativePathNT from to) where
       then P.unexpected "empty FilePath"
       else return (RelativePathNT $ unsafeMakeSymbolicPath token)
 
-instance Pretty (RelativePathNT from to) where
+instance Pretty Mod.HasNoPos (RelativePathNT from to) where
   pretty = showFilePath . getSymbolicPath . getRelativePathNT
 
 -------------------------------------------------------------------------------
@@ -511,7 +511,7 @@ instance Parsec SpecVersion where
           alg (OrLaterVersionF _) = True
           alg _ = False
 
-instance Pretty SpecVersion where
+instance Pretty Mod.HasNoPos SpecVersion where
   pretty (SpecVersion csv)
     | csv >= CabalSpecV1_12 = text (showCabalSpecVersion csv)
     | otherwise = text ">=" <<>> text (showCabalSpecVersion csv)
@@ -533,7 +533,7 @@ instance Parsec SpecLicense where
       then SpecLicense . Left <$> parsec
       else SpecLicense . Right <$> parsec
 
-instance Pretty SpecLicense where
+instance Pretty Mod.HasNoPos SpecLicense where
   pretty = either pretty pretty . unpack
 
 -------------------------------------------------------------------------------
@@ -548,7 +548,7 @@ instance Newtype (CompilerFlavor, VersionRange) TestedWith
 instance Parsec TestedWith where
   parsec = pack <$> parsecTestedWith
 
-instance Pretty TestedWith where
+instance Pretty Mod.HasNoPos TestedWith where
   pretty x = case unpack x of
     (compiler, vr) -> pretty compiler <+> pretty vr
 

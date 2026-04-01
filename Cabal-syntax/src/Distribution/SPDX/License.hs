@@ -1,4 +1,6 @@
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE DeriveGeneric #-}
 
 module Distribution.SPDX.License
@@ -11,6 +13,7 @@ import Prelude ()
 import Distribution.Parsec
 import Distribution.Pretty
 import Distribution.SPDX.LicenseExpression
+import qualified Distribution.Types.Modify as Mod
 
 import qualified Distribution.Compat.CharParsing as P
 import qualified Text.PrettyPrint as Disp
@@ -50,7 +53,7 @@ instance NFData License where
   rnf NONE = ()
   rnf (License l) = rnf l
 
-instance Pretty License where
+instance Pretty Mod.HasNoPos License where
   pretty NONE = Disp.text "NONE"
   pretty (License l) = pretty l
 

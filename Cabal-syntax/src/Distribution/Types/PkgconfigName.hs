@@ -1,4 +1,6 @@
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE DeriveGeneric #-}
 
 module Distribution.Types.PkgconfigName
@@ -13,6 +15,7 @@ import Prelude ()
 
 import Distribution.Parsec
 import Distribution.Pretty
+import qualified Distribution.Types.Modify as Mod
 
 import qualified Distribution.Compat.CharParsing as P
 import qualified Text.PrettyPrint as Disp
@@ -54,7 +57,7 @@ instance Structured PkgconfigName
 -- pkg-config allows versions and other letters in package names, eg
 -- "gtk+-2.0" is a valid pkg-config package _name_.  It then has a package
 -- version number like 2.10.13
-instance Pretty PkgconfigName where
+instance Pretty Mod.HasNoPos PkgconfigName where
   pretty = Disp.text . unPkgconfigName
 
 instance Parsec PkgconfigName where

@@ -107,7 +107,7 @@ instance NFData StrongFlags
 instance NFData AllowBootLibInstalls
 instance NFData OnlyConstrained
 
-instance Pretty OnlyConstrained where
+instance Pretty Mod.HasNoPos OnlyConstrained where
   pretty OnlyConstrainedAll  = PP.text "all"
   pretty OnlyConstrainedNone = PP.text "none"
 

@@ -1,4 +1,6 @@
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 
 module Distribution.Types.ExposedModule where
 
@@ -11,6 +13,7 @@ import Distribution.Parsec
 import Distribution.Pretty
 
 import qualified Distribution.Compat.CharParsing as P
+import qualified Distribution.Types.Modify as Mod
 import qualified Text.PrettyPrint as Disp
 
 data ExposedModule = ExposedModule
@@ -19,7 +22,7 @@ data ExposedModule = ExposedModule
   }
   deriving (Eq, Generic, Read, Show)
 
-instance Pretty ExposedModule where
+instance Pretty Mod.HasNoPos ExposedModule where
   pretty (ExposedModule m reexport) =
     Disp.hsep
       [ pretty m

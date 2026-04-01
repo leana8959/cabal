@@ -1,5 +1,6 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
@@ -72,7 +73,7 @@ instance IsString UnqualComponentName where
 instance Binary UnqualComponentName
 instance Structured UnqualComponentName
 
-instance Pretty UnqualComponentName where
+instance Pretty Mod.HasNoPos UnqualComponentName where
   pretty = showToken . unUnqualComponentName
 
 instance Parsec UnqualComponentName where

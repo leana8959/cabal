@@ -1,4 +1,6 @@
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE OverloadedStrings #-}
 
@@ -11,6 +13,7 @@ import Prelude ()
 
 import Distribution.Parsec
 import Distribution.Pretty
+import qualified Distribution.Types.Modify as Mod
 
 import qualified Distribution.Compat.CharParsing as P
 import qualified Text.PrettyPrint as Disp
@@ -20,7 +23,7 @@ data ExecutableScope
   | ExecutablePrivate
   deriving (Generic, Show, Read, Eq, Ord, Data)
 
-instance Pretty ExecutableScope where
+instance Pretty Mod.HasNoPos ExecutableScope where
   pretty ExecutablePublic = Disp.text "public"
   pretty ExecutablePrivate = Disp.text "private"
 

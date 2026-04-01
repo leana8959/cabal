@@ -1,4 +1,6 @@
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE DeriveGeneric #-}
 
 module Distribution.Types.Mixin
@@ -13,6 +15,7 @@ import Prelude ()
 import Distribution.CabalSpecVersion
 import Distribution.Parsec
 import Distribution.Pretty
+import qualified Distribution.Types.Modify as Mod
 import Distribution.Types.IncludeRenaming
 import Distribution.Types.LibraryName
 import Distribution.Types.PackageName
@@ -38,7 +41,7 @@ instance Structured Mixin
 
 instance NFData Mixin where rnf = genericRnf
 
-instance Pretty Mixin where
+instance Pretty Mod.HasNoPos Mixin where
   pretty (Mixin pn LMainLibName incl) = pretty pn <+> pretty incl
   pretty (Mixin pn (LSubLibName ln) incl) = pretty pn <<>> PP.colon <<>> pretty ln <+> pretty incl
 

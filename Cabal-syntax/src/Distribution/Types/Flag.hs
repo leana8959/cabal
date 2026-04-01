@@ -1,5 +1,7 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE TupleSections #-}
 
@@ -41,6 +43,7 @@ import Prelude ()
 
 import Distribution.Parsec
 import Distribution.Pretty
+import qualified Distribution.Types.Modify as Mod
 
 import qualified Data.Map as Map
 import qualified Distribution.Compat.CharParsing as P
@@ -109,7 +112,7 @@ unFlagName (FlagName s) = fromShortText s
 instance Binary FlagName
 instance Structured FlagName
 
-instance Pretty FlagName where
+instance Pretty Mod.HasNoPos FlagName where
   pretty = Disp.text . unFlagName
 
 instance Parsec FlagName where
@@ -247,7 +250,7 @@ showFlagValue (f, True) = '+' : unFlagName f
 showFlagValue (f, False) = '-' : unFlagName f
 
 -- | @since 3.4.0.0
-instance Pretty FlagAssignment where
+instance Pretty Mod.HasNoPos FlagAssignment where
   pretty = dispFlagAssignment
 
 -- |

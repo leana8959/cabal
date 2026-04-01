@@ -1,4 +1,6 @@
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE DeriveGeneric #-}
 
 module Distribution.Types.ExeDependency
@@ -11,6 +13,7 @@ import Prelude ()
 
 import Distribution.Parsec
 import Distribution.Pretty
+import qualified Distribution.Types.Modify as Mod
 import Distribution.Types.ComponentName
 import Distribution.Types.PackageName
 import Distribution.Types.UnqualComponentName
@@ -31,7 +34,7 @@ instance Binary ExeDependency
 instance Structured ExeDependency
 instance NFData ExeDependency where rnf = genericRnf
 
-instance Pretty ExeDependency where
+instance Pretty Mod.HasNoPos ExeDependency where
   pretty (ExeDependency name exe ver) =
     pretty name <<>> PP.colon <<>> pretty exe PP.<+> pver
     where

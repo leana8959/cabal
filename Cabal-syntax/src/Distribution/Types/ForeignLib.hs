@@ -90,7 +90,7 @@ instance Binary LibVersionInfo
 instance Structured LibVersionInfo
 instance NFData LibVersionInfo where rnf = genericRnf
 
-instance Pretty LibVersionInfo where
+instance Pretty Mod.HasNoPos LibVersionInfo where
   pretty (LibVersionInfo c r a) =
     Disp.hcat $ Disp.punctuate (Disp.char ':') $ map Disp.int [c, r, a]
 

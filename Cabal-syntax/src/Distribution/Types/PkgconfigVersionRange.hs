@@ -1,4 +1,6 @@
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE DeriveGeneric #-}
 
 module Distribution.Types.PkgconfigVersionRange
@@ -18,6 +20,7 @@ import Prelude ()
 import Distribution.CabalSpecVersion
 import Distribution.Parsec
 import Distribution.Pretty
+import qualified Distribution.Types.Modify as Mod
 import Distribution.Types.PkgconfigVersion
 import Distribution.Types.Version
 import Distribution.Types.VersionInterval
@@ -43,7 +46,7 @@ instance Binary PkgconfigVersionRange
 instance Structured PkgconfigVersionRange
 instance NFData PkgconfigVersionRange where rnf = genericRnf
 
-instance Pretty PkgconfigVersionRange where
+instance Pretty Mod.HasNoPos PkgconfigVersionRange where
   pretty = pp 0
     where
       pp :: Int -> PkgconfigVersionRange -> PP.Doc

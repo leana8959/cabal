@@ -1,4 +1,6 @@
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE DeriveGeneric #-}
 
 module Distribution.Types.IncludeRenaming
@@ -11,6 +13,7 @@ import Distribution.Compat.Prelude
 import Prelude ()
 
 import Distribution.Types.ModuleRenaming
+import qualified Distribution.Types.Modify as Mod
 
 import qualified Distribution.Compat.CharParsing as P
 import Distribution.Parsec
@@ -42,7 +45,7 @@ defaultIncludeRenaming = IncludeRenaming defaultRenaming defaultRenaming
 isDefaultIncludeRenaming :: IncludeRenaming -> Bool
 isDefaultIncludeRenaming (IncludeRenaming p r) = isDefaultRenaming p && isDefaultRenaming r
 
-instance Pretty IncludeRenaming where
+instance Pretty Mod.HasNoPos IncludeRenaming where
   pretty (IncludeRenaming prov_rn req_rn) =
     pretty prov_rn
       <+> ( if isDefaultRenaming req_rn

@@ -1,5 +1,7 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FlexibleContexts #-}
 
 -- |
@@ -48,6 +50,7 @@ import qualified System.Info (arch, os)
 
 import Distribution.Parsec
 import Distribution.Pretty
+import qualified Distribution.Types.Modify as Mod
 
 import qualified Distribution.Compat.CharParsing as P
 import qualified Text.PrettyPrint as Disp
@@ -148,7 +151,7 @@ osAliases Permissive Android = ["linux-android", "linux-androideabi", "linux-and
 osAliases Compat Android = ["linux-android"]
 osAliases _ _ = []
 
-instance Pretty OS where
+instance Pretty Mod.HasNoPos OS where
   pretty (OtherOS name) = Disp.text name
   pretty other = Disp.text (lowercase (show other))
 
@@ -254,7 +257,7 @@ archAliases _ Arm = ["armeb", "armel"]
 archAliases _ AArch64 = ["arm64"]
 archAliases _ _ = []
 
-instance Pretty Arch where
+instance Pretty Mod.HasNoPos Arch where
   pretty (OtherArch name) = Disp.text name
   pretty other = Disp.text (lowercase (show other))
 
@@ -287,7 +290,7 @@ instance Binary Platform
 instance Structured Platform
 instance NFData Platform where rnf = genericRnf
 
-instance Pretty Platform where
+instance Pretty Mod.HasNoPos Platform where
   pretty (Platform arch os) = pretty arch <<>> Disp.char '-' <<>> pretty os
 
 instance Parsec Platform where

@@ -191,7 +191,7 @@ monitorFileHashedSearchPath notFoundAtPaths foundAtPath =
 -- Parsing & pretty-printing
 --
 
-instance Pretty RootedGlob where
+instance Pretty Mod.HasNoPos RootedGlob where
   pretty (RootedGlob root pathglob) = pretty root Disp.<> pretty pathglob
 
 instance Parsec RootedGlob where
@@ -201,7 +201,7 @@ instance Parsec RootedGlob where
       FilePathRelative -> RootedGlob root <$> parsec
       _ -> RootedGlob root <$> parsec <|> pure (RootedGlob root GlobDirTrailing)
 
-instance Pretty FilePathRoot where
+instance Pretty Mod.HasNoPos FilePathRoot where
   pretty FilePathRelative = Disp.empty
   pretty (FilePathRoot root) = Disp.text root
   pretty FilePathHomeDir = Disp.char '~' Disp.<> Disp.char '/'

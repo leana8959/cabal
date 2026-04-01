@@ -1,4 +1,6 @@
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DeriveTraversable #-}
 
@@ -59,6 +61,7 @@ import qualified Distribution.Compat.CharParsing as P
 import Distribution.Package (PackageName)
 import Distribution.Parsec (Parsec (..))
 import Distribution.Pretty (Pretty (..), prettyShow)
+import qualified Distribution.Types.Modify as Mod
 import Distribution.Types.UnitId (UnitId)
 import qualified System.Info (compilerName, compilerVersion)
 import qualified Text.PrettyPrint as Disp
@@ -89,7 +92,7 @@ knownCompilerFlavors :: [CompilerFlavor]
 knownCompilerFlavors =
   [GHC, GHCJS, NHC, YHC, Hugs, HBC, Helium, JHC, LHC, UHC, Eta, MHS]
 
-instance Pretty CompilerFlavor where
+instance Pretty Mod.HasNoPos CompilerFlavor where
   pretty (OtherCompiler name) = Disp.text name
   pretty NHC = Disp.text "nhc98"
   pretty other = Disp.text (lowercase (show other))
@@ -179,7 +182,7 @@ instance Binary CompilerId
 instance Structured CompilerId
 instance NFData CompilerId where rnf = genericRnf
 
-instance Pretty CompilerId where
+instance Pretty Mod.HasNoPos CompilerId where
   pretty (CompilerId f v)
     | v == nullVersion = pretty f
     | otherwise = pretty f <<>> Disp.char '-' <<>> pretty v
@@ -235,7 +238,7 @@ instance Binary AbiTag
 instance NFData AbiTag
 instance Structured AbiTag
 
-instance Pretty AbiTag where
+instance Pretty Mod.HasNoPos AbiTag where
   pretty NoAbiTag = Disp.empty
   pretty (AbiTag tag) = Disp.text tag
 

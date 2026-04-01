@@ -66,7 +66,7 @@ instance Structured TestShowDetails
 knownTestShowDetails :: [TestShowDetails]
 knownTestShowDetails = [minBound .. maxBound]
 
-instance Pretty TestShowDetails where
+instance Pretty Mod.HasNoPos TestShowDetails where
   pretty = Disp.text . lowercase . show
 
 instance Parsec TestShowDetails where

@@ -1,4 +1,6 @@
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeFamilies #-}
 
@@ -27,6 +29,7 @@ import Distribution.Types.MungedPackageId
 import Distribution.Types.MungedPackageName
 import Distribution.Utils.ShortText (ShortText)
 import Distribution.Version (nullVersion)
+import qualified Distribution.Types.Modify as Mod
 
 import qualified Distribution.Package as Package
 import qualified Distribution.SPDX as SPDX

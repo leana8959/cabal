@@ -1,4 +1,6 @@
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE DeriveGeneric #-}
 
 module Distribution.Types.ModuleReexport
@@ -12,6 +14,7 @@ import Distribution.ModuleName
 import Distribution.Parsec
 import Distribution.Pretty
 import Distribution.Types.PackageName
+import qualified Distribution.Types.Modify as Mod
 
 import qualified Distribution.Compat.CharParsing as P
 import qualified Text.PrettyPrint as Disp
@@ -30,7 +33,7 @@ instance Binary ModuleReexport
 instance Structured ModuleReexport
 instance NFData ModuleReexport where rnf = genericRnf
 
-instance Pretty ModuleReexport where
+instance Pretty Mod.HasNoPos ModuleReexport where
   pretty (ModuleReexport mpkgname origname newname) =
     maybe Disp.empty (\pkgname -> pretty pkgname <<>> Disp.char ':') mpkgname
       <<>> pretty origname

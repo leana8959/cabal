@@ -1,4 +1,5 @@
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DeriveTraversable #-}
@@ -413,7 +414,7 @@ hyloVersionRangeAnn f g = h where h = f . fmap h . g
 --
 -- >>> fmap (prettyVersioned CabalSpecV1_6) (simpleParsec' CabalSpecV1_6 "-any" :: Maybe VersionRange)
 -- Just >=0
-instance Pretty VersionRange where
+instance Pretty Mod.HasNoPos VersionRange where
   pretty = prettyVersioned cabalSpecLatest
 
   prettyVersioned csv
@@ -455,7 +456,7 @@ prettyVersionRange16 (IntersectVersionRanges (OrLaterVersion v) (EarlierVersion 
         <<>> Disp.text ".*"
 prettyVersionRange16 vr = prettyVersionRange vr
 
-instance Pretty VersionRangeAnn where
+instance Pretty Mod.HasNoPos VersionRangeAnn where
   pretty = prettyVersionRangeAnn
 
 -- TODO(leana8959): how do we know if the element is inserted and we need to fallback

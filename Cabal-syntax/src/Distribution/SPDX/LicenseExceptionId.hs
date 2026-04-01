@@ -1,6 +1,8 @@
 -- This file is generated. See Makefile's spdx rule
 {- FOURMOLU_DISABLE -}
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE DeriveGeneric      #-}
 module Distribution.SPDX.LicenseExceptionId (
     LicenseExceptionId (..),
@@ -19,6 +21,7 @@ import Distribution.Parsec
 import Distribution.Utils.Generic (isAsciiAlphaNum)
 import Distribution.Utils.Structured (Structured (..), nominalStructure, typeVersion)
 import Distribution.SPDX.LicenseListVersion
+import qualified Distribution.Types.Modify as Mod
 
 import qualified Data.Binary.Get as Binary
 import qualified Data.Binary.Put as Binary
@@ -125,7 +128,7 @@ instance Binary LicenseExceptionId where
 instance Structured LicenseExceptionId where
     structure p = set typeVersion 307 $ nominalStructure p
 
-instance Pretty LicenseExceptionId where
+instance Pretty Mod.HasNoPos LicenseExceptionId where
     pretty = Disp.text . licenseExceptionId
 
 instance Parsec LicenseExceptionId where

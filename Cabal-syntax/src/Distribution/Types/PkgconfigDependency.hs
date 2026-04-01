@@ -1,4 +1,6 @@
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE DeriveGeneric #-}
 
 module Distribution.Types.PkgconfigDependency
@@ -13,6 +15,7 @@ import Distribution.Types.PkgconfigVersionRange
 
 import Distribution.Parsec
 import Distribution.Pretty
+import qualified Distribution.Types.Modify as Mod
 
 import qualified Distribution.Compat.CharParsing as P
 
@@ -29,7 +32,7 @@ instance Binary PkgconfigDependency
 instance Structured PkgconfigDependency
 instance NFData PkgconfigDependency where rnf = genericRnf
 
-instance Pretty PkgconfigDependency where
+instance Pretty Mod.HasNoPos PkgconfigDependency where
   pretty (PkgconfigDependency name PcAnyVersion) = pretty name
   pretty (PkgconfigDependency name ver) = pretty name <+> pretty ver
 

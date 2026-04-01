@@ -70,7 +70,7 @@ instance Structured ConstraintSource
 showConstraintSource :: ConstraintSource -> String
 showConstraintSource = prettyShow
 
-instance Pretty ConstraintSource where
+instance Pretty Mod.HasNoPos ConstraintSource where
   pretty constraintSource = case constraintSource of
     (ConstraintSourceMainConfig path) ->
       text "main config" <+> text path

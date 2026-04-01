@@ -88,7 +88,7 @@ data RelaxDepSubject
   | RelaxDepSubjectPkg !PackageName
   deriving (Eq, Ord, Read, Show, Generic)
 
-instance Pretty RelaxedDep where
+instance Pretty Mod.HasNoPos RelaxedDep where
   pretty (RelaxedDep scope rdmod subj) = case scope of
     RelaxDepScopeAll -> Disp.text "*:" Disp.<> modDep
     RelaxDepScopePackage p0 -> pretty p0 Disp.<> Disp.colon Disp.<> modDep
@@ -129,7 +129,7 @@ relaxedDepPkgidP pid@(PackageIdentifier pn v)
 modP :: P.CharParsing m => m RelaxDepMod
 modP = RelaxDepModCaret <$ P.char '^' <|> pure RelaxDepModNone
 
-instance Pretty RelaxDepSubject where
+instance Pretty Mod.HasNoPos RelaxDepSubject where
   pretty RelaxDepSubjectAll = Disp.text "*"
   pretty (RelaxDepSubjectPkg pn) = pretty pn
 
@@ -143,7 +143,7 @@ instance Parsec RelaxDepSubject where
             then RelaxDepSubjectAll
             else RelaxDepSubjectPkg pn
 
-instance Pretty RelaxDeps where
+instance Pretty Mod.HasNoPos RelaxDeps where
   pretty rd | not (isRelaxDeps rd) = Disp.text "none"
   pretty (RelaxDepsSome pkgs) =
     Disp.fsep

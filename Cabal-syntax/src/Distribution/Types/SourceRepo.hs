@@ -1,4 +1,6 @@
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE DeriveGeneric #-}
 
 module Distribution.Types.SourceRepo
@@ -19,6 +21,7 @@ import Distribution.Utils.Generic (lowercase)
 
 import Distribution.Parsec
 import Distribution.Pretty
+import qualified Distribution.Types.Modify as Mod
 
 import qualified Data.Map.Strict as M
 import qualified Distribution.Compat.CharParsing as P
@@ -140,7 +143,7 @@ instance Parsec KnownRepoType where
       return
       (M.lookup str knownRepoTypeMap)
 
-instance Pretty KnownRepoType where
+instance Pretty Mod.HasNoPos KnownRepoType where
   pretty = Disp.text . lowercase . show
 
 data RepoType
@@ -161,7 +164,7 @@ repoTypeAliases Mercurial = ["hg"]
 repoTypeAliases GnuArch = ["arch"]
 repoTypeAliases _ = []
 
-instance Pretty RepoKind where
+instance Pretty Mod.HasNoPos RepoKind where
   pretty RepoHead = Disp.text "head"
   pretty RepoThis = Disp.text "this"
   pretty (RepoKindUnknown other) = Disp.text other
@@ -178,7 +181,7 @@ classifyRepoKind name = case lowercase name of
 instance Parsec RepoType where
   parsec = classifyRepoType <$> P.munch1 isIdent
 
-instance Pretty RepoType where
+instance Pretty Mod.HasNoPos RepoType where
   pretty (OtherRepoType other) = Disp.text other
   pretty (KnownRepoType t) = pretty t
 

@@ -1,4 +1,5 @@
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE FlexibleInstances #-}
@@ -133,7 +134,7 @@ instance NFData Dependency where rnf = genericRnf
 --
 -- >>> prettyShow $ Dependency (mkPackageName "pkg") anyVersion $ NES.insert (LSubLibName $ mkUnqualComponentName "sublib-b") $ NES.singleton (LSubLibName $ mkUnqualComponentName "sublib-a")
 -- "pkg:{sublib-a,sublib-b}"
-instance Pretty Dependency where
+instance Pretty Mod.HasNoPos Dependency where
   pretty (Dependency name ver sublibs) = prettyLibraryNames name (NES.toNonEmpty sublibs) <+> pver
     where
       -- TODO: change to isAnyVersion after #6736
@@ -142,7 +143,7 @@ instance Pretty Dependency where
         | otherwise = pretty ver
 
 -- TODO(leana8959): implement packagename part
-instance Pretty DependencyAnn where
+instance Pretty Mod.HasNoPos DependencyAnn where
   pretty (Dependency name ver sublibs) = prettyLibraryNames name (NES.toNonEmpty sublibs) <> pretty ver
 
 -- |

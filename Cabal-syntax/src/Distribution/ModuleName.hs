@@ -1,4 +1,6 @@
 {-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -34,6 +36,7 @@ import Distribution.Pretty
 import Distribution.Utils.ShortText (ShortText, fromShortText, toShortText)
 import System.FilePath (pathSeparator)
 
+import qualified Distribution.Types.Modify as Mod
 import qualified Distribution.Compat.CharParsing as P
 import qualified Distribution.Compat.DList as DList
 import qualified Text.PrettyPrint as Disp
@@ -51,7 +54,7 @@ instance Structured ModuleName
 instance NFData ModuleName where
   rnf (ModuleName ms) = rnf ms
 
-instance Pretty ModuleName where
+instance Pretty Mod.HasNoPos ModuleName where
   pretty = Disp.text . unModuleName
 
 instance Parsec ModuleName where

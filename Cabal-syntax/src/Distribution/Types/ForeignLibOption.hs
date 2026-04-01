@@ -1,4 +1,6 @@
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE OverloadedStrings #-}
 
@@ -11,6 +13,7 @@ import Prelude ()
 
 import Distribution.Parsec
 import Distribution.Pretty
+import qualified Distribution.Types.Modify as Mod
 
 import qualified Distribution.Compat.CharParsing as P
 import qualified Text.PrettyPrint as Disp
@@ -24,7 +27,7 @@ data ForeignLibOption
     ForeignLibStandalone
   deriving (Generic, Show, Read, Eq, Ord, Data)
 
-instance Pretty ForeignLibOption where
+instance Pretty Mod.HasNoPos ForeignLibOption where
   pretty ForeignLibStandalone = Disp.text "standalone"
 
 instance Parsec ForeignLibOption where

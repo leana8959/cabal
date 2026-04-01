@@ -42,7 +42,7 @@ instance Binary ReportLevel
 instance NFData ReportLevel
 instance Structured ReportLevel
 
-instance Pretty ReportLevel where
+instance Pretty Mod.HasNoPos ReportLevel where
   pretty NoReports = Disp.text "none"
   pretty AnonymousReports = Disp.text "anonymous"
   pretty DetailedReports = Disp.text "detailed"
@@ -109,7 +109,7 @@ data InstallOutcome
   | InstallOk
   deriving (Eq, Show, Generic)
 
-instance Pretty InstallOutcome where
+instance Pretty Mod.HasNoPos InstallOutcome where
   pretty PlanningFailed = Disp.text "PlanningFailed"
   pretty (DependencyFailed pkgid) = Disp.text "DependencyFailed" <+> pretty pkgid
   pretty DownloadFailed = Disp.text "DownloadFailed"
@@ -144,7 +144,7 @@ instance Parsec InstallOutcome where
 data Outcome = NotTried | Failed | Ok
   deriving (Eq, Show, Enum, Bounded, Generic)
 
-instance Pretty Outcome where
+instance Pretty Mod.HasNoPos Outcome where
   pretty NotTried = Disp.text "NotTried"
   pretty Failed = Disp.text "Failed"
   pretty Ok = Disp.text "Ok"

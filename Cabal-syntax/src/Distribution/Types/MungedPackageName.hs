@@ -1,4 +1,6 @@
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE DeriveGeneric #-}
 
 module Distribution.Types.MungedPackageName
@@ -12,6 +14,7 @@ import Prelude ()
 
 import Distribution.Parsec
 import Distribution.Pretty
+import qualified Distribution.Types.Modify as Mod
 import Distribution.Types.LibraryName
 import Distribution.Types.PackageName
 import Distribution.Types.UnqualComponentName
@@ -71,7 +74,7 @@ instance NFData MungedPackageName where rnf = genericRnf
 --
 -- >>> prettyShow $ MungedPackageName "servant" (LSubLibName "lackey")
 -- "z-servant-z-lackey"
-instance Pretty MungedPackageName where
+instance Pretty Mod.HasNoPos MungedPackageName where
   -- First handle the cases where we can just use the original 'PackageName'.
   -- This is for the PRIMARY library, and it is non-Backpack, or the
   -- indefinite package for us.

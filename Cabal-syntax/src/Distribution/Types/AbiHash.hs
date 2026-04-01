@@ -1,4 +1,6 @@
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 
 module Distribution.Types.AbiHash
   ( AbiHash
@@ -13,6 +15,7 @@ import Prelude ()
 import qualified Distribution.Compat.CharParsing as P
 import Distribution.Parsec
 import Distribution.Pretty
+import qualified Distribution.Types.Modify as Mod
 
 import Text.PrettyPrint (text)
 
@@ -54,7 +57,7 @@ instance Binary AbiHash
 instance Structured AbiHash
 instance NFData AbiHash where rnf = genericRnf
 
-instance Pretty AbiHash where
+instance Pretty Mod.HasNoPos AbiHash where
   pretty = text . unAbiHash
 
 instance Parsec AbiHash where

@@ -1,5 +1,7 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module Distribution.Types.LibraryVisibility
@@ -11,6 +13,7 @@ import Prelude ()
 
 import Distribution.Parsec
 import Distribution.Pretty
+import qualified Distribution.Types.Modify as Mod
 
 import qualified Distribution.Compat.CharParsing as P
 import qualified Text.PrettyPrint as Disp
@@ -25,7 +28,7 @@ data LibraryVisibility
     LibraryVisibilityPrivate
   deriving (Generic, Show, Read, Eq, Ord, Data)
 
-instance Pretty LibraryVisibility where
+instance Pretty Mod.HasNoPos LibraryVisibility where
   pretty LibraryVisibilityPublic = Disp.text "public"
   pretty LibraryVisibilityPrivate = Disp.text "private"
 

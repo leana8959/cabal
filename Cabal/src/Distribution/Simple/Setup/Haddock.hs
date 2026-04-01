@@ -78,7 +78,7 @@ instance Binary HaddockTarget
 instance NFData HaddockTarget
 instance Structured HaddockTarget
 
-instance Pretty HaddockTarget where
+instance Pretty Mod.HasNoPos HaddockTarget where
   pretty ForHackage = Disp.text "for-hackage"
   pretty ForDevelopment = Disp.text "for-development"
 

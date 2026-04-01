@@ -77,7 +77,7 @@ instance Binary RemoteRepo
 instance NFData RemoteRepo
 instance Structured RemoteRepo
 
-instance Pretty RemoteRepo where
+instance Pretty Mod.HasNoPos RemoteRepo where
   pretty r =
     pretty (remoteRepoName r)
       <<>> Disp.colon
@@ -146,7 +146,7 @@ instance Parsec LocalRepo where
     p <- P.munch1 (const True) -- restrict what can be a path?
     return (LocalRepo n p False)
 
-instance Pretty LocalRepo where
+instance Pretty Mod.HasNoPos LocalRepo where
   pretty (LocalRepo n p _) = pretty n <<>> Disp.colon <<>> Disp.text p
 
 -- | Construct a partial 'LocalRepo' value to fold the field parser list over.

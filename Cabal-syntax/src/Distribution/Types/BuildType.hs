@@ -1,5 +1,7 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module Distribution.Types.BuildType
@@ -13,6 +15,7 @@ import Prelude ()
 import Distribution.CabalSpecVersion (CabalSpecVersion (..))
 import Distribution.Parsec
 import Distribution.Pretty
+import qualified Distribution.Types.Modify as Mod
 
 import qualified Distribution.Compat.CharParsing as P
 import qualified Text.PrettyPrint as Disp
@@ -39,7 +42,7 @@ instance NFData BuildType where rnf = genericRnf
 knownBuildTypes :: [BuildType]
 knownBuildTypes = [Simple, Configure, Make, Custom, Hooks]
 
-instance Pretty BuildType where
+instance Pretty Mod.HasNoPos BuildType where
   pretty = Disp.text . show
 
 instance Parsec BuildType where

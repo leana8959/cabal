@@ -1,5 +1,7 @@
 {-# LANGUAGE DeriveFunctor #-}
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE UndecidableInstances #-}
@@ -18,6 +20,7 @@ import Distribution.Compat.Lens (aview, cloneLens)
 import Distribution.Compat.Newtype
 import Distribution.FieldGrammar
 import Distribution.Pretty (Pretty (..), showFreeText)
+import qualified Distribution.Types.Modify as Mod
 import Distribution.Utils.String (trim)
 
 import qualified Data.Map as Map
@@ -125,5 +128,5 @@ parsecFreeText = dropDotLines <$ C.spaces <*> many C.anyChar
     trim' :: String -> String
     trim' = dropWhileEnd (`elem` (" \t" :: String))
 
-class (P.Parsec a, Pretty a) => ParsecPretty a
-instance (P.Parsec a, Pretty a) => ParsecPretty a
+class (P.Parsec a, Pretty Mod.HasNoPos a) => ParsecPretty a
+instance (P.Parsec a, Pretty Mod.HasNoPos a) => ParsecPretty a

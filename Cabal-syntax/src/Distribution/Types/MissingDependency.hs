@@ -1,3 +1,6 @@
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+
 module Distribution.Types.MissingDependency
   ( MissingDependency (..)
   ) where
@@ -15,13 +18,14 @@ import Distribution.Types.MissingDependencyReason
   ( MissingDependencyReason (..)
   )
 
+import qualified Distribution.Types.Modify as Mod
 import qualified Text.PrettyPrint as PP
 
 -- | A missing dependency and information on why it's missing.
 data MissingDependency = MissingDependency Dependency MissingDependencyReason
   deriving (Show)
 
-instance Pretty MissingDependency where
+instance Pretty Mod.HasNoPos MissingDependency where
   pretty (MissingDependency dependency reason) =
     let prettyReason =
           case reason of

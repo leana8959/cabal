@@ -82,6 +82,7 @@ import Distribution.Parsec
 import Distribution.Pretty
 import Distribution.Utils.Generic (isAbsoluteOnAnyPlatform)
 
+import qualified Distribution.Types.Modify as Mod
 import qualified Distribution.Compat.CharParsing as P
 
 import qualified System.Directory as Directory
@@ -394,7 +395,7 @@ instance Parsec (SymbolicPathX 'AllowAbsolute from to) where
       then P.unexpected "empty FilePath"
       else return (SymbolicPath token)
 
-instance Pretty (SymbolicPathX allowAbsolute from to) where
+instance Pretty Mod.HasNoPos (SymbolicPathX allowAbsolute from to) where
   pretty = showFilePath . getSymbolicPath
 
 -------------------------------------------------------------------------------

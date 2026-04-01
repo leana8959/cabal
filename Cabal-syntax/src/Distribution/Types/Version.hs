@@ -1,4 +1,6 @@
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE KindSignatures #-}
@@ -27,6 +29,7 @@ import Prelude ()
 
 import Distribution.Parsec
 import Distribution.Pretty
+import qualified Distribution.Types.Modify as Mod
 import Distribution.Trivia
 
 import qualified Data.Version as Base
@@ -98,7 +101,7 @@ instance NFData Version where
   rnf (PV0 _) = ()
   rnf (PV1 _ ns) = rnf ns
 
-instance Pretty Version where
+instance Pretty Mod.HasNoPos Version where
   pretty ver =
     Disp.hcat
       ( Disp.punctuate
@@ -106,7 +109,7 @@ instance Pretty Version where
           (map Disp.int $ versionNumbers ver)
       )
 
-instance Pretty VersionAnn where
+instance Pretty Mod.HasNoPos VersionAnn where
   pretty (Ann t ver) = applyTrivia $ fmap pretty (t, ver)
     where
       applyTrivia :: (Trivia, Disp.Doc) -> Disp.Doc
