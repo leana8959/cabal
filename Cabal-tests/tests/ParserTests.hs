@@ -213,6 +213,8 @@ parsecPrettyTests = testGroup "parsec pretty roundtrip" $
       optionals (specVer >= CabalSpecV2_2)
         [ parsecPrettyTest @(ListAnn CommaVCatAnn (Identity PackageName) PackageName) specVer "CommaVCat leading" ", foo , bar"
         , parsecPrettyTest @(ListAnn CommaFSepAnn (Identity PackageName) PackageName) specVer "CommaFSepAnn leading" ", foo , bar"
+        , parsecPrettyTest @(ListAnn CommaVCatAnn (Identity PackageName) PackageName) specVer "CommaVCat trailing" "foo \n , bar  \n, "
+        , parsecPrettyTest @(ListAnn CommaFSepAnn (Identity PackageName) PackageName) specVer "CommaFSepAnn trailing" "foo \n , bar , "
         ]
       ++
       optionals (specVer >= CabalSpecV3_0)
@@ -220,15 +222,11 @@ parsecPrettyTests = testGroup "parsec pretty roundtrip" $
         , parsecPrettyTest @(ListAnn FSepAnn (Identity PackageName) PackageName) specVer "FSepAnn leading" ", foo , bar"
         ]
       ++
-      [ -- FIXME(leana8959): trailing comma (separator) isn't restored
-        --   parsecPrettyTest @(ListAnn CommaVCatAnn (Identity PackageName) PackageName) specVer "CommaVCat trailing" "foo , bar ,"
-          parsecPrettyTest @(ListAnn CommaVCatAnn (Identity PackageName) PackageName) specVer "CommaVCat simple" "foo , bar"
+        [ parsecPrettyTest @(ListAnn CommaFSepAnn (Identity PackageName) PackageName) specVer "CommaFSepAnn trailing" "foo , bar ,"
         , parsecPrettyTest @(ListAnn CommaVCatAnn (Identity PackageName) PackageName) specVer "CommaVCat simple" "foo , bar ,   baz"
         , parsecPrettyTest @(ListAnn CommaVCatAnn (Identity PackageName) PackageName) specVer "CommaVCat newline" "foo ,\n bar ,   baz"
         , parsecPrettyTest @(ListAnn CommaVCatAnn (Identity PackageName) PackageName) specVer "CommaVCat newline" "foo ,\n bar \n,   baz"
 
-        -- FIXME(leana8959): trailing comma (separator) isn't restored
-        -- , parsecPrettyTest @(ListAnn CommaFSepAnn (Identity PackageName) PackageName) specVer "CommaFSepAnn trailing" "foo , bar ,"
         , parsecPrettyTest @(ListAnn CommaFSepAnn (Identity PackageName) PackageName) specVer "CommaFSepAnn simple" "foo , bar"
         , parsecPrettyTest @(ListAnn CommaFSepAnn (Identity PackageName) PackageName) specVer "CommaFSepAnn simple" "foo , bar ,   baz"
         , parsecPrettyTest @(ListAnn CommaFSepAnn (Identity PackageName) PackageName) specVer "CommaFSepAnn newline" "foo ,\n bar ,   baz"

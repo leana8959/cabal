@@ -136,18 +136,13 @@ sepEndByNonEmpty :: Alternative m => m a -> m sep -> m (NonEmpty a)
 sepEndByNonEmpty p sep = (:|) <$> p <*> ((sep *> sepEndBy p sep) <|> pure [])
 
 sepEndByNonEmptyAnn :: Alternative m => m (Ann a) -> m String -> m (NonEmpty (Ann a))
-sepEndByNonEmptyAnn p sep =
-  (:|)
-    <$> p
-    <*> ( do
-            leading <- sep
-            rest <- sepEndByAnn p sep
-            pure (insertTriviaHead leading rest)
-            <|> pure []
-        )
-  where
-    insertTriviaHead _ [] = []
-    insertTriviaHead t (x : xs) = mapAnn (HasTrivia t mempty <>) x : xs
+sepEndByNonEmptyAnn p sep = do
+  x <- p
+  (trailing, xs) <-
+    ( (,) <$> sep <*> sepEndByAnn p sep
+      )
+      <|> pure (mempty, [])
+  pure (mapAnn (<> HasTrivia mempty trailing) x :| xs)
 
 -- | @sepEndBy p sep@ parses /zero/ or more occurrences of @p@,
 -- separated and optionally ended by @sep@, ie. haskell style
