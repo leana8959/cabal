@@ -143,7 +143,7 @@ instance Pretty Dependency where
 
 -- TODO(leana8959): implement packagename part
 instance Pretty DependencyAnn where
-  pretty dep@(Dependency name ver sublibs) = prettyLibraryNames name (NES.toNonEmpty sublibs) <> pretty ver
+  pretty (Dependency name ver sublibs) = prettyLibraryNames name (NES.toNonEmpty sublibs) <> pretty ver
 
 -- |
 --
@@ -188,8 +188,8 @@ instance Parsec (DependencyAnn) where
         versionGuardMultilibs
         NES.singleton <$> parseLib <|> parseMultipleLibs
 
-      postSpaces <- spaces' -- https://github.com/haskell/cabal/issues/5846
-      pure (PackageName $ Ann (HasTrivia mempty postSpaces) name, libs)
+      post <- spaces' -- https://github.com/haskell/cabal/issues/5846
+      pure (PackageName $ Ann (postTrivia post) name, libs)
 
     ver <- parsec <|> pure anyVersionAnn
     return $ mkDependencyAnn pname ver libraries

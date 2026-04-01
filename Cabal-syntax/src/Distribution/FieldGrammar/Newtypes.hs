@@ -187,7 +187,7 @@ instance Sep Mod.Ann VCatAnn where
       ( do
           x <- p
           post <- P.spaces'
-          pure (Ann (HasTrivia mempty post) x)
+          pure (Ann (postTrivia post) x)
       )
 
 instance Sep Mod.Bare FSep where
@@ -208,7 +208,7 @@ instance Sep Mod.Ann FSepAnn where
       ( do
           x <- p
           post <- P.spaces'
-          pure (Ann (HasTrivia mempty post) x)
+          pure (Ann (postTrivia post) x)
       )
 
 instance Sep Mod.Bare NoCommaFSep where
@@ -221,11 +221,11 @@ instance Sep Mod.Ann NoCommaFSepAnn where
   parseSep _ p = many $ do
     x <- p
     post <- P.spaces'
-    pure (Ann (HasTrivia mempty post) x)
+    pure (Ann (postTrivia post) x)
   parseSepNE _ p = NE.some1 $ do
     x <- p
     post <- P.spaces'
-    pure (Ann (HasTrivia mempty post) x)
+    pure (Ann (postTrivia post) x)
 
 -- | List separated with optional commas. Displayed with @sep@, arguments of
 -- type @a@ are parsed and pretty-printed as @b@.

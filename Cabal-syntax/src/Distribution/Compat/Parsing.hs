@@ -126,7 +126,7 @@ sepByNonEmptyAnn p sep =
       ( do
           leading <- sep
           x <- p
-          pure (mapAnn (HasTrivia leading mempty <>) x)
+          pure (mapAnn (preTrivia leading <>) x)
       )
 
 -- | @sepEndByNonEmpty p sep@ parses /one/ or more occurrences of @p@,
@@ -142,7 +142,7 @@ sepEndByNonEmptyAnn p sep = do
     ( (,) <$> sep <*> sepEndByAnn p sep
       )
       <|> pure (mempty, [])
-  pure (mapAnn (<> HasTrivia mempty trailing) x :| xs)
+  pure (mapAnn (<> postTrivia trailing) x :| xs)
 
 -- | @sepEndBy p sep@ parses /zero/ or more occurrences of @p@,
 -- separated and optionally ended by @sep@, ie. haskell style

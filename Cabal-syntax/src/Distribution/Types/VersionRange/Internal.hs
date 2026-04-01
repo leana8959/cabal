@@ -534,12 +534,6 @@ instance Parsec VersionRangeAnn where
 versionRangeParser :: forall m. CabalParsing m => m Int -> CabalSpecVersion -> m VersionRange
 versionRangeParser digitParser csv = unAnnVersionRange <$> versionRangeAnnParser digitParser csv
 
-leadingString :: forall m. CabalParsing m => m String -> m Trivia
-leadingString = fmap (flip HasTrivia mempty)
-
-trailingString :: forall m. CabalParsing m => m String -> m Trivia
-trailingString = fmap (HasTrivia mempty)
-
 -- TODO(leana8959): implement this
 versionRangeAnnParser :: forall m. CabalParsing m => m Int -> CabalSpecVersion -> m VersionRangeAnn
 versionRangeAnnParser digitParser csv = expr
@@ -549,9 +543,9 @@ versionRangeAnnParser digitParser csv = expr
       (tEnclosed, tInserted) <-
         surroundWith
           (curry decorateTriviaVersionRangeAnn)
-          (leadingString P.spaces')
+          (preTrivia <$> P.spaces')
           term
-          (trailingString P.spaces')
+          (postTrivia <$> P.spaces')
 
       ( do
           _ <- P.string "||"
@@ -559,7 +553,7 @@ versionRangeAnnParser digitParser csv = expr
           (eEnclosed, _eInserted) <-
             surroundWith
               (curry decorateTriviaVersionRangeAnn)
-              (leadingString P.spaces')
+              (preTrivia <$> P.spaces')
               expr
               (pure mempty)
 
@@ -574,7 +568,7 @@ versionRangeAnnParser digitParser csv = expr
           (curry decorateTriviaVersionRangeAnn)
           (pure mempty)
           factor
-          (trailingString P.spaces')
+          (postTrivia <$> P.spaces')
 
       ( do
           _ <- P.string "&&"
@@ -582,7 +576,7 @@ versionRangeAnnParser digitParser csv = expr
           (tEnclosed, _tInserted) <-
             surroundWith
               (curry decorateTriviaVersionRangeAnn)
-              (leadingString P.spaces')
+              (preTrivia <$> P.spaces')
               term
               (pure mempty)
 
@@ -599,7 +593,7 @@ versionRangeAnnParser digitParser csv = expr
       case op of
         "-" -> anyVersionAnn <$ P.string "any" <|> P.string "none" *> noVersion'
         "==" -> do
-          pre <- leadingString P.spaces'
+          pre <- preTrivia <$> P.spaces'
           ( do
               (wild, v) <- verOrWild
               checkWild wild
@@ -607,7 +601,7 @@ versionRangeAnnParser digitParser csv = expr
               <|> (verSet' (thisVersionAnn . (mempty,)) =<< verSet)
             )
         "^>=" -> do
-          pre <- leadingString P.spaces'
+          pre <- preTrivia <$> P.spaces'
           ( do
               (wild, v) <- verOrWild
               when wild $
@@ -617,7 +611,7 @@ versionRangeAnnParser digitParser csv = expr
               <|> (verSet' (majorBoundVersionAnn . (mempty,)) =<< verSet)
             )
         _ -> do
-          pre <- leadingString P.spaces'
+          pre <- preTrivia <$> P.spaces'
           (wild, v) <- verOrWild
           when wild $
             P.unexpected $
@@ -775,9 +769,9 @@ versionRangeAnnParser digitParser csv = expr
       (_enclosed, inserted) <-
         surroundWith
           (\pre post x -> decorateTriviaVersionRangeAnn (pre, post) x)
-          (leadingString open)
+          (preTrivia <$> open)
           p
-          (trailingString close)
+          (postTrivia <$> close)
 
       pure inserted
 

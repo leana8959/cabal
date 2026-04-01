@@ -322,7 +322,7 @@ parsecSpacesAnn :: (CabalParsing m) => m (Ann a) -> m (Ann a)
 parsecSpacesAnn p = do
   x <- p
   post <- P.spaces'
-  pure (mapAnn (<> HasTrivia mempty post) x)
+  pure (mapAnn (<> postTrivia post) x)
 {-# INLINABLE parsecSpacesAnn #-}
 
 parsecCommaList :: CabalParsing m => m a -> m [a]
@@ -366,7 +366,7 @@ parsecLeadingCommaListAnn :: forall m a. CabalParsing m => m (Ann a) -> m [Ann a
 parsecLeadingCommaListAnn p = P.optional comma >>= \case
   Nothing -> toList <$> P.sepEndByNonEmptyAnn lp comma <|> pure []
   Just c ->
-    let insertTriviaHead (x :| xs) = mapAnn (HasTrivia c mempty <>) x :| xs
+    let insertTriviaHead (x :| xs) = mapAnn (preTrivia c <>) x :| xs
      in toList . insertTriviaHead <$> P.sepByNonEmptyAnn lp comma
   where
     lp :: m (Ann a)
@@ -448,7 +448,7 @@ parsecLeadingOptCommaListAnn :: forall m a. CabalParsing m => m (Ann a) -> m [An
 parsecLeadingOptCommaListAnn p = P.optional comma >>= \case
   Nothing -> sepEndBy1StartAnn <|> pure []
   Just c ->
-    let insertTriviaHead (x :| xs) = mapAnn (HasTrivia c mempty <>) x :| xs
+    let insertTriviaHead (x :| xs) = mapAnn (preTrivia c <>) x :| xs
      in toList . insertTriviaHead <$> P.sepByNonEmptyAnn lp comma
   where
     lp :: m (Ann a)
@@ -462,7 +462,7 @@ parsecLeadingOptCommaListAnn p = P.optional comma >>= \case
       x <- lp
       P.optional comma >>= \case
         Nothing -> (x :) <$> many lp
-        Just c -> (mapAnn (<> HasTrivia mempty c) x :) <$> P.sepEndByAnn lp comma
+        Just c -> (mapAnn (<> postTrivia c) x :) <$> P.sepEndByAnn lp comma
 
 -- | Content isn't unquoted
 parsecQuoted :: CabalParsing m => m a -> m a
