@@ -1,4 +1,5 @@
 {-# LANGUAGE FlexibleInstances   #-}
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}

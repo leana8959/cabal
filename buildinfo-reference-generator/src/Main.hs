@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveFunctor         #-}
+{-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE TypeApplications      #-}
 {-# LANGUAGE DeriveGeneric         #-}
 {-# LANGUAGE MultiParamTypeClasses #-}

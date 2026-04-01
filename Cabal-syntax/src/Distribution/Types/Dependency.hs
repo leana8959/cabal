@@ -41,7 +41,6 @@ import Distribution.Types.UnqualComponentName
 import qualified Distribution.Compat.NonEmptySet as NES
 import qualified Text.PrettyPrint as PP
 
-import Data.Kind
 import qualified Distribution.Types.Modify as Mod
 
 -- | Describes a dependency on a source package (API)

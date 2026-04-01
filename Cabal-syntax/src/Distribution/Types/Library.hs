@@ -26,7 +26,6 @@ import Distribution.Types.ModuleReexport
 
 import qualified Distribution.Types.BuildInfo.Lens as L
 
-import Data.Kind
 import qualified Distribution.Types.Modify as Mod
 
 type Library = LibraryWith Mod.HasNoAnn
