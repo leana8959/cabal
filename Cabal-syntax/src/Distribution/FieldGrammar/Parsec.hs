@@ -123,17 +123,17 @@ data ParsecFieldGrammar s a = ParsecFG
   }
   deriving (Functor)
 
-parseFieldGrammar :: CabalSpecVersion -> Fields Position -> ParsecFieldGrammar s a -> ParseResult src a
+parseFieldGrammar :: L.HasPosition ann => CabalSpecVersion -> Fields ann -> ParsecFieldGrammar s a -> ParseResult src a
 parseFieldGrammar v fields grammar = do
   for_ (Map.toList (Map.filterWithKey (isUnknownField grammar) fields)) $ \(name, nfields) ->
-    for_ nfields $ \(MkNamelessField pos _) ->
-      parseWarning pos PWTUnknownField $ "Unknown field: " ++ show name
+    for_ nfields $ \(MkNamelessField ann _) ->
+      parseWarning (L.view L.position ann) PWTUnknownField $ "Unknown field: " ++ show name
   -- TODO: fields allowed in this section
 
   -- parse
   fieldGrammarParser grammar v fields
 
-isUnknownField :: ParsecFieldGrammar s a -> FieldName -> [NamelessField Position] -> Bool
+isUnknownField :: L.HasPosition ann => ParsecFieldGrammar s a -> FieldName -> [NamelessField ann] -> Bool
 isUnknownField grammar k _ =
   not $
     k `Set.member` fieldGrammarKnownFields grammar
@@ -365,7 +365,7 @@ instance FieldGrammar Parsec ParsecFieldGrammar where
 
             case namePos of
               -- no fields => proceed (with empty values, to be sure)
-              [] -> parser v Map.empty
+              [] -> parser v (Map.empty :: Fields ann)
               -- if there's single field: fail fatally with it
               ((name, pos) : rest) -> do
                 for_ rest $ \(name', pos') -> parseFailure (L.view L.position pos') $ makeMsg name'
