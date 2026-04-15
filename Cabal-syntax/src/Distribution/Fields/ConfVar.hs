@@ -1,7 +1,13 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Distribution.Fields.ConfVar (parseConditionConfVar, parseConditionConfVarFromClause) where
+module Distribution.Fields.ConfVar
+  ( parseConditionConfVar
+  , parseConditionConfVarFromAnn
+  , parseConditionConfVarFromClause
+  )
+  where
 
+import qualified Distribution.Compat.Lens as L
 import Distribution.Compat.CharParsing (char, integral)
 import Distribution.Compat.Prelude
 import Distribution.Fields.Field (Field (..), SectionArg (..), sectionArgAnn)
@@ -10,6 +16,7 @@ import Distribution.Fields.Parser (readFields)
 import Distribution.Parsec (Parsec (..), runParsecParser)
 import Distribution.Parsec.FieldLineStream (fieldLineStreamFromBS)
 import Distribution.Parsec.Position
+import qualified Distribution.Parsec.Position.Lens as L
 import Distribution.Types.Condition
 import Distribution.Types.ConfVar (ConfVar (..))
 import Distribution.Version
@@ -38,6 +45,14 @@ parseConditionConfVarFromClause x =
   readFields x >>= \r -> case r of
     (Section _ xs _ : _) -> P.runParser (parser <* P.eof) () "<condition>" xs
     _ -> Left $ P.newErrorMessage (P.Message "No fields in clause") (P.initialPos "<condition>")
+
+parseConditionConfVarFromAnn :: L.HasPosition ann => Position -> [SectionArg ann] -> ParseResult src (Condition ConfVar)
+parseConditionConfVarFromAnn start_pos args = parseConditionConfVar start_pos (map convertSectionArg args)
+
+convertSectionArg :: L.HasPosition ann => SectionArg ann -> SectionArg Position
+convertSectionArg (SecArgName ann s) = SecArgName (L.view L.position ann) s
+convertSectionArg (SecArgStr ann s) = SecArgStr (L.view L.position ann) s
+convertSectionArg (SecArgOther ann s) = SecArgOther (L.view L.position ann) s
 
 -- | Parse @'Condition' 'ConfVar'@ from section arguments provided by parsec
 -- based outline parser.

@@ -43,8 +43,9 @@ import Distribution.CabalSpecVersion
 import Distribution.Compat.Lens
 import Distribution.FieldGrammar
 import Distribution.FieldGrammar.Parsec (NamelessField (..))
-import Distribution.Fields.ConfVar (parseConditionConfVar)
+import Distribution.Fields.ConfVar (parseConditionConfVar, parseConditionConfVarFromAnn)
 import Distribution.Fields.Field (Comment (..), FieldName, WithComments, getName, sectionArgAnn)
+import qualified Distribution.Fields.Field.Lens as L
 import Distribution.Fields.LexerMonad (LexWarning, toPWarnings)
 import Distribution.Fields.ParseResult
 import Distribution.Fields.Parser
@@ -198,7 +199,7 @@ parseAnnotatedGenericPackageDescription' scannedVer lexWarnings utf8WarnPos fs =
     Just v -> return v
     Nothing -> case Map.lookup "cabal-version" fields >>= safeLast of
       Nothing -> return CabalSpecV1_0
-      Just (MkNamelessField ann fls) -> do
+      Just (MkNamelessField (ann :: WithComments Position) (fls :: [FieldLine (WithComments Position)])) -> do
         -- version will be parsed twice, therefore we parse without warnings.
         v <-
           withoutWarnings $
@@ -272,12 +273,16 @@ parseAnnotatedGenericPackageDescription' scannedVer lexWarnings utf8WarnPos fs =
 cabalFormatVersionsDesc :: String
 cabalFormatVersionsDesc = "Current cabal-version values are listed at https://cabal.readthedocs.io/en/stable/file-format-changelog.html."
 
-goSections :: CabalSpecVersion -> [Field Position] -> SectionParser src ()
+goSections :: L.HasPosition ann => CabalSpecVersion -> [Field ann] -> SectionParser src ()
 goSections specVer = traverse_ process
   where
-    process (Field (Name pos name) _) =
+    process
+      :: L.HasPosition ann
+      => Field ann
+      -> StateT SectionS (ParseResult src) ()
+    process (Field (Name ann name) _) =
       lift $
-        parseWarning pos PWTTrailingFields $
+        parseWarning (view L.position ann) PWTTrailingFields $
           "Ignoring trailing fields after sections: " ++ show name
     process (Section name args secFields) =
       parseSection name args secFields
@@ -288,24 +293,26 @@ goSections specVer = traverse_ process
 
     -- we need signature, because this is polymorphic, but not-closed
     parseCondTree'
-      :: L.HasBuildInfo a
+      :: ( L.HasPosition ann
+         , L.HasBuildInfo a
+         )
       => ParsecFieldGrammar' a
       -- \^ grammar
       -> (BuildInfo -> a)
       -> Map String CondTreeBuildInfo
       -- \^ common stanzas
-      -> [Field Position]
+      -> [Field ann]
       -> ParseResult src (CondTree ConfVar a)
     parseCondTree' = parseCondTreeWithCommonStanzas specVer
 
-    parseSection :: Name Position -> [SectionArg Position] -> [Field Position] -> SectionParser src ()
-    parseSection (Name pos name) args fields
+    parseSection :: forall ann src. L.HasPosition ann => Name ann -> [SectionArg ann] -> [Field ann] -> SectionParser src ()
+    parseSection (Name ann name) args fields
       | hasCommonStanzas == NoCommonStanzas
       , name == "common" = lift $ do
           parseWarning pos PWTUnknownSection "Ignoring section: common. You should set cabal-version: 2.2 or larger to use common stanzas."
       | name == "common" = do
           commonStanzas <- use stateCommonStanzas
-          name' <- lift $ parseCommonName pos args
+          name' <- lift $ parseCommonName pos (map convertSectionArg args)
           biTree <- lift $ parseCondTree' buildInfoFieldGrammar id commonStanzas fields
 
           case Map.lookup name' commonStanzas of
@@ -331,7 +338,7 @@ goSections specVer = traverse_ process
       -- TODO: check cabal-version
       | name == "library" = do
           commonStanzas <- use stateCommonStanzas
-          name' <- parseUnqualComponentName pos args
+          name' <- parseUnqualComponentName pos (map convertSectionArg args)
           let name'' = LSubLibName name'
           lib <- lift $ parseCondTree' (libraryFieldGrammar name'') (libraryFromBuildInfo name'') commonStanzas fields
           -- TODO check duplicate name here?
@@ -340,7 +347,7 @@ goSections specVer = traverse_ process
       -- TODO: check cabal-version
       | name == "foreign-library" = do
           commonStanzas <- use stateCommonStanzas
-          name' <- parseUnqualComponentName pos args
+          name' <- parseUnqualComponentName pos (map convertSectionArg args)
           flib <- lift $ parseCondTree' (foreignLibFieldGrammar name') (fromBuildInfo' name') commonStanzas fields
 
           let hasType ts = foreignLibType ts /= foreignLibType mempty
@@ -359,13 +366,13 @@ goSections specVer = traverse_ process
           stateGpd . L.condForeignLibs %= snoc (name', flib)
       | name == "executable" = do
           commonStanzas <- use stateCommonStanzas
-          name' <- parseUnqualComponentName pos args
+          name' <- parseUnqualComponentName pos (map convertSectionArg args)
           exe <- lift $ parseCondTree' (executableFieldGrammar name') (fromBuildInfo' name') commonStanzas fields
           -- TODO check duplicate name here?
           stateGpd . L.condExecutables %= snoc (name', exe)
       | name == "test-suite" = do
           commonStanzas <- use stateCommonStanzas
-          name' <- parseUnqualComponentName pos args
+          name' <- parseUnqualComponentName pos (map convertSectionArg args)
           testStanza <- lift $ parseCondTree' testSuiteFieldGrammar (fromBuildInfo' name') commonStanzas fields
           testSuite <- lift $ traverse (validateTestSuite specVer pos) testStanza
 
@@ -393,7 +400,7 @@ goSections specVer = traverse_ process
           stateGpd . L.condTestSuites %= snoc (name', testSuite)
       | name == "benchmark" = do
           commonStanzas <- use stateCommonStanzas
-          name' <- parseUnqualComponentName pos args
+          name' <- parseUnqualComponentName pos (map convertSectionArg args)
           benchStanza <- lift $ parseCondTree' benchmarkFieldGrammar (fromBuildInfo' name') commonStanzas fields
           bench <- lift $ traverse (validateBenchmark specVer pos) benchStanza
 
@@ -420,31 +427,33 @@ goSections specVer = traverse_ process
           -- TODO check duplicate name here?
           stateGpd . L.condBenchmarks %= snoc (name', bench)
       | name == "flag" = do
-          name' <- parseNameBS pos args
+          name' <- parseNameBS pos (map convertSectionArg args)
           name'' <- lift $ runFieldParser' [pos] parsec specVer (fieldLineStreamFromBS name') `recoverWith` mkFlagName ""
-          flag <- lift $ parseFields specVer fields (flagFieldGrammar name'')
+          flag <- lift $ parseFields specVer (map convertField fields) (flagFieldGrammar name'')
           -- Check default flag
           stateGpd . L.genPackageFlags %= snoc flag
       | name == "custom-setup" && null args = do
-          sbi <- lift $ parseFields specVer fields (setupBInfoFieldGrammar False)
+          sbi <- lift $ parseFields specVer (map convertField fields) (setupBInfoFieldGrammar False)
           stateGpd . L.packageDescription . L.setupBuildInfo ?= sbi
       | name == "source-repository" = do
           kind <- lift $ case args of
             [SecArgName spos secName] ->
-              runFieldParser' [spos] parsec specVer (fieldLineStreamFromBS secName) `recoverWith` RepoHead
+              runFieldParser' [view L.position spos] parsec specVer (fieldLineStreamFromBS secName) `recoverWith` RepoHead
             [] -> do
               parseFailure pos "'source-repository' requires exactly one argument"
               pure RepoHead
             _ -> do
-              parseFailure pos $ "Invalid source-repository kind " ++ show args
+              parseFailure pos $ "Invalid source-repository kind " ++ show (map convertSectionArg args)
               pure RepoHead
 
-          sr <- lift $ parseFields specVer fields (sourceRepoFieldGrammar kind)
+          sr <- lift $ parseFields specVer (map convertField fields) (sourceRepoFieldGrammar kind)
           stateGpd . L.packageDescription . L.sourceRepos %= snoc sr
       | otherwise =
           lift $
             parseWarning pos PWTUnknownSection $
               "Ignoring section: " ++ show name
+      where
+        pos = view L.position ann
 
 parseName :: Position -> [SectionArg Position] -> SectionParser src String
 parseName pos args = fromUTF8BS <$> parseNameBS pos args
@@ -482,6 +491,9 @@ parseCommonName pos args = case args of
 parseUnqualComponentName :: Position -> [SectionArg Position] -> SectionParser src UnqualComponentName
 parseUnqualComponentName pos args = mkUnqualComponentName <$> parseName pos args
 
+convertField :: L.HasPosition ann => Field ann -> Field Position
+convertField = fmap (view L.position)
+
 -- | Parse a non-recursive list of fields.
 parseFields
   :: CabalSpecVersion
@@ -499,8 +511,10 @@ warnInvalidSubsection (MkSection (Name pos name) _ _) =
   void $ parseFailure pos $ "invalid subsection " ++ show name
 
 parseCondTree
-  :: forall src a
-   . L.HasBuildInfo a
+  :: forall src ann a
+   . ( L.HasBuildInfo a
+     , L.HasPosition ann
+     )
   => CabalSpecVersion
   -> HasElif
   -- ^ accept @elif@
@@ -510,10 +524,11 @@ parseCondTree
   -- ^ common stanzas
   -> (BuildInfo -> a)
   -- ^ constructor from buildInfo
-  -> [Field Position]
+  -> [Field ann]
   -> ParseResult src (CondTree ConfVar a)
 parseCondTree v hasElif grammar commonStanzas fromBuildInfo = go
   where
+    go :: [Field ann] -> ParseResult src (CondTree ConfVar a)
     go fields0 = do
       (fields, endo) <-
         if v >= CabalSpecV3_0
@@ -525,47 +540,53 @@ parseCondTree v hasElif grammar commonStanzas fromBuildInfo = go
       branches <- concat <$> traverse parseIfs ss
       return $ endo $ CondNode x branches
 
-    parseIfs :: [Section Position] -> ParseResult src [CondBranch ConfVar a]
+    parseIfs :: L.HasPosition ann => [Section ann] -> ParseResult src [CondBranch ConfVar a]
     parseIfs [] = return []
-    parseIfs (MkSection (Name pos name) test fields : sections) | name == "if" = do
-      test' <- parseConditionConfVar (startOfSection (incPos 2 pos) test) test
+    parseIfs (MkSection (Name ann name) test fields : sections) | name == "if" = do
+      let pos = view L.position ann
+      test' <- parseConditionConfVarFromAnn (startOfSection (incPos 2 pos) test) test
       fields' <- go fields
       (elseFields, sections') <- parseElseIfs sections
       return (CondBranch test' fields' elseFields : sections')
-    parseIfs (MkSection (Name pos name) _ _ : sections) = do
+    parseIfs (MkSection (Name ann name) _ _ : sections) = do
+      let pos = view L.position ann
       parseWarning pos PWTInvalidSubsection $ "invalid subsection " ++ show name
       parseIfs sections
 
     parseElseIfs
-      :: [Section Position]
+      :: L.HasPosition ann
+      => [Section ann]
       -> ParseResult src (Maybe (CondTree ConfVar a), [CondBranch ConfVar a])
     parseElseIfs [] = return (Nothing, [])
-    parseElseIfs (MkSection (Name pos name) args fields : sections) | name == "else" = do
+    parseElseIfs (MkSection (Name ann name) args fields : sections) | name == "else" = do
+      let pos = view L.position ann
       unless (null args) $
         parseFailure pos $
-          "`else` section has section arguments " ++ show args
+          "`else` section has section arguments " ++ show (map convertSectionArg args)
       elseFields <- go fields
       sections' <- parseIfs sections
       return (Just elseFields, sections')
-    parseElseIfs (MkSection (Name pos name) test fields : sections)
+    parseElseIfs (MkSection (Name ann name) test fields : sections)
       | hasElif == HasElif
       , name == "elif" = do
-          test' <- parseConditionConfVar (startOfSection (incPos 4 pos) test) test
+          let pos = view L.position ann
+          test' <- parseConditionConfVarFromAnn (startOfSection (incPos 4 pos) test) test
           fields' <- go fields
           (elseFields, sections') <- parseElseIfs sections
           -- we parse an empty 'Fields', to get empty value for a node
-          a <- parseFieldGrammar v mempty grammar
+          a <- parseFieldGrammar v (Map.empty :: Fields ann) grammar
           return (Just $ CondNode a [CondBranch test' fields' elseFields], sections')
-    parseElseIfs (MkSection (Name pos name) _ _ : sections) | name == "elif" = do
+    parseElseIfs (MkSection (Name ann name) _ _ : sections) | name == "elif" = do
+      let pos = view L.position ann
       parseWarning pos PWTInvalidSubsection "invalid subsection \"elif\". You should set cabal-version: 2.2 or larger to use elif-conditionals."
       (,) Nothing <$> parseIfs sections
     parseElseIfs sections = (,) Nothing <$> parseIfs sections
 
-startOfSection :: Position -> [SectionArg Position] -> Position
+startOfSection :: L.HasPosition ann => Position -> [SectionArg ann] -> Position
 -- The case where we have no args is the start of the section
 startOfSection defaultPos [] = defaultPos
 -- Otherwise the start of the section is the position of the first argument.
-startOfSection _ (cond : _) = sectionArgAnn cond
+startOfSection _ (cond : _) = view L.position $ sectionArgAnn cond
 
 {- Note [Accumulating parser]
 
@@ -655,8 +676,10 @@ instance FromBuildInfo BenchmarkStanza where
   fromBuildInfo' _ bi = BenchmarkStanza Nothing Nothing Nothing bi
 
 parseCondTreeWithCommonStanzas
-  :: forall src a
-   . L.HasBuildInfo a
+  :: forall src ann a
+   . ( L.HasBuildInfo a
+     , L.HasPosition ann
+     )
   => CabalSpecVersion
   -> ParsecFieldGrammar' a
   -- ^ grammar
@@ -664,7 +687,7 @@ parseCondTreeWithCommonStanzas
   -- ^ construct fromBuildInfo
   -> Map String CondTreeBuildInfo
   -- ^ common stanzas
-  -> [Field Position]
+  -> [Field ann]
   -> ParseResult src (CondTree ConfVar a)
 parseCondTreeWithCommonStanzas v grammar fromBuildInfo commonStanzas fields = do
   (fields', endo) <- processImports v fromBuildInfo commonStanzas fields
@@ -673,16 +696,23 @@ parseCondTreeWithCommonStanzas v grammar fromBuildInfo commonStanzas fields = do
   where
     hasElif = specHasElif v
 
+convertSectionArg :: L.HasPosition ann => SectionArg ann -> SectionArg Position
+convertSectionArg (SecArgName ann s) = SecArgName (view L.position ann) s
+convertSectionArg (SecArgStr ann s) = SecArgStr (view L.position ann) s
+convertSectionArg (SecArgOther ann s) = SecArgOther (view L.position ann) s
+
 processImports
-  :: forall src a
-   . L.HasBuildInfo a
+  :: forall src ann a
+   . ( L.HasBuildInfo a
+     , L.HasPosition ann
+     )
   => CabalSpecVersion
   -> (BuildInfo -> a)
   -- ^ construct fromBuildInfo
   -> Map String CondTreeBuildInfo
   -- ^ common stanzas
-  -> [Field Position]
-  -> ParseResult src ([Field Position], CondTree ConfVar a -> CondTree ConfVar a)
+  -> [Field ann]
+  -> ParseResult src ([Field ann], CondTree ConfVar a -> CondTree ConfVar a)
 processImports v fromBuildInfo commonStanzas = go []
   where
     hasCommonStanzas = specHasCommonStanzas v
@@ -690,18 +720,18 @@ processImports v fromBuildInfo commonStanzas = go []
     getList' :: List CommaFSep Token String -> [String]
     getList' = Newtype.unpack
 
-    go acc (Field (Name pos name) _ : fields)
+    go acc (Field (Name ann name) _ : fields)
       | name == "import"
       , hasCommonStanzas == NoCommonStanzas = do
-          parseWarning pos PWTUnknownField "Unknown field: import. You should set cabal-version: 2.2 or larger to use common stanzas"
+          parseWarning (view L.position ann) PWTUnknownField "Unknown field: import. You should set cabal-version: 2.2 or larger to use common stanzas"
           go acc fields
     -- supported:
-    go acc (Field (Name pos name) fls : fields) | name == "import" = do
-      names <- getList' <$> runFieldParser pos parsec v fls
+    go acc (Field (Name ann name) fls : fields) | name == "import" = do
+      names <- getList' <$> runFieldParser ann parsec v fls
       names' <- for names $ \commonName ->
         case Map.lookup commonName commonStanzas of
           Nothing -> do
-            parseFailure pos $ "Undefined common stanza imported: " ++ commonName
+            parseFailure (view L.position ann) $ "Undefined common stanza imported: " ++ commonName
             pure Nothing
           Just commonTree ->
             pure (Just commonTree)
@@ -714,12 +744,13 @@ processImports v fromBuildInfo commonStanzas = go []
       pure (fields', \x -> foldr (mergeCommonStanza fromBuildInfo) x acc)
 
 -- | Warn on "import" fields, also map to Maybe, so erroneous fields can be filtered
-warnImport :: CabalSpecVersion -> Field Position -> ParseResult src (Maybe (Field Position))
-warnImport v (Field (Name pos name) _) | name == "import" = do
+warnImport :: L.HasPosition ann => CabalSpecVersion -> Field ann -> ParseResult src (Maybe (Field ann))
+warnImport v (Field (Name ann name) _) | name == "import" = do
   if specHasCommonStanzas v == NoCommonStanzas
     then parseWarning pos PWTUnknownField "Unknown field: import. You should set cabal-version: 2.2 or larger to use common stanzas"
     else parseWarning pos PWTUnknownField "Unknown field: import. Common stanza imports should be at the top of the enclosing section"
   return Nothing
+  where pos = view L.position ann
 warnImport _ f = pure (Just f)
 
 mergeCommonStanza
