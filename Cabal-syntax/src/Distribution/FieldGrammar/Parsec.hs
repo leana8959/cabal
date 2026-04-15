@@ -69,6 +69,7 @@ module Distribution.FieldGrammar.Parsec
   , freeTextIgnoreDotlineVers
   ) where
 
+import qualified Distribution.Compat.Lens as L
 import Distribution.Compat.Newtype
 import Distribution.Compat.Prelude
 import Distribution.Utils.Generic (fromUTF8BS)
@@ -90,6 +91,7 @@ import Distribution.Fields.ParseResult
 import Distribution.Parsec
 import Distribution.Parsec.FieldLineStream
 import Distribution.Parsec.Position (positionCol, positionRow)
+import qualified Distribution.Parsec.Position.Lens as L
 
 -------------------------------------------------------------------------------
 -- Auxiliary types
@@ -392,10 +394,10 @@ runFieldParser' inputPoss p v str = case P.runParser p' [] "<field>" str of
         go n (Position row col : _) | n <= 0 = Position row (col + pcol - 1)
         go n (_ : ps) = go (n - 1) ps
 
-runFieldParser :: Position -> ParsecParser a -> CabalSpecVersion -> [FieldLine Position] -> ParseResult src a
-runFieldParser pp p v ls = runFieldParser' poss p v (fieldLinesToStream ls)
+runFieldParser :: L.HasPosition ann => ann -> ParsecParser a -> CabalSpecVersion -> [FieldLine ann] -> ParseResult src a
+runFieldParser ann p v ls = runFieldParser' poss p v (fieldLinesToStream ls)
   where
-    poss = map (\(FieldLine pos _) -> pos) ls ++ [pp] -- add "default" position
+    poss = map (L.view L.position) $ map (\(FieldLine a _) -> a) ls ++ [ann] -- add "default" position
 
 fieldlinesToBS :: [FieldLine ann] -> BS.ByteString
 fieldlinesToBS = BS.intercalate "\n" . map (\(FieldLine _ bs) -> bs)

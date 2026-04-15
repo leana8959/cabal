@@ -1,4 +1,5 @@
 {-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE ViewPatterns #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE Rank2Types #-}
@@ -54,6 +55,7 @@ import Distribution.PackageDescription.Quirks (patchQuirks)
 import Distribution.Parsec (parsec, simpleParsecBS)
 import Distribution.Parsec.FieldLineStream (fieldLineStreamFromBS)
 import Distribution.Parsec.Position (Position (..), incPos, zeroPos)
+import qualified Distribution.Parsec.Position.Lens as L
 import Distribution.Parsec.Warning (PWarnType (..))
 import Distribution.Pretty (prettyShow)
 import Distribution.Utils.Generic (breakMaybe, fromUTF8BS, toUTF8BS, unfoldrM, validateUTF8)
@@ -189,25 +191,25 @@ parseAnnotatedGenericPackageDescription' scannedVer lexWarnings utf8WarnPos fs =
   --     !commentsMap = Map.fromList . map (\(Comment cmt pos) -> (pos, cmt)) $ comments
 
   let (syntax, fs') = sectionizeFields fs
-  let (fields, sectionFields) = takeFields fs'
+  let (fields :: Fields (WithComments Position), sectionFields :: [Field (WithComments Position)]) = takeFields fs'
 
   -- cabal-version
   specVer <- case scannedVer of
     Just v -> return v
     Nothing -> case Map.lookup "cabal-version" fields >>= safeLast of
       Nothing -> return CabalSpecV1_0
-      Just (MkNamelessField pos fls) -> do
+      Just (MkNamelessField ann fls) -> do
         -- version will be parsed twice, therefore we parse without warnings.
         v <-
           withoutWarnings $
             Newtype.unpack' SpecVersion
               <$>
               -- Use version with || and && but before addition of ^>= and removal of -any
-              runFieldParser pos parsec CabalSpecV1_24 fls
+              runFieldParser ann parsec CabalSpecV1_24 fls
 
         -- if it were at the beginning, scanner would found it
         when (v >= CabalSpecV2_2) $
-          parseFailure pos $
+          parseFailure (view L.position ann) $
             "cabal-version should be at the beginning of the file starting with spec version 2.2.\n"
               ++ cabalFormatVersionsDesc
 
