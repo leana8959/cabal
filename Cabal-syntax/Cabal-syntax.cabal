@@ -96,6 +96,7 @@ library
     Distribution.Fields
     Distribution.Fields.ConfVar
     Distribution.Fields.Field
+    Distribution.Fields.Field.Lens
     Distribution.Fields.Lexer
     Distribution.Fields.LexerMonad
     Distribution.Fields.ParseResult
@@ -116,6 +117,7 @@ library
     Distribution.Parsec.Error
     Distribution.Parsec.FieldLineStream
     Distribution.Parsec.Position
+    Distribution.Parsec.Position.Lens
     Distribution.Parsec.Warning
     Distribution.Parsec.Source
     Distribution.Pretty
