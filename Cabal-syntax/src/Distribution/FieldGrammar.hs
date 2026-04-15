@@ -26,7 +26,7 @@ module Distribution.FieldGrammar
   , Section (..)
   , Fields
   , partitionFields
-  , extractComments
+  -- , extractComments
   , takeFields
   , runFieldParser
   , runFieldParser'
@@ -110,8 +110,8 @@ takeFields = finalize . spanMaybe match
     match (Field (Name ann name) fs) = Just (name, [MkNamelessField ann fs])
     match _ = Nothing
 
-extractComments :: (Foldable f, Functor f) => [f (WithComments ann)] -> ([Comment ann], [f ann])
-extractComments = Bi.first mconcat . unzip . map extractCommentsStep
-
-extractCommentsStep :: (Foldable f, Functor f) => f (WithComments ann) -> ([Comment ann], f ann)
-extractCommentsStep f = (foldMap justComments f, fmap unComments f)
+-- extractComments :: (Foldable f, Functor f) => [f (WithComments ann)] -> ([Comment ann], [f ann])
+-- extractComments = Bi.first mconcat . unzip . map extractCommentsStep
+--
+-- extractCommentsStep :: (Foldable f, Functor f) => f (WithComments ann) -> ([Comment ann], f ann)
+-- extractCommentsStep f = (foldMap justComments f, fmap unComments f)

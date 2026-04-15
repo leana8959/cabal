@@ -185,11 +185,11 @@ parseAnnotatedGenericPackageDescription' scannedVer lexWarnings utf8WarnPos fs =
   for_ utf8WarnPos $ \pos ->
     parseWarning zeroPos PWTUTF $ "UTF8 encoding problem at byte offset " ++ show pos
 
-  let (comments, fs') = extractComments fs
-      !commentsMap = Map.fromList . map (\(Comment cmt pos) -> (pos, cmt)) $ comments
+  -- let (comments, fs') = extractComments fs
+  --     !commentsMap = Map.fromList . map (\(Comment cmt pos) -> (pos, cmt)) $ comments
 
-  let (syntax, fs'') = sectionizeFields fs'
-  let (fields, sectionFields) = takeFields fs''
+  let (syntax, fs') = sectionizeFields fs
+  let (fields, sectionFields) = takeFields fs'
 
   -- cabal-version
   specVer <- case scannedVer of
@@ -240,8 +240,9 @@ parseAnnotatedGenericPackageDescription' scannedVer lexWarnings utf8WarnPos fs =
   checkForUndefinedFlags gpd2
   checkForUndefinedCustomSetup gpd2
   return
+    -- TODO(leana8959): abandon idea of extracting comments
     AnnotatedGenericPackageDescription
-      { exactComments = commentsMap
+      { exactComments = mempty
       , unannotatedGpd = gpd2
       }
   where
