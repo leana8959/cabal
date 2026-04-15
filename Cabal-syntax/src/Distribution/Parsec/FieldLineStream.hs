@@ -21,6 +21,9 @@ import Data.Text.Internal.Encoding.Utf8
 import qualified Text.Parsec as Parsec
 
 -- | This is essentially a lazy bytestring, but chunks are glued with newline @\'\\n\'@.
+
+-- TODO(leana8959): injecting the comments here would allow them to be collected
+-- maybe we can create another constructor to do so?
 data FieldLineStream
   = FLSLast !ByteString
   | FLSCons {-# UNPACK #-} !ByteString FieldLineStream
