@@ -48,7 +48,7 @@ typeField csv (Field fname fls)
   | otherwise = pure (MkRawTField fname fls)
 typeField csv (Section sname sargs fs) = do
   tfs <- typeFields csv fs
-  pure (MkRawTSection sname sargs tfs)
+  pure (MkTSection sname sargs tfs)
 
 extractCommentsFieldLines :: [FieldLine (WithComments Position)] -> ([Comment Position], [FieldLine Position])
 extractCommentsFieldLines = Bi.first mconcat . unzip . map extractCommentsFieldLine

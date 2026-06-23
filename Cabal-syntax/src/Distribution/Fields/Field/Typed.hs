@@ -13,6 +13,5 @@ data TField ann
     MkRawTField !(Name ann) [FieldLine ann]
   | MkCabalVersionTField !(Name ann) (Annotated CabalSpecVersion)
   | MkTargetBuildDependsField !(Name ann) (AnnotatedList Dependency)
-  | -- | Holds sections that are not yet transformed to typed implementation.
-    MkRawTSection !(Name ann) [SectionArg ann] [TField ann]
+  | MkTSection !(Name ann) [SectionArg ann] [TField ann]
   deriving (Show)
