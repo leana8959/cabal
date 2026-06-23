@@ -23,7 +23,7 @@ module Distribution.FieldGrammar.Newtypes
   , Sep (..)
 
   -- * Location
-  , LocatedP (..)
+  , Located (..)
 
     -- ** Type
   , List
@@ -84,14 +84,15 @@ import qualified Distribution.Compat.CharParsing as P
 import qualified Distribution.SPDX as SPDX
 
 -- TODO(leana8959): move this to newtypes module
-data LocatedP a = MkLocatedP { getSrcSpan :: !SrcSpan, unLocatedP :: !a }
+data Located a = MkLocated { getSrcSpan :: !SrcSpan, unLocated :: !a }
+  deriving Functor
 
-instance Parsec a => Parsec (LocatedP a) where
+instance Parsec a => Parsec (Located a) where
   parsec = do
     begin <- getPosition
     x <- parsec
     end <- getPosition
-    pure (MkLocatedP (MkSrcSpan begin end) x)
+    pure (MkLocated (MkSrcSpan begin end) x)
 
 -- | Vertical list with commas. Displayed with 'vcat'
 data CommaVCat = CommaVCat

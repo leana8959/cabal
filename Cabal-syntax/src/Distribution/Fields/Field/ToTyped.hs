@@ -13,8 +13,8 @@ import qualified Data.Bifunctor as Bi
 
 import Distribution.CabalSpecVersion
 import Distribution.Parsec (Parsec(parsec), CabalParsing)
-import Distribution.FieldGrammar.Newtypes (SpecVersion, List, CommaVCat, LocatedP (..))
-import Distribution.FieldGrammar.Parsec (runFieldParser, fieldLinesToBS, fieldLinesToSrcSpan)
+import Distribution.FieldGrammar.Newtypes (SpecVersion, List, CommaVCat, Located (..))
+import Distribution.FieldGrammar.Parsec (runFieldParser, fieldLinesToBS)
 import Distribution.Parsec.Position
 import Distribution.Annotation
 import Distribution.Compat.Newtype (Newtype(unpack))
@@ -27,21 +27,20 @@ typeField :: CabalSpecVersion -> Field (WithComments Position) -> ParseResult sr
 typeField csv (Field fname fls)
   | getName fname == "cabal-version" = do
     let (cmts, fls') = extractCommentsFieldLines fls
-    sv <- unpack <$> runFieldParser (unComments $ nameAnn fname) (parsec @SpecVersion) csv fls'
-    let spn = fieldLinesToSrcSpan fls'
+    MkLocated spn sv <- fmap unpack <$> runFieldParser (unComments $ nameAnn fname) (parsec @(Located SpecVersion)) csv fls'
     let ann = ExactRepr (fieldLinesToBS fls)
-    pure (MkCabalVersionTField fname (MkAnnotated cmts ann spn sv))
+    pure (MkCabalVersionTField fname (MkAnnotated cmts ann (Just spn) sv))
 
   | getName fname == "build-depends" = do
     let (cmts, fls') = extractCommentsFieldLines fls
-    let parseListDeps :: CabalParsing m => m (List CommaVCat (Identity (LocatedP Dependency)) (LocatedP Dependency))
+    let parseListDeps :: CabalParsing m => m (List CommaVCat (Identity (Located Dependency)) (Located Dependency))
         parseListDeps = parsec
-        parseDeps :: CabalParsing m => m [LocatedP Dependency]
+        parseDeps :: CabalParsing m => m [Located Dependency]
         parseDeps = unpack <$> parseListDeps
     let eann = ExactRepr (fieldLinesToBS fls)
     deps <- runFieldParser (unComments $ nameAnn fname) parseDeps csv fls'
 
-    let deps' = map (\(MkLocatedP spn x) -> (spn, x)) deps
+    let deps' = map (\(MkLocated spn x) -> (spn, x)) deps
     let deps'' = MkAnnotatedList cmts eann deps'
     pure (MkTargetBuildDependsField fname deps'')
 

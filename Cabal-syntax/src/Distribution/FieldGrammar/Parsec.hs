@@ -67,7 +67,6 @@ module Distribution.FieldGrammar.Parsec
   , runFieldParser'
   , fieldLinesToStream
   , fieldLinesToBS
-  , fieldLinesToSrcSpan
   , freeTextIgnoreDotlineVers
   ) where
 
@@ -92,7 +91,6 @@ import Distribution.Fields.ParseResult
 import Distribution.Parsec
 import Distribution.Parsec.FieldLineStream
 import Distribution.Parsec.Position (positionCol, positionRow)
-import Distribution.Annotation (SrcSpan (MkSrcSpan))
 
 -------------------------------------------------------------------------------
 -- Auxiliary types
@@ -469,11 +467,3 @@ fieldLinesToBS :: [FieldLine ann] -> BS.ByteString
 fieldLinesToBS [] = mempty
 fieldLinesToBS [FieldLine _ bs] = bs -- don't leave trailing newline
 fieldLinesToBS (FieldLine _ bs : fls) = bs <> "\n" <> fieldLinesToBS fls
-
-fieldLinesToSrcSpan :: [FieldLine Position] -> Maybe SrcSpan
-fieldLinesToSrcSpan [] = Nothing
-fieldLinesToSrcSpan [FieldLine pos bs] = Just (MkSrcSpan pos (incPos (BS.length bs) pos))
-fieldLinesToSrcSpan (FieldLine pos bs : fls) =
-  Just $ case fieldLinesToSrcSpan fls of
-    Just (MkSrcSpan _ endPos) -> MkSrcSpan pos endPos
-    Nothing -> MkSrcSpan pos (incPos (BS.length bs) pos)
