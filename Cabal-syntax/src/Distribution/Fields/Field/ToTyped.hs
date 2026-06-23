@@ -20,6 +20,7 @@ import Distribution.Annotation
 import Distribution.Compat.Newtype (Newtype(unpack))
 import Distribution.Types.Dependency 
 import Distribution.Version
+import Distribution.PackageDescription (LegacyExeDependency)
 
 typeFields :: CabalSpecVersion -> [Field (WithComments Position)] -> ParseResult src [TField (WithComments Position)]
 typeFields = traverse . typeField
@@ -50,6 +51,18 @@ typeField csv (Field fname fls)
     lv <- runFieldParser (unComments $ nameAnn fname) (parsec @(Located Version)) csv fls'
     let eann = ExactRepr (fieldLinesToBS fls)
     pure (MkPkgVersionTField fname (MkAnnotated cmts eann lv))
+
+  -- example for many values
+  | getName fname == "build-tools" = do
+    let (cmts, fls') = extractCommentsFieldLines fls
+    let parseListBuildTools :: CabalParsing m => m (List CommaVCat (Identity (Located LegacyExeDependency)) (Located LegacyExeDependency))
+        parseListBuildTools = parsec
+        parseBuildTools :: CabalParsing m => m [Located LegacyExeDependency]
+        parseBuildTools = unpack <$> parseListBuildTools
+    let eann = ExactRepr (fieldLinesToBS fls)
+    bts <- runFieldParser (unComments $ nameAnn fname) parseBuildTools csv fls'
+    let bts' = MkAnnotatedList cmts eann bts
+    pure (MkBuildToolsTField fname bts')
 
   -- store all legacy value in a fourre-tout
   | otherwise = pure (MkRawTField fname fls)

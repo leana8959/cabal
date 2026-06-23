@@ -12,3 +12,7 @@ version: 5
 build-depends:
     base > 1
   , text > 2
+
+build-tools:
+    alex
+  , happy

@@ -15,7 +15,7 @@ import Control.Monad                               (void, unless)
 import Data.Algorithm.Diff                         (PolyDiff (..), getGroupedDiff)
 import Data.Maybe                                  (isNothing)
 import Distribution.Fields                         (pwarning)
-import Distribution.Fields.Parser                  (readFieldsWithComments', formatError, readFields, readFieldsWithComments)
+import Distribution.Fields.Parser                  (readFieldsWithComments', formatError, readFieldsWithComments)
 import Distribution.PackageDescription
   ( GenericPackageDescription
   , packageDescription
@@ -55,7 +55,7 @@ import Data.TreeDiff                 (ansiWlEditExpr, ediff, toExpr)
 import Data.TreeDiff.Golden          (ediffGolden)
 import Data.TreeDiff.Instances.Cabal ()
 import Distribution.CabalSpecVersion (CabalSpecVersion(CabalSpecV3_0))
-import Distribution.Fields.Field.ToTyped (typeField, typeFields)
+import Distribution.Fields.Field.ToTyped (typeFields)
 #endif
 
 tests :: TestTree
