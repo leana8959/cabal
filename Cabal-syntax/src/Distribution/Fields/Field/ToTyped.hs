@@ -28,9 +28,9 @@ typeField csv (Field fname fls)
   -- example for single value
   | getName fname == "cabal-version" = do
     let (cmts, fls') = extractCommentsFieldLines fls
-    MkLocated spn sv <- fmap unpack <$> runFieldParser (unComments $ nameAnn fname) (parsec @(Located SpecVersion)) csv fls'
+    lsv <- fmap unpack <$> runFieldParser (unComments $ nameAnn fname) (parsec @(Located SpecVersion)) csv fls'
     let ann = ExactRepr (fieldLinesToBS fls)
-    pure (MkCabalVersionTField fname (MkAnnotated cmts ann (Just spn) sv))
+    pure (MkCabalVersionTField fname (MkAnnotated cmts ann lsv))
 
   -- example for many values
   | getName fname == "build-depends" = do

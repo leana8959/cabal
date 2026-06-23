@@ -18,7 +18,7 @@ data SrcSpan = MkSrcSpan {-# UNPACK #-} !Position {-# UNPACK #-} !Position
   deriving (Show)
 
 -- TODO(leana8959): refine type
-data Annotated a = MkAnnotated [Comment Position] ExactAnn (Maybe SrcSpan) a
+data Annotated a = MkAnnotated [Comment Position] ExactAnn (Located a)
   deriving (Show)
 
 -- NOTE(leana8959): Move Located to its own module, here's a cycle
