@@ -13,7 +13,7 @@ import qualified Data.Bifunctor as Bi
 
 import Distribution.CabalSpecVersion
 import Distribution.Parsec (Parsec(parsec), CabalParsing)
-import Distribution.FieldGrammar.Newtypes (SpecVersion, List, CommaVCat, Located (..))
+import Distribution.FieldGrammar.Newtypes (SpecVersion, List, CommaVCat)
 import Distribution.FieldGrammar.Parsec (runFieldParser, fieldLinesToBS)
 import Distribution.Parsec.Position
 import Distribution.Annotation
@@ -25,12 +25,14 @@ typeFields = traverse . typeField
 
 typeField :: CabalSpecVersion -> Field (WithComments Position) -> ParseResult src (TField (WithComments Position))
 typeField csv (Field fname fls)
+  -- example for single value
   | getName fname == "cabal-version" = do
     let (cmts, fls') = extractCommentsFieldLines fls
     MkLocated spn sv <- fmap unpack <$> runFieldParser (unComments $ nameAnn fname) (parsec @(Located SpecVersion)) csv fls'
     let ann = ExactRepr (fieldLinesToBS fls)
     pure (MkCabalVersionTField fname (MkAnnotated cmts ann (Just spn) sv))
 
+  -- example for many values
   | getName fname == "build-depends" = do
     let (cmts, fls') = extractCommentsFieldLines fls
     let parseListDeps :: CabalParsing m => m (List CommaVCat (Identity (Located Dependency)) (Located Dependency))
@@ -39,11 +41,10 @@ typeField csv (Field fname fls)
         parseDeps = unpack <$> parseListDeps
     let eann = ExactRepr (fieldLinesToBS fls)
     deps <- runFieldParser (unComments $ nameAnn fname) parseDeps csv fls'
+    let deps' = MkAnnotatedList cmts eann deps
+    pure (MkTargetBuildDependsField fname deps')
 
-    let deps' = map (\(MkLocated spn x) -> (spn, x)) deps
-    let deps'' = MkAnnotatedList cmts eann deps'
-    pure (MkTargetBuildDependsField fname deps'')
-
+  -- store all legacy value in a fourre-tout
   | otherwise = pure (MkRawTField fname fls)
 typeField csv (Section sname sargs fs) = do
   tfs <- typeFields csv fs

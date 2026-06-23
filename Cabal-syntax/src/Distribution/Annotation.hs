@@ -1,9 +1,12 @@
+{-# LANGUAGE DeriveFunctor #-}
+
 module Distribution.Annotation where
 
 import qualified Data.ByteString as BS
 import Distribution.Parsec.Position
 import Distribution.Fields.Field
 
+import Distribution.Parsec
 
 -- TODO(leana8959): We can label this with a position range so it looks like lsp-style edits, and modifications will mean preforming edits.
 data ExactAnn
@@ -19,5 +22,15 @@ data Annotated a = MkAnnotated [Comment Position] ExactAnn (Maybe SrcSpan) a
   deriving (Show)
 
 -- NOTE(leana8959): Move Located to its own module, here's a cycle
-data AnnotatedList a = MkAnnotatedList [Comment Position] ExactAnn [(SrcSpan, a)]
+data AnnotatedList a = MkAnnotatedList [Comment Position] ExactAnn [Located a]
   deriving (Show)
+
+data Located a = MkLocated { getSrcSpan :: !SrcSpan, unLocated :: !a }
+  deriving (Show, Functor)
+
+instance Parsec a => Parsec (Located a) where
+  parsec = do
+    begin <- getPosition
+    x <- parsec
+    end <- getPosition
+    pure (MkLocated (MkSrcSpan begin end) x)
