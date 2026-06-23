@@ -13,3 +13,4 @@ data TField ann
   | MkCabalVersionTField !(Name ann) (Annotated CabalSpecVersion)
   | -- | Holds sections that are not yet transformed to typed implementation.
     MkRawTSection !(Name ann) [SectionArg ann] [TField ann]
+  deriving (Show)

@@ -467,6 +467,7 @@ fieldLinesToStream (FieldLine _ bs : fs) = FLSCons bs (fieldLinesToStream fs)
 
 fieldLinesToBS :: [FieldLine ann] -> BS.ByteString
 fieldLinesToBS [] = mempty
+fieldLinesToBS [FieldLine _ bs] = bs -- don't leave trailing newline
 fieldLinesToBS (FieldLine _ bs : fls) = bs <> "\n" <> fieldLinesToBS fls
 
 fieldLinesToSrcSpan :: [FieldLine Position] -> Maybe SrcSpan

@@ -1,4 +1,5 @@
 {-# LANGUAGE CPP #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 module Main
     ( main
     ) where
@@ -14,7 +15,7 @@ import Control.Monad                               (void, unless)
 import Data.Algorithm.Diff                         (PolyDiff (..), getGroupedDiff)
 import Data.Maybe                                  (isNothing)
 import Distribution.Fields                         (pwarning)
-import Distribution.Fields.Parser                  (readFieldsWithComments', formatError)
+import Distribution.Fields.Parser                  (readFieldsWithComments', formatError, readFields)
 import Distribution.PackageDescription
   ( GenericPackageDescription
   , packageDescription
@@ -41,6 +42,8 @@ import System.Environment                          (getArgs, withArgs)
 import System.FilePath                             (replaceExtension, (</>))
 import Distribution.Parsec.Source
 
+import Text.Pretty.Simple
+
 import qualified Data.ByteString       as BS
 import qualified Data.ByteString.Char8 as BS8
 import qualified Data.List.NonEmpty    as NE
@@ -51,6 +54,8 @@ import qualified Distribution.InstalledPackageInfo as IPI
 import Data.TreeDiff                 (ansiWlEditExpr, ediff, toExpr)
 import Data.TreeDiff.Golden          (ediffGolden)
 import Data.TreeDiff.Instances.Cabal ()
+import Distribution.CabalSpecVersion (CabalSpecVersion(CabalSpecV3_0))
+import Distribution.Fields.Field.ToTyped (typeField, typeFields)
 #endif
 
 tests :: TestTree
@@ -60,6 +65,7 @@ tests = testGroup "parsec tests"
     , commentTests
     , errorTests
     , ipiTests
+    , typedFieldTest
     ]
 
 -------------------------------------------------------------------------------
@@ -170,6 +176,29 @@ commentTest fname = ediffGolden goldenTest fname exprFile $ do
     input = "tests" </> "ParserTests" </> "comments" </> fname
     exprFile = replaceExtension input "expr"
 #endif
+
+-------------------------------------------------------------------------------
+-- Typed fields
+-------------------------------------------------------------------------------
+
+typedFieldTest :: TestTree
+typedFieldTest = testCase "typedField" $ do
+    contents <- BS.readFile input
+
+    fields <- case readFields contents of
+      Left err -> fail (show err)
+      Right ok -> pure ok
+
+    let (_, res) = runParseResult $ typeFields CabalSpecV3_0 fields
+    tfields <- case res of
+      Left (v, errs) -> fail $ unlines $ ("VERSION: " ++ show v) : map (showPErrorWithSource . fmap renderCabalFileSource) (NE.toList errs)
+      Right ok -> pure ok
+
+    pPrint fields
+    pPrint tfields
+    pure ()
+    where
+      input = "tests" </> "ParserTests" </> "typedFieldTest.cabal"
 
 -------------------------------------------------------------------------------
 -- Errors

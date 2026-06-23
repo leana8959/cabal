@@ -14,3 +14,4 @@ data SrcSpan = MkSrcSpan {-# UNPACK #-} !Position {-# UNPACK #-} !Position
   deriving (Show)
 
 data Annotated a = MkAnnotated ExactAnn a
+  deriving (Show)
