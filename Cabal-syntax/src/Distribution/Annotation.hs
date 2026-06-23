@@ -1,11 +1,16 @@
 module Distribution.Annotation where
 
 import qualified Data.ByteString as BS
+import Distribution.Parsec.Position
+
 
 -- TODO(leana8959): We can label this with a position range so it looks like lsp-style edits, and modifications will mean preforming edits.
-data Trivia
-  = ExactRepr BS.ByteString
+data ExactAnn
+  = ExactRepr (Maybe SrcSpan) BS.ByteString
   | IsInserted
-  deriving (Show, Eq, Ord, Read)
+  deriving (Show)
 
-data Annotated a = MkAnnotated Trivia a
+data SrcSpan = MkSrcSpan {-# UNPACK #-} !Position {-# UNPACK #-} !Position
+  deriving (Show)
+
+data Annotated a = MkAnnotated ExactAnn a
