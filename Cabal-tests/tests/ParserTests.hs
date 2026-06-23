@@ -194,7 +194,7 @@ typedFieldTest = testCase "typedField" $ do
       Left (v, errs) -> fail $ unlines $ ("VERSION: " ++ show v) : map (showPErrorWithSource . fmap renderCabalFileSource) (NE.toList errs)
       Right ok -> pure ok
 
-    pPrint fields
+    -- pPrint fields
     pPrint tfields
     pure ()
     where

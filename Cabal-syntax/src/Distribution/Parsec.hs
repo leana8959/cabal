@@ -101,6 +101,8 @@ class (P.CharParsing m, MonadPlus m, Fail.MonadFail m) => CabalParsing m where
 
   askCabalSpecVersion :: m CabalSpecVersion
 
+  getPosition :: m Position
+
 -- | 'parsec' /could/ consume trailing spaces, this function /will/ consume.
 lexemeParsec :: (CabalParsing m, Parsec a) => m a
 lexemeParsec = parsec <* P.spaces
@@ -181,6 +183,12 @@ instance CabalParsing ParsecParser where
     Parsec.modifyState
       (PWarning t (Position (Parsec.sourceLine spos) (Parsec.sourceColumn spos)) w :)
   askCabalSpecVersion = PP pure
+
+  -- TODO(leana8959): this doesn't take into account of the indentation that is stripped from the lexer
+  -- We can recover it by offsetting with the position in the stream
+  getPosition = do
+    spos <- liftParsec Parsec.getPosition
+    pure $ Position (Parsec.sourceLine spos) (Parsec.sourceColumn spos)
 
 -- | Parse a 'String' with 'lexemeParsec'.
 simpleParsec :: Parsec a => String -> Maybe a

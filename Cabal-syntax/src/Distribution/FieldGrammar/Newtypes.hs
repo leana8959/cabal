@@ -1,4 +1,5 @@
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE InstanceSigs #-}
@@ -20,6 +21,9 @@ module Distribution.FieldGrammar.Newtypes
   , FSep (..)
   , NoCommaFSep (..)
   , Sep (..)
+
+  -- * Location
+  , LocatedP (..)
 
     -- ** Type
   , List
@@ -72,11 +76,22 @@ import Distribution.Version
   , versionNumbers
   )
 import Text.PrettyPrint (Doc, comma, fsep, punctuate, text, vcat)
+import Distribution.Annotation
 
 import qualified Data.List.NonEmpty as NE
 import qualified Data.Set as Set
 import qualified Distribution.Compat.CharParsing as P
 import qualified Distribution.SPDX as SPDX
+
+-- TODO(leana8959): move this to newtypes module
+data LocatedP a = MkLocatedP { getSrcSpan :: !SrcSpan, unLocatedP :: !a }
+
+instance Parsec a => Parsec (LocatedP a) where
+  parsec = do
+    begin <- getPosition
+    x <- parsec
+    end <- getPosition
+    pure (MkLocatedP (MkSrcSpan begin end) x)
 
 -- | Vertical list with commas. Displayed with 'vcat'
 data CommaVCat = CommaVCat
