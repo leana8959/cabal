@@ -66,6 +66,7 @@ module Distribution.FieldGrammar.Parsec
   , runFieldParser
   , runFieldParser'
   , fieldLinesToStream
+  , fieldLinesToBS
   , freeTextIgnoreDotlineVers
   ) where
 
@@ -461,3 +462,7 @@ fieldLinesToStream :: [FieldLine ann] -> FieldLineStream
 fieldLinesToStream [] = fieldLineStreamEnd
 fieldLinesToStream [FieldLine _ bs] = FLSLast bs
 fieldLinesToStream (FieldLine _ bs : fs) = FLSCons bs (fieldLinesToStream fs)
+
+fieldLinesToBS :: [FieldLine ann] -> BS.ByteString
+fieldLinesToBS [] = mempty
+fieldLinesToBS (FieldLine _ bs : fls) = bs <> "\n" <> fieldLinesToBS fls

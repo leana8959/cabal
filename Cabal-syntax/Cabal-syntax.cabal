@@ -96,6 +96,8 @@ library
     Distribution.Fields
     Distribution.Fields.ConfVar
     Distribution.Fields.Field
+    Distribution.Fields.Field.Typed
+    Distribution.Fields.Field.ToTyped
     Distribution.Fields.Lexer
     Distribution.Fields.LexerMonad
     Distribution.Fields.ParseResult
@@ -105,6 +107,7 @@ library
     Distribution.License
     Distribution.ModuleName
     Distribution.Package
+    Distribution.Annotation
     Distribution.PackageDescription
     Distribution.PackageDescription.Configuration
     Distribution.PackageDescription.FieldGrammar

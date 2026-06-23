@@ -142,6 +142,7 @@ data Name ann = Name !ann !FieldName
 -- | @since 3.12.0.0
 deriving instance Ord ann => Ord (Name ann)
 
+-- TODO(leana8959): handle name casing later
 mkName :: ann -> FieldName -> Name ann
 mkName ann bs = Name ann (B.map Char.toLower bs)
 
