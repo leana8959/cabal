@@ -15,7 +15,7 @@ import Control.Monad                               (void, unless)
 import Data.Algorithm.Diff                         (PolyDiff (..), getGroupedDiff)
 import Data.Maybe                                  (isNothing)
 import Distribution.Fields                         (pwarning)
-import Distribution.Fields.Parser                  (readFieldsWithComments', formatError, readFields)
+import Distribution.Fields.Parser                  (readFieldsWithComments', formatError, readFields, readFieldsWithComments)
 import Distribution.PackageDescription
   ( GenericPackageDescription
   , packageDescription
@@ -185,7 +185,7 @@ typedFieldTest :: TestTree
 typedFieldTest = testCase "typedField" $ do
     contents <- BS.readFile input
 
-    fields <- case readFields contents of
+    fields <- case readFieldsWithComments contents of
       Left err -> fail (show err)
       Right ok -> pure ok
 

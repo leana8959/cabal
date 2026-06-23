@@ -1,1 +1,10 @@
-cabal-version: 2.0
+cabal-version:
+  -- meow before
+  2.0
+  -- meow after
+
+
+-- before name field
+name: typedFieldTest
+
+version: 5
