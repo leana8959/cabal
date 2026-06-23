@@ -19,6 +19,7 @@ import Distribution.Parsec.Position
 import Distribution.Annotation
 import Distribution.Compat.Newtype (Newtype(unpack))
 import Distribution.Types.Dependency 
+import Distribution.Version
 
 typeFields :: CabalSpecVersion -> [Field (WithComments Position)] -> ParseResult src [TField (WithComments Position)]
 typeFields = traverse . typeField
@@ -42,7 +43,13 @@ typeField csv (Field fname fls)
     let eann = ExactRepr (fieldLinesToBS fls)
     deps <- runFieldParser (unComments $ nameAnn fname) parseDeps csv fls'
     let deps' = MkAnnotatedList cmts eann deps
-    pure (MkTargetBuildDependsField fname deps')
+    pure (MkTargetBuildDependsTField fname deps')
+
+  | getName fname == "version" = do
+    let (cmts, fls') = extractCommentsFieldLines fls
+    lv <- runFieldParser (unComments $ nameAnn fname) (parsec @(Located Version)) csv fls'
+    let eann = ExactRepr (fieldLinesToBS fls)
+    pure (MkPkgVersionTField fname (MkAnnotated cmts eann lv))
 
   -- store all legacy value in a fourre-tout
   | otherwise = pure (MkRawTField fname fls)
