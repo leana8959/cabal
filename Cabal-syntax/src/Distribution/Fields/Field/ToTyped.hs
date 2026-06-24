@@ -30,8 +30,15 @@ typeField csv (Field fname fls)
   -- example for single value
   | getName fname == "cabal-version" = do
     let (cmts, fls') = extractCommentsFieldLines fls
-    lsv <- fmap unpack <$> runFieldParser (unComments $ nameAnn fname) (parsec @(Located SpecVersion)) csv fls'
-    pure (MkCabalVersionTField fname (MkAnnotated cmts (fieldLinesToBS fls) lsv))
+    let anc = unComments $ nameAnn fname
+    lsv <- fmap unpack <$> runFieldParser anc (parsec @(Located SpecVersion)) csv fls'
+    pure (MkCabalVersionTField fname (MkAnnotated cmts anc (fieldLinesToBS fls) lsv))
+
+  | getName fname == "version" = do
+    let (cmts, fls') = extractCommentsFieldLines fls
+    let anc = unComments $ nameAnn fname
+    lv <- runFieldParser anc (parsec @(Located Version)) csv fls'
+    pure (MkPkgVersionTField fname (MkAnnotated cmts anc (fieldLinesToBS fls) lv))
 
   -- example for many values
   | getName fname == "build-depends" = do
@@ -40,14 +47,10 @@ typeField csv (Field fname fls)
         parseListDeps = parsec
         parseDeps :: CabalParsing m => m [Located Dependency]
         parseDeps = unpack <$> parseListDeps
-    deps <- runFieldParser (unComments $ nameAnn fname) parseDeps csv fls'
-    let deps' = MkAnnotatedList cmts (fieldLinesToBS fls) deps
+    let anc = unComments $ nameAnn fname
+    deps <- runFieldParser anc parseDeps csv fls'
+    let deps' = MkAnnotatedList cmts anc (fieldLinesToBS fls) deps
     pure (MkTargetBuildDependsTField fname deps')
-
-  | getName fname == "version" = do
-    let (cmts, fls') = extractCommentsFieldLines fls
-    lv <- runFieldParser (unComments $ nameAnn fname) (parsec @(Located Version)) csv fls'
-    pure (MkPkgVersionTField fname (MkAnnotated cmts (fieldLinesToBS fls) lv))
 
   -- example for many values
   | getName fname == "build-tools" = do
@@ -56,8 +59,9 @@ typeField csv (Field fname fls)
         parseListBuildTools = parsec
         parseBuildTools :: CabalParsing m => m [Located LegacyExeDependency]
         parseBuildTools = unpack <$> parseListBuildTools
-    bts <- runFieldParser (unComments $ nameAnn fname) parseBuildTools csv fls'
-    let bts' = MkAnnotatedList cmts (fieldLinesToBS fls) bts
+    let anc = unComments $ nameAnn fname
+    bts <- runFieldParser anc parseBuildTools csv fls'
+    let bts' = MkAnnotatedList cmts anc (fieldLinesToBS fls) bts
     pure (MkBuildToolsTField fname bts')
 
   -- store all legacy value in a fourre-tout

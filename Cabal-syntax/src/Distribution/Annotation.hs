@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveFunctor #-}
+{-# LANGUAGE BangPatterns #-}
 
 module Distribution.Annotation where
 
@@ -8,7 +9,7 @@ import Distribution.Fields.Field
 
 import Distribution.Parsec
 
-data SrcSpan = MkSrcSpan {-# UNPACK #-} !Position {-# UNPACK #-} !Position
+data LocalSrcSpan = LocalSrcSpan {-# UNPACK #-} !RelPosition {-# UNPACK #-} !RelPosition
   deriving (Show)
 
 -- NOTE(leana8959): The default mechanism is in field grammar. Nothing is inserted automatically here. Hence is it removed from gpd-barbie branch.
@@ -18,18 +19,21 @@ data SrcSpan = MkSrcSpan {-# UNPACK #-} !Position {-# UNPACK #-} !Position
 --                  We don't want users to be able to costruct with ExactRepr
 --                  We might not be able to prevent user from getting a ExactAnn data,
 --                  but we can prevent it from being used.
-data Annotated a = MkAnnotated [Comment Position] BS.ByteString (Located a)
+data Annotated a = MkAnnotated [Comment Position] {- anchor -}Position {- exactrepr -}BS.ByteString (Located a)
   deriving (Show, Functor)
 
-data AnnotatedList a = MkAnnotatedList [Comment Position] BS.ByteString [Located a]
+data AnnotatedList a = MkAnnotatedList [Comment Position] {- anchor -}Position {- exactrepr -}BS.ByteString [Located a]
   deriving (Show, Functor)
 
-data Located a = MkLocated { getSrcSpan :: !SrcSpan, unLocated :: !a }
+data Located a = MkLocated { getSrcSpan :: !LocalSrcSpan, unLocated :: !a }
   deriving (Show, Functor)
 
 instance Parsec a => Parsec (Located a) where
   parsec = do
-    begin <- getPosition
+    begin <- asRelativeUnsafe <$> getPosition
     x <- parsec
-    end <- getPosition
-    pure (MkLocated (MkSrcSpan begin end) x)
+    end <- asRelativeUnsafe <$> getPosition
+    pure (MkLocated (LocalSrcSpan begin end) x)
+    where
+      -- We know this is relative
+      asRelativeUnsafe !(Position r c) = RelPosition r c

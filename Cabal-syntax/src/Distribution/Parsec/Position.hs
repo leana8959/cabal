@@ -9,6 +9,10 @@ module Distribution.Parsec.Position
   , zeroPos
   , positionCol
   , positionRow
+
+  -- * Relative positioning
+  , RelPosition (..)
+  , anchor
   ) where
 
 import Distribution.Compat.Prelude
@@ -17,6 +21,12 @@ import Prelude ()
 -- | 1-indexed row and column positions in a file.
 data Position
   = Position
+      {-# UNPACK #-} !Int -- row
+      {-# UNPACK #-} !Int -- column
+  deriving (Eq, Ord, Show, Generic, Data)
+
+data RelPosition
+  = RelPosition
       {-# UNPACK #-} !Int -- row
       {-# UNPACK #-} !Int -- column
   deriving (Eq, Ord, Show, Generic, Data)
@@ -46,3 +56,6 @@ positionCol (Position _ c) = c
 -- | @since 3.0.0.0
 positionRow :: Position -> Int
 positionRow (Position r _) = r
+
+anchor :: Position -> RelPosition -> Position
+anchor (Position row0 col0) (RelPosition row col) = Position (row0 + row) (col0 + col)
