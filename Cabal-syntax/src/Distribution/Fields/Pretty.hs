@@ -1,4 +1,6 @@
 {-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE DeriveTraversable #-}
 {-# LANGUAGE LambdaCase #-}
 
@@ -25,13 +27,22 @@ import Distribution.Compat.Prelude
 import Distribution.Pretty (showToken)
 import Prelude ()
 
-import Distribution.Fields.Field (FieldName)
-import Distribution.Utils.Generic (fromUTF8BS)
+import Distribution.Fields.Field (FieldName, WithComments, Comment (..), getName)
+import Distribution.Utils.Generic (fromUTF8BS, toUTF8BS)
 
 import qualified Distribution.Fields.Parser as P
 
 import qualified Data.ByteString as BS
+import qualified Data.ByteString.Char8 as BS8
 import qualified Text.PrettyPrint as PP
+
+import Distribution.Fields.Field.Typed
+import Distribution.Parsec.Position
+
+import qualified Distribution.Pretty.ExactDoc as EPP
+import Distribution.Pretty.ExactDoc (ExactDoc)
+import Distribution.Annotation
+import Data.List (sortOn)
 
 -- | This type is used to discern when a comment block should go
 --   before or after a cabal-like file field, otherwise it would
@@ -211,3 +222,48 @@ fromParsecFields =
   where
     (.:) :: (a -> b) -> (c -> d -> a) -> (c -> d -> b)
     (f .: g) x y = f (g x y)
+
+-- TODO(leana8959): indentation is not exact with the comments we preserve, we need to patch them either at the lexer stage or here
+-- Lol this would probably fail with ogham space  
+commentToLocatedDoc :: Comment Position -> (Position, ExactDoc)
+commentToLocatedDoc (Comment bs pos) = (pos, EPP.text (BS8.dropWhile (== ' ') bs <> "\n"))
+
+interleaveCommentsWithDocs :: [Comment Position] -> [(Position, ExactDoc)] -> [(Position, ExactDoc)]
+interleaveCommentsWithDocs cmts docs = sortOn fst $ (map commentToLocatedDoc cmts) <> docs
+
+-- | Post condition: Fields are sorted in ascending order
+exactRenderPrettyFields
+  :: [TField (WithComments Position)]
+  -> [ExactDoc]
+exactRenderPrettyFields = foldr go state0
+  where
+    state0 :: [ExactDoc]
+    state0 = []
+
+    go field processed  = exactRenderPrettyField field : processed
+
+-- TODO(leana8959): place name and section properly
+exactRenderPrettyField
+  :: TField (WithComments Position)
+  -> ExactDoc
+exactRenderPrettyField = \case
+  MkCabalVersionTField fname csv ->
+    let MkAnnotated cmts eann (MkLocated (MkSrcSpan pos _) _) = csv
+    -- NOTE(leana8959): name should also be interleaved with the comment, but it doesn't have a position yet.
+        bodyDoc =
+          mconcat $
+            map ( \(Position row col, d) -> EPP.place row col d ) $
+              interleaveCommentsWithDocs cmts [(pos, EPP.text eann)]
+    in
+    EPP.text (getName fname) <> bodyDoc
+
+  MkTSection sname sargs fields ->
+    let sbody = mconcat $ exactRenderPrettyFields fields
+    in
+    EPP.text (getName sname) <> sbody
+
+  _ -> mempty
+
+-- | Will only be used in modification, when we rerender a data back out
+docToExactDoc :: PP.Doc -> ExactDoc
+docToExactDoc = EPP.multilineText . BS8.lines . toUTF8BS . PP.renderStyle PP.style

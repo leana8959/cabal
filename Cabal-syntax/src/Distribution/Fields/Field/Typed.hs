@@ -8,7 +8,7 @@ import Distribution.CabalSpecVersion (CabalSpecVersion)
 import Distribution.Annotation
 import Distribution.Types.Dependency
 import Distribution.Version
-import Distribution.PackageDescription (LegacyExeDependency(LegacyExeDependency))
+import Distribution.PackageDescription (LegacyExeDependency)
 
 data TField ann
   = -- | Holds fields that are not yet transformed to typed implementation.

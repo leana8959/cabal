@@ -38,13 +38,14 @@ import Control.Applicative
 import Control.Monad
 import Control.Monad.Trans.State.Strict
 import Data.List (intersperse)
-import Data.Text (Text)
-import qualified Data.Text as T
+import Data.ByteString (ByteString)
+import qualified Data.ByteString as BS
+import qualified Data.ByteString.Char8 as BS8
 import GHC.Generics
 
 data ExactDoc where
   -- | Turn a Text into a document
-  Text :: !T.Text -> ExactDoc
+  Text :: !ByteString -> ExactDoc
   -- | The empty document, 0 in width and height
   Nil :: ExactDoc
   -- | Force the layout engine to render a newline
@@ -71,11 +72,11 @@ type RenderState = Position
 -- |
 -- Outputs the padding Text to currect the cursor position if needed,
 -- changes the state otherwise.
-updateCursorRow :: Int -> State RenderState Text
+updateCursorRow :: Int -> State RenderState ByteString
 updateCursorRow row = do
   Position currentRow _currentCol <- get
   let rowDiff = row - currentRow
-      padding = T.replicate rowDiff "\n"
+      padding = BS8.replicate rowDiff '\n'
 
   when (rowDiff /= 0) $
     -- Jumped, we move cursor forward (or also backward) to desired row and reset col.
@@ -85,23 +86,23 @@ updateCursorRow row = do
 
   pure padding
 
-updateCursorCol :: Int -> State RenderState Text
+updateCursorCol :: Int -> State RenderState ByteString
 updateCursorCol col = do
   Position currentRow currentCol <- get
   let colDiff = col - currentCol
-      padding = T.replicate colDiff " "
+      padding = BS8.replicate colDiff ' '
 
   when (colDiff > 0) $
     put (Position currentRow col)
 
   pure padding
 
-renderText :: ExactDoc -> Text
+renderText :: ExactDoc -> ByteString
 renderText doc = evalState (renderTextStep doc) state0
   where
     state0 = Position 1 1 -- the parser is 1,1 indexed
 
-renderTextStep :: ExactDoc -> State RenderState Text
+renderTextStep :: ExactDoc -> State RenderState ByteString
 renderTextStep d0 = case d0 of
   Nil -> pure mempty
   Place atRow atCol d ->
@@ -115,19 +116,19 @@ renderTextStep d0 = case d0 of
       liftA2 (<>) (updateCursorCol (col + indentSize)) (renderTextStep d)
   Text t -> do
     modify $
-      \(Position row col) -> Position row (col + T.length t)
+      \(Position row col) -> Position row (col + BS.length t)
     pure t
   Concat d1 d2 -> liftA2 (<>) (renderTextStep d1) (renderTextStep d2)
   StickyConcat d1 d2 -> liftA2 (<>) (renderTextStep d1) (renderTextStep d2)
   Newline -> get >>= \(Position row _col) -> updateCursorRow (row + 1)
 
 -- | Invariant: this assumes the input text doesn't have more than one line
-text :: T.Text -> ExactDoc
+text :: ByteString -> ExactDoc
 text = Text
 
 -- TODO(leana8959): this was made for multiline fieldline content, but is no longer used.
 -- multiline fieldlines are individual strings with exact positioning
-multilineText :: [T.Text] -> ExactDoc
+multilineText :: [ByteString] -> ExactDoc
 multilineText = foldr stickyConcatDoc Nil . intersperse Newline . map Text
 
 -- We use the exact offset primitive to define the newline primitive

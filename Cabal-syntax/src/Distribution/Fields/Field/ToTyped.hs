@@ -31,8 +31,7 @@ typeField csv (Field fname fls)
   | getName fname == "cabal-version" = do
     let (cmts, fls') = extractCommentsFieldLines fls
     lsv <- fmap unpack <$> runFieldParser (unComments $ nameAnn fname) (parsec @(Located SpecVersion)) csv fls'
-    let ann = ExactRepr (fieldLinesToBS fls)
-    pure (MkCabalVersionTField fname (MkAnnotated cmts ann lsv))
+    pure (MkCabalVersionTField fname (MkAnnotated cmts (fieldLinesToBS fls) lsv))
 
   -- example for many values
   | getName fname == "build-depends" = do
@@ -41,16 +40,14 @@ typeField csv (Field fname fls)
         parseListDeps = parsec
         parseDeps :: CabalParsing m => m [Located Dependency]
         parseDeps = unpack <$> parseListDeps
-    let eann = ExactRepr (fieldLinesToBS fls)
     deps <- runFieldParser (unComments $ nameAnn fname) parseDeps csv fls'
-    let deps' = MkAnnotatedList cmts eann deps
+    let deps' = MkAnnotatedList cmts (fieldLinesToBS fls) deps
     pure (MkTargetBuildDependsTField fname deps')
 
   | getName fname == "version" = do
     let (cmts, fls') = extractCommentsFieldLines fls
     lv <- runFieldParser (unComments $ nameAnn fname) (parsec @(Located Version)) csv fls'
-    let eann = ExactRepr (fieldLinesToBS fls)
-    pure (MkPkgVersionTField fname (MkAnnotated cmts eann lv))
+    pure (MkPkgVersionTField fname (MkAnnotated cmts (fieldLinesToBS fls) lv))
 
   -- example for many values
   | getName fname == "build-tools" = do
@@ -59,9 +56,8 @@ typeField csv (Field fname fls)
         parseListBuildTools = parsec
         parseBuildTools :: CabalParsing m => m [Located LegacyExeDependency]
         parseBuildTools = unpack <$> parseListBuildTools
-    let eann = ExactRepr (fieldLinesToBS fls)
     bts <- runFieldParser (unComments $ nameAnn fname) parseBuildTools csv fls'
-    let bts' = MkAnnotatedList cmts eann bts
+    let bts' = MkAnnotatedList cmts (fieldLinesToBS fls) bts
     pure (MkBuildToolsTField fname bts')
 
   -- store all legacy value in a fourre-tout

@@ -8,20 +8,21 @@ import Distribution.Fields.Field
 
 import Distribution.Parsec
 
--- NOTE(leana8959): We can label this with a position range so it looks like lsp-style edits, and modifications will mean preforming edits.
-data ExactAnn
-  = ExactRepr BS.ByteString
-  | IsInserted
-  deriving (Show)
-
 data SrcSpan = MkSrcSpan {-# UNPACK #-} !Position {-# UNPACK #-} !Position
   deriving (Show)
 
-data Annotated a = MkAnnotated [Comment Position] ExactAnn (Located a)
-  deriving (Show)
+-- NOTE(leana8959): The default mechanism is in field grammar. Nothing is inserted automatically here. Hence is it removed from gpd-barbie branch.
 
-data AnnotatedList a = MkAnnotatedList [Comment Position] ExactAnn [Located a]
-  deriving (Show)
+-- TODO(leana8959): Guard MkAnnotated* behind internal / hidden modules.
+--                  Then expose smart constructors.
+--                  We don't want users to be able to costruct with ExactRepr
+--                  We might not be able to prevent user from getting a ExactAnn data,
+--                  but we can prevent it from being used.
+data Annotated a = MkAnnotated [Comment Position] BS.ByteString (Located a)
+  deriving (Show, Functor)
+
+data AnnotatedList a = MkAnnotatedList [Comment Position] BS.ByteString [Located a]
+  deriving (Show, Functor)
 
 data Located a = MkLocated { getSrcSpan :: !SrcSpan, unLocated :: !a }
   deriving (Show, Functor)
