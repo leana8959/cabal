@@ -259,7 +259,7 @@ renderTField = \case
             map ( \(Position row col, d) -> EPP.place row col d ) $
               interleaveCommentsWithDocs cmts [(pos, EPP.text eann)]
     in
-    EPP.text (getName fname) <> bodyDoc
+    EPP.text (getName fname <> ": ") <> bodyDoc
 
   MkTargetBuildDependsTField fname deps ->
     let MkAnnotatedList cmts eann _ = deps
@@ -273,7 +273,7 @@ renderTField = \case
   MkTSection sname sargs fields ->
     let sbody = mconcat $ renderTFields fields
     in
-    EPP.text (getName sname) <> sbody
+    EPP.text (getName sname <> ": ") <> sbody
 
   _ -> mempty
 
