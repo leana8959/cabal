@@ -15,6 +15,7 @@ import Control.Monad                               (void, unless)
 import Data.Algorithm.Diff                         (PolyDiff (..), getGroupedDiff)
 import Data.Maybe                                  (isNothing)
 import Distribution.Fields                         (pwarning)
+import Distribution.Fields.Pretty                  (renderTFields)
 import Distribution.Fields.Parser                  (readFieldsWithComments', formatError, readFieldsWithComments)
 import Distribution.PackageDescription
   ( GenericPackageDescription
@@ -35,6 +36,7 @@ import Distribution.PackageDescription.Parsec
 import Distribution.PackageDescription.PrettyPrint (showGenericPackageDescription)
 import Distribution.Parsec                         (PWarnType (..), PWarning (..), showPErrorWithSource, showPWarningWithSource)
 import Distribution.Pretty                         (prettyShow)
+import qualified Distribution.Pretty.ExactDoc as EPP
 import Distribution.Fields.ParseResult
 import Distribution.Utils.Generic                  (fromUTF8BS, toUTF8BS)
 import System.Directory                            (setCurrentDirectory)
@@ -194,8 +196,12 @@ typedFieldTest = testCase "typedField" $ do
       Left (v, errs) -> fail $ unlines $ ("VERSION: " ++ show v) : map (showPErrorWithSource . fmap renderCabalFileSource) (NE.toList errs)
       Right ok -> pure ok
 
-    -- pPrint fields
+    putStrLn $ "typed fields" <> replicate 80 '='
     pPrint tfields
+
+    putStrLn $ "prettyFields" <> replicate 80 '='
+    BS8.putStrLn $ EPP.renderText $ mconcat $ renderTFields tfields
+
     pure ()
     where
       input = "tests" </> "ParserTests" </> "typedFieldTest.cabal"

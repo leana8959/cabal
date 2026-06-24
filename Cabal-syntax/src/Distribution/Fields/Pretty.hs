@@ -21,6 +21,9 @@ module Distribution.Fields.Pretty
   , genericFromParsecFields
   , prettyFieldLines
   , prettySectionArgs
+
+  -- * Trasformation from TFields
+  , renderTFields
   ) where
 
 import Distribution.Compat.Prelude
@@ -229,24 +232,24 @@ commentToLocatedDoc :: Comment Position -> (Position, ExactDoc)
 commentToLocatedDoc (Comment bs pos) = (pos, EPP.text (BS8.dropWhile (== ' ') bs <> "\n"))
 
 interleaveCommentsWithDocs :: [Comment Position] -> [(Position, ExactDoc)] -> [(Position, ExactDoc)]
-interleaveCommentsWithDocs cmts docs = sortOn fst $ (map commentToLocatedDoc cmts) <> docs
+interleaveCommentsWithDocs cmts docs = sortOn fst $ map commentToLocatedDoc cmts <> docs
 
 -- | Post condition: Fields are sorted in ascending order
-exactRenderPrettyFields
+renderTFields
   :: [TField (WithComments Position)]
   -> [ExactDoc]
-exactRenderPrettyFields = foldr go state0
+renderTFields = foldr go state0
   where
     state0 :: [ExactDoc]
     state0 = []
 
-    go field processed  = exactRenderPrettyField field : processed
+    go field processed  = renderTField field : processed
 
 -- TODO(leana8959): place name and section properly
-exactRenderPrettyField
+renderTField
   :: TField (WithComments Position)
   -> ExactDoc
-exactRenderPrettyField = \case
+renderTField = \case
   MkCabalVersionTField fname csv ->
     let MkAnnotated cmts eann (MkLocated (MkSrcSpan pos _) _) = csv
     -- NOTE(leana8959): name should also be interleaved with the comment, but it doesn't have a position yet.
@@ -258,7 +261,7 @@ exactRenderPrettyField = \case
     EPP.text (getName fname) <> bodyDoc
 
   MkTSection sname sargs fields ->
-    let sbody = mconcat $ exactRenderPrettyFields fields
+    let sbody = mconcat $ renderTFields fields
     in
     EPP.text (getName sname) <> sbody
 
