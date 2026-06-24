@@ -251,12 +251,22 @@ renderTField
   -> ExactDoc
 renderTField = \case
   MkCabalVersionTField fname csv ->
+    -- FIXME(leana8959): The position is relative and not absolute. This is incorrect.
     let MkAnnotated cmts eann (MkLocated (MkSrcSpan pos _) _) = csv
     -- NOTE(leana8959): name should also be interleaved with the comment, but it doesn't have a position yet.
         bodyDoc =
           mconcat $
             map ( \(Position row col, d) -> EPP.place row col d ) $
               interleaveCommentsWithDocs cmts [(pos, EPP.text eann)]
+    in
+    EPP.text (getName fname) <> bodyDoc
+
+  MkTargetBuildDependsTField fname deps ->
+    let MkAnnotatedList cmts eann _ = deps
+        bodyDoc =
+          mconcat $
+            map ( \(Position row col, d) -> EPP.place row col d ) $
+              interleaveCommentsWithDocs cmts [(zeroPos,  EPP.text eann)]
     in
     EPP.text (getName fname) <> bodyDoc
 
