@@ -27,7 +27,7 @@ module Distribution.Fields.Pretty
   ) where
 
 import Distribution.Compat.Prelude
-import Distribution.Pretty (showToken)
+import Distribution.Pretty (showToken, Pretty (..))
 import Prelude ()
 
 import Distribution.Fields.Field (FieldName, WithComments, Comment (..), getName)
@@ -46,6 +46,9 @@ import qualified Distribution.Pretty.ExactDoc as EPP
 import Distribution.Pretty.ExactDoc (ExactDoc)
 import Distribution.Annotation
 import Data.List (sortOn)
+import Distribution.Package (Dependency)
+import Distribution.FieldGrammar.Newtypes
+import Distribution.Compat.Newtype (Newtype(..))
 
 -- | This type is used to discern when a comment block should go
 --   before or after a cabal-like file field, otherwise it would
@@ -251,24 +254,40 @@ renderTField
   -> ExactDoc
 renderTField = \case
   MkCabalVersionTField fname csv ->
-    let MkAnnotated cmts anc eann _ = csv
-    -- NOTE(leana8959): name should also be interleaved with the comment, but it doesn't have a position yet.
-        bodyDoc =
-          mconcat $
-            map ( \(Position row col, d) -> EPP.place row col d ) $
-              interleaveCommentsWithDocs cmts [(anc, EPP.text eann)]
+    let
+        bodyDoc = case csv of
+          Annotate cmts anc eann _ ->
+              -- NOTE(leana8959): name should also be interleaved with the comment, but it doesn't have a position yet.
+              mconcat $
+                map ( \(Position row col, d) -> EPP.place row col d ) $
+                  interleaveCommentsWithDocs cmts [(anc, EPP.text eann)]
+          Inserted cmts csv' ->
+            let body = docToExactDoc $ pretty $ SpecVersion csv'
+            in  mconcat
+                  (map ( \(Comment bs (Position row col)) -> EPP.place row col (EPP.text bs) ) cmts
+                  )
+                -- How to force a newline
+                <> body
     in
-    EPP.text (getName fname <> ": ") <> bodyDoc
+      EPP.text (getName fname <> ": ") <> bodyDoc
 
   MkTargetBuildDependsTField fname deps ->
-    let MkAnnotatedList cmts anc eann _ = deps
-        bodyDoc =
-          mconcat $
-            map ( \(Position row col, d) -> EPP.place row col d ) $
-              -- FIXME(leana8959): Using the anchor to place the text means that all the lines should have correct indentation, not the first line.
-              interleaveCommentsWithDocs cmts [(anc,  EPP.text eann)]
-    in
-    EPP.text (getName fname) <> bodyDoc
+    let
+        bodyDoc = case deps of
+          AnnotateList cmts anc eann _ ->
+              mconcat $
+                map ( \(Position row col, d) -> EPP.place row col d ) $
+                  -- FIXME(leana8959): Using the anchor to place the text means that all the lines should have correct indentation, not the first line.
+                  interleaveCommentsWithDocs cmts [(anc,  EPP.text eann)]
+          InsertedList cmts deps' ->
+            let packDeps :: [Dependency] -> List CommaVCat (Identity Dependency) Dependency
+                packDeps = pack
+                body = docToExactDoc $ pretty $ packDeps deps'
+            in  mconcat
+                  (map ( \(Comment bs (Position row col)) -> EPP.place row col (EPP.text bs) ) cmts
+                  )
+                <> body
+    in   EPP.text (getName fname) <> bodyDoc
 
   MkTSection sname sargs fields ->
     let sbody = mconcat $ renderTFields fields

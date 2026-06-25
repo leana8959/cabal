@@ -32,13 +32,13 @@ typeField csv (Field fname fls)
     let (cmts, fls') = extractCommentsFieldLines fls
     let anc = unComments $ nameAnn fname
     lsv <- fmap unpack <$> runFieldParser anc (parsec @(Located SpecVersion)) csv fls'
-    pure (MkCabalVersionTField fname (MkAnnotated cmts anc (fieldLinesToBS fls) lsv))
+    pure (MkCabalVersionTField fname (Annotate cmts anc (fieldLinesToBS fls) lsv))
 
   | getName fname == "version" = do
     let (cmts, fls') = extractCommentsFieldLines fls
     let anc = unComments $ nameAnn fname
     lv <- runFieldParser anc (parsec @(Located Version)) csv fls'
-    pure (MkPkgVersionTField fname (MkAnnotated cmts anc (fieldLinesToBS fls) lv))
+    pure (MkPkgVersionTField fname (Annotate cmts anc (fieldLinesToBS fls) lv))
 
   -- example for many values
   | getName fname == "build-depends" = do
@@ -49,7 +49,7 @@ typeField csv (Field fname fls)
         parseDeps = unpack <$> parseListDeps
     let anc = unComments $ nameAnn fname
     deps <- runFieldParser anc parseDeps csv fls'
-    let deps' = MkAnnotatedList cmts anc (fieldLinesToBS fls) deps
+    let deps' = AnnotateList cmts anc (fieldLinesToBS fls) deps
     pure (MkTargetBuildDependsTField fname deps')
 
   -- example for many values
@@ -61,7 +61,7 @@ typeField csv (Field fname fls)
         parseBuildTools = unpack <$> parseListBuildTools
     let anc = unComments $ nameAnn fname
     bts <- runFieldParser anc parseBuildTools csv fls'
-    let bts' = MkAnnotatedList cmts anc (fieldLinesToBS fls) bts
+    let bts' = AnnotateList cmts anc (fieldLinesToBS fls) bts
     pure (MkBuildToolsTField fname bts')
 
   -- store all legacy value in a fourre-tout

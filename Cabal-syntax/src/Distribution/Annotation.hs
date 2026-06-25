@@ -1,5 +1,4 @@
 {-# LANGUAGE DeriveFunctor #-}
-{-# LANGUAGE BangPatterns #-}
 
 module Distribution.Annotation where
 
@@ -9,6 +8,7 @@ import Distribution.Fields.Field
 
 import Distribution.Parsec
 
+-- | Designates the source position within a joined 'FieldLineStream'.
 data LocalSrcSpan = LocalSrcSpan {-# UNPACK #-} !RelPosition {-# UNPACK #-} !RelPosition
   deriving (Show)
 
@@ -19,10 +19,18 @@ data LocalSrcSpan = LocalSrcSpan {-# UNPACK #-} !RelPosition {-# UNPACK #-} !Rel
 --                  We don't want users to be able to costruct with ExactRepr
 --                  We might not be able to prevent user from getting a ExactAnn data,
 --                  but we can prevent it from being used.
-data Annotated a = MkAnnotated [Comment Position] {- anchor -}Position {- exactrepr -}BS.ByteString (Located a)
+
+
+-- NOTE:(leana8959): we have a insert variant here because we want the user to be able to construct this, not just the parser.
+-- When that is used, we fall back to using the pretty instance.
+data Annotated a
+  = Annotate [Comment Position] {- anchor -}Position {- exactrepr -}BS.ByteString (Located a)
+  | Inserted [Comment Position] a
   deriving (Show, Functor)
 
-data AnnotatedList a = MkAnnotatedList [Comment Position] {- anchor -}Position {- exactrepr -}BS.ByteString [Located a]
+data AnnotatedList a
+  = AnnotateList [Comment Position] {- anchor -}Position {- exactrepr -}BS.ByteString [Located a]
+  | InsertedList [Comment Position] [a]
   deriving (Show, Functor)
 
 data Located a = MkLocated { getSrcSpan :: !LocalSrcSpan, unLocated :: !a }
@@ -36,4 +44,4 @@ instance Parsec a => Parsec (Located a) where
     pure (MkLocated (LocalSrcSpan begin end) x)
     where
       -- We know this is relative
-      asRelativeUnsafe !(Position r c) = RelPosition r c
+      asRelativeUnsafe (Position r c) = RelPosition r c
