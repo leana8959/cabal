@@ -9,6 +9,7 @@ import Distribution.Fields.Field
 import Distribution.Parsec
 
 -- | Designates the source position within a joined 'FieldLineStream'.
+--   Inclusive in the start position, exclusive in the ending position.
 data LocalSrcSpan = LocalSrcSpan {-# UNPACK #-} !RelPosition {-# UNPACK #-} !RelPosition
   deriving (Show)
 
@@ -24,12 +25,12 @@ data LocalSrcSpan = LocalSrcSpan {-# UNPACK #-} !RelPosition {-# UNPACK #-} !Rel
 -- NOTE:(leana8959): we have a insert variant here because we want the user to be able to construct this, not just the parser.
 -- When that is used, we fall back to using the pretty instance.
 data Annotated a
-  = Annotate [Comment Position] {- anchor -}Position {- exactrepr -}BS.ByteString (Located a)
+  = Annotate [Comment Position] {- anchor -}(Maybe Position) {- exactrepr -}BS.ByteString (Located a)
   | Inserted [Comment Position] a
   deriving (Show, Functor)
 
 data AnnotatedList a
-  = AnnotateList [Comment Position] {- anchor -}Position {- exactrepr -}BS.ByteString [Located a]
+  = AnnotateList [Comment Position] {- anchor -}(Maybe Position) {- exactrepr -}BS.ByteString [Located a]
   | InsertedList [Comment Position] [a]
   deriving (Show, Functor)
 

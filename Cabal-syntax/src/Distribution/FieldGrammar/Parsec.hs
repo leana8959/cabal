@@ -67,12 +67,13 @@ module Distribution.FieldGrammar.Parsec
   , runFieldParser'
   , fieldLinesToStream
   , fieldLinesToBS
+  , getFieldLinesFirstAnn
   , freeTextIgnoreDotlineVers
   ) where
 
 import Distribution.Compat.Newtype
 import Distribution.Compat.Prelude
-import Distribution.Utils.Generic (fromUTF8BS)
+import Distribution.Utils.Generic (fromUTF8BS, safeHead)
 import Distribution.Utils.String (trim)
 import Prelude ()
 
@@ -91,6 +92,7 @@ import Distribution.Fields.ParseResult
 import Distribution.Parsec
 import Distribution.Parsec.FieldLineStream
 import Distribution.Parsec.Position (positionCol, positionRow)
+import Distribution.Utils.Generic
 
 -------------------------------------------------------------------------------
 -- Auxiliary types
@@ -467,3 +469,8 @@ fieldLinesToBS :: [FieldLine ann] -> BS.ByteString
 fieldLinesToBS [] = mempty
 fieldLinesToBS [FieldLine _ bs] = bs -- don't leave trailing newline
 fieldLinesToBS (FieldLine _ bs : fls) = bs <> "\n" <> fieldLinesToBS fls
+
+getFieldLinesFirstAnn :: [FieldLine ann] -> Maybe ann
+getFieldLinesFirstAnn = fmap getAnn . safeHead
+  where
+    getAnn (FieldLine ann _) = ann

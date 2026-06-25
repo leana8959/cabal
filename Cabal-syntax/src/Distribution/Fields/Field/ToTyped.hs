@@ -14,11 +14,11 @@ import qualified Data.Bifunctor as Bi
 import Distribution.CabalSpecVersion
 import Distribution.Parsec (Parsec(parsec), CabalParsing)
 import Distribution.FieldGrammar.Newtypes (SpecVersion, List, CommaVCat)
-import Distribution.FieldGrammar.Parsec (runFieldParser, fieldLinesToBS)
+import Distribution.FieldGrammar.Parsec (runFieldParser, fieldLinesToBS, getFieldLinesFirstAnn)
 import Distribution.Parsec.Position
 import Distribution.Annotation
 import Distribution.Compat.Newtype (Newtype(unpack))
-import Distribution.Types.Dependency 
+import Distribution.Types.Dependency
 import Distribution.Version
 import Distribution.PackageDescription (LegacyExeDependency)
 
@@ -30,14 +30,16 @@ typeField csv (Field fname fls)
   -- example for single value
   | getName fname == "cabal-version" = do
     let (cmts, fls') = extractCommentsFieldLines fls
-    let anc = unComments $ nameAnn fname
-    lsv <- fmap unpack <$> runFieldParser anc (parsec @(Located SpecVersion)) csv fls'
+    let fnamePos = unComments $ nameAnn fname
+    let anc = unComments <$> getFieldLinesFirstAnn fls
+    lsv <- fmap unpack <$> runFieldParser fnamePos (parsec @(Located SpecVersion)) csv fls'
     pure (MkCabalVersionTField fname (Annotate cmts anc (fieldLinesToBS fls) lsv))
 
   | getName fname == "version" = do
     let (cmts, fls') = extractCommentsFieldLines fls
-    let anc = unComments $ nameAnn fname
-    lv <- runFieldParser anc (parsec @(Located Version)) csv fls'
+    let fnamePos = unComments $ nameAnn fname
+    let anc = unComments <$> getFieldLinesFirstAnn fls
+    lv <- runFieldParser fnamePos (parsec @(Located Version)) csv fls'
     pure (MkPkgVersionTField fname (Annotate cmts anc (fieldLinesToBS fls) lv))
 
   -- example for many values
@@ -47,8 +49,9 @@ typeField csv (Field fname fls)
         parseListDeps = parsec
         parseDeps :: CabalParsing m => m [Located Dependency]
         parseDeps = unpack <$> parseListDeps
-    let anc = unComments $ nameAnn fname
-    deps <- runFieldParser anc parseDeps csv fls'
+    let fnamePos = unComments $ nameAnn fname
+    let anc = unComments <$> getFieldLinesFirstAnn fls
+    deps <- runFieldParser fnamePos parseDeps csv fls'
     let deps' = AnnotateList cmts anc (fieldLinesToBS fls) deps
     pure (MkTargetBuildDependsTField fname deps')
 
@@ -59,8 +62,9 @@ typeField csv (Field fname fls)
         parseListBuildTools = parsec
         parseBuildTools :: CabalParsing m => m [Located LegacyExeDependency]
         parseBuildTools = unpack <$> parseListBuildTools
-    let anc = unComments $ nameAnn fname
-    bts <- runFieldParser anc parseBuildTools csv fls'
+    let fnamePos = unComments $ nameAnn fname
+    let anc = unComments <$> getFieldLinesFirstAnn fls
+    bts <- runFieldParser fnamePos parseBuildTools csv fls'
     let bts' = AnnotateList cmts anc (fieldLinesToBS fls) bts
     pure (MkBuildToolsTField fname bts')
 

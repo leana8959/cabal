@@ -234,8 +234,23 @@ fromParsecFields =
 commentToLocatedDoc :: Comment Position -> (Position, ExactDoc)
 commentToLocatedDoc (Comment bs pos) = (pos, EPP.text (BS8.dropWhile (== ' ') bs <> "\n"))
 
-interleaveCommentsWithDocs :: [Comment Position] -> [(Position, ExactDoc)] -> [(Position, ExactDoc)]
-interleaveCommentsWithDocs cmts docs = sortOn fst $ map commentToLocatedDoc cmts <> docs
+-- | Separate data with 'Position' information and those that don't.
+partitionMaybeLocated :: [(Maybe Position, a)] -> ([(Position, a)], [a])
+partitionMaybeLocated = foldr go ([], [])
+  where
+    go :: (Maybe Position, a) -> ([(Position, a)], [a]) -> ([(Position, a)], [a])
+    go (Just p, x) ~(l, r) = ( (p, x) : l, r )
+    go (Nothing, x) ~(l, r) = ( l, x : r )
+
+interleaveCommentsWithDocs :: [Comment Position] -> [(Maybe Position, ExactDoc)] -> ExactDoc
+interleaveCommentsWithDocs cmts docs =
+  let (locatedDocs, unlocatedDocs) = partitionMaybeLocated docs
+      locatedDocsWithComments = sortOn fst (map commentToLocatedDoc cmts <> locatedDocs)
+  in  mconcat
+        ( map ( \(Position row col, d) -> EPP.place row col d ) locatedDocsWithComments 
+        )
+      -- How to force a newline
+      <> mconcat unlocatedDocs
 
 -- | Post condition: Fields are sorted in ascending order
 renderTFields
@@ -256,37 +271,23 @@ renderTField = \case
   MkCabalVersionTField fname csv ->
     let
         bodyDoc = case csv of
-          Annotate cmts anc eann _ ->
-              -- NOTE(leana8959): name should also be interleaved with the comment, but it doesn't have a position yet.
-              mconcat $
-                map ( \(Position row col, d) -> EPP.place row col d ) $
-                  interleaveCommentsWithDocs cmts [(anc, EPP.text eann)]
+          Annotate cmts anc eann _ -> interleaveCommentsWithDocs cmts [(anc, EPP.text eann)]
           Inserted cmts csv' ->
             let body = docToExactDoc $ pretty $ SpecVersion csv'
-            in  mconcat
-                  (map ( \(Comment bs (Position row col)) -> EPP.place row col (EPP.text bs) ) cmts
-                  )
-                -- How to force a newline
-                <> body
+            in  interleaveCommentsWithDocs cmts [(Nothing, body)]
     in
       EPP.text (getName fname <> ": ") <> bodyDoc
 
   MkTargetBuildDependsTField fname deps ->
     let
         bodyDoc = case deps of
-          AnnotateList cmts anc eann _ ->
-              mconcat $
-                map ( \(Position row col, d) -> EPP.place row col d ) $
-                  -- FIXME(leana8959): Using the anchor to place the text means that all the lines should have correct indentation, not the first line.
-                  interleaveCommentsWithDocs cmts [(anc,  EPP.text eann)]
+          -- FIXME(leana8959): Using the anchor to place the text means that all the lines should have correct indentation, not the first line.
+          AnnotateList cmts anc eann _ -> interleaveCommentsWithDocs cmts [(anc,  EPP.text eann)]
           InsertedList cmts deps' ->
             let packDeps :: [Dependency] -> List CommaVCat (Identity Dependency) Dependency
                 packDeps = pack
                 body = docToExactDoc $ pretty $ packDeps deps'
-            in  mconcat
-                  (map ( \(Comment bs (Position row col)) -> EPP.place row col (EPP.text bs) ) cmts
-                  )
-                <> body
+            in  interleaveCommentsWithDocs cmts [(Nothing, body)]
     in   EPP.text (getName fname) <> bodyDoc
 
   MkTSection sname sargs fields ->
