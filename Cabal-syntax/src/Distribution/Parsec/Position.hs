@@ -58,4 +58,4 @@ positionRow :: Position -> Int
 positionRow (Position r _) = r
 
 anchor :: Position -> RelPosition -> Position
-anchor (Position row0 col0) (RelPosition row col) = Position (row0 + row) (col0 + col)
+anchor (Position row0 col0) (RelPosition row col) = Position (row0 + row - 1) (col0 + col - 1) -- 1 indexed
