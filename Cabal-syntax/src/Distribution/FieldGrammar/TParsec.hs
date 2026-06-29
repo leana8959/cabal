@@ -1,5 +1,4 @@
 {-# LANGUAGE DeriveFunctor #-}
-{-# LANGUAGE ViewPatterns #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
@@ -41,8 +40,6 @@ import qualified Text.Parsec.Error as P
 import Distribution.CabalSpecVersion
 import Distribution.FieldGrammar.Class
 import Distribution.Fields.Field
-import Distribution.Fields.Field.Typed
-import Distribution.Fields.Field.ToTyped
 import Distribution.Fields.ParseResult
 import Distribution.Parsec
 import Distribution.Parsec.FieldLineStream
@@ -73,35 +70,35 @@ data Section ann = MkSection !(Name ann) [SectionArg ann] [Field ann]
 data TParsecFieldGrammar s a = TParsecFG
   { tFieldGrammarKnownFields :: !(Set FieldName)
   , tFieldGrammarKnownPrefixes :: !(Set FieldName)
-  , tFieldGrammarParser :: forall src. (CabalSpecVersion -> [TField (WithComments Position)] -> ParseResult src a)
+  , tFieldGrammarParser :: forall src. (CabalSpecVersion -> Fields Position -> ParseResult src a)
   }
   deriving (Functor)
 
--- TODO(leana8959): restore warning for each fieldline
-parseTFieldGrammar :: CabalSpecVersion -> [TField (WithComments Position)] -> TParsecFieldGrammar s a -> ParseResult src a
-parseTFieldGrammar v tfields grammar = do
-  for_ (filter (isUnknownTField grammar) tfields) $ \(getTFieldName->Name ann unknownTFieldName) ->
-    parseWarning (unComments ann) PWTUnknownField $ "Unknown field: " ++ show unknownTFieldName
+parseTFieldGrammar :: CabalSpecVersion -> Fields Position -> TParsecFieldGrammar s a -> ParseResult src a
+parseTFieldGrammar v fields grammar = do
+  for_ (Map.toList (Map.filterWithKey (isUnknownField grammar) fields)) $ \(name, nfields) ->
+    for_ nfields $ \(MkNamelessField pos _) ->
+      parseWarning pos PWTUnknownField $ "Unknown field: " ++ show name
+  -- TODO: fields allowed in this section
 
   -- parse
-  tFieldGrammarParser grammar v tfields
+  tFieldGrammarParser grammar v fields
 
-isUnknownTField :: TParsecFieldGrammar s a -> TField ann -> Bool
-isUnknownTField grammar tfield =
-  let fname = getName $ getTFieldName tfield
-  in  not $
-          fname `Set.member` tFieldGrammarKnownFields grammar
-            || any (`BS.isPrefixOf` fname) (tFieldGrammarKnownPrefixes grammar)
+isUnknownField :: TParsecFieldGrammar s a -> FieldName -> [NamelessField Position] -> Bool
+isUnknownField grammar k _ =
+  not $
+    k `Set.member` tFieldGrammarKnownFields grammar
+      || any (`BS.isPrefixOf` k) (tFieldGrammarKnownPrefixes grammar)
 
 -- | Parse a ParsecFieldGrammar and check for fields that should be stanzas.
-parseTFieldGrammarCheckingStanzas :: CabalSpecVersion -> [TField (WithComments Position)] -> TParsecFieldGrammar s a -> Set BS.ByteString -> ParseResult src a
-parseTFieldGrammarCheckingStanzas v tfields grammar sections = do
-  for_ (filter (isUnknownTField grammar) tfields) $ \(getTFieldName->Name ann unknownTFieldName) ->
-    let pos = unComments ann
-    in  if unknownTFieldName `Set.member` sections
-          then parseFailure pos $ "'" ++ fromUTF8BS unknownTFieldName ++ "' is a stanza, not a field. Remove the trailing ':' to parse a stanza."
-          else parseWarning pos PWTUnknownField $ "Unknown field: " ++ show unknownTFieldName
-  tFieldGrammarParser grammar v tfields
+parseTFieldGrammarCheckingStanzas :: CabalSpecVersion -> Fields Position -> TParsecFieldGrammar s a -> Set BS.ByteString -> ParseResult src a
+parseTFieldGrammarCheckingStanzas v fields grammar sections = do
+  for_ (Map.toList (Map.filterWithKey (isUnknownField grammar) fields)) $ \(name, nfields) ->
+    for_ nfields $ \(MkNamelessField pos _) ->
+      if name `Set.member` sections
+        then parseFailure pos $ "'" ++ fromUTF8BS name ++ "' is a stanza, not a field. Remove the trailing ':' to parse a stanza."
+        else parseWarning pos PWTUnknownField $ "Unknown field: " ++ show name
+  tFieldGrammarParser grammar v fields
 
 tFieldGrammarKnownFieldList :: TParsecFieldGrammar s a -> [FieldName]
 tFieldGrammarKnownFieldList = Set.toList . tFieldGrammarKnownFields
@@ -130,7 +127,7 @@ instance FieldGrammar Parsec TParsecFieldGrammar where
 
   uniqueFieldAla fn _pack _extract = TParsecFG (Set.singleton fn) Set.empty parser
     where
-      parser v (fields :: [TField (WithComments Position)]) = case getTFieldByName fn fields of
+      parser v fields = case Map.lookup fn fields of
         Nothing -> parseFatalFailure zeroPos $ show fn ++ " field missing"
         Just [] -> parseFatalFailure zeroPos $ show fn ++ " field missing"
         Just [x] -> parseOne v x
