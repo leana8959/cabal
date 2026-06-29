@@ -27,7 +27,6 @@ module Distribution.Fields.Field
     -- * Name
   , FieldName
   , Name (..)
-  , Name'
   , mkName
   , getName
   , nameAnn
@@ -139,8 +138,6 @@ type FieldName = ByteString
 -- /Invariant/: 'ByteString' is lower-case ASCII.
 data Name ann = Name !ann !FieldName
   deriving (Eq, Show, Functor, Foldable, Traversable, Generic)
-
-type Name' a ann = Name ann
 
 -- | @since 3.12.0.0
 deriving instance Ord ann => Ord (Name ann)

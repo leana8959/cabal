@@ -99,7 +99,6 @@ library
     Distribution.Fields.Field
     Distribution.Fields.Field.Typed
     Distribution.Fields.Field.ToTyped
-    Distribution.Fields.Field.FromTyped
     Distribution.Fields.Lexer
     Distribution.Fields.LexerMonad
     Distribution.Fields.ParseResult
