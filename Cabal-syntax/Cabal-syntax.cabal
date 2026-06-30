@@ -95,7 +95,6 @@ library
     Distribution.FieldGrammar.FieldDescrs
     Distribution.FieldGrammar.Newtypes
     Distribution.FieldGrammar.Parsec
-    Distribution.FieldGrammar.TParsec
     Distribution.FieldGrammar.Pretty
     Distribution.Fields
     Distribution.Fields.ConfVar
