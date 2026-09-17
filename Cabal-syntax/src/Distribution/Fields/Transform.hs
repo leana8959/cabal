@@ -24,7 +24,7 @@ module Distribution.Fields.Transform
 
     -- * Modification
   , ModifyConfig (..)
-  -- , modifyField
+  , modifyField
   -- , modifySection
 
     -- * Control flow
@@ -60,10 +60,7 @@ import Distribution.FieldGrammar.Parsec
 import Distribution.Fields.Field
 import Distribution.Parsec.Position
 import Distribution.Pretty
-import Distribution.Utils.Generic
 
-import Data.Function ((&))
-import qualified Data.Bifunctor as Bi
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Char8 as BS8
 import Data.Coerce
@@ -82,18 +79,15 @@ import Distribution.Types.Condition
 import Distribution.Types.ConfVar
 import GHC.Generics
 
-import Control.Monad.Trans.State
 import Distribution.CabalSpecVersion
 import qualified Distribution.Compat.Lens as L
 import qualified Distribution.Fields.Field.Lens as L ()
 import Distribution.Fields.Field.Relative
 import qualified Distribution.Parsec.Position.Lens as L
-import Control.Monad.Identity (Identity)
-import Data.Functor.Identity
 
 -- | Reified function to facilitate chaining
 --   This can't be a functor (so there's no applicative nor alternative), I think there are better ways to do this.
-newtype Edit a = Edit { runEdit :: CabalSpecVersion -> a -> EditResult a }
+newtype Edit (f :: Type -> Type) (a :: Type) = Edit { runEdit :: CabalSpecVersion -> f a -> f (EditResult a) }
 
 data EditResult a
   = EditOk a
@@ -115,6 +109,9 @@ data EditError
   = ExpectChanges
   | ParseFailed P.ParseError
   deriving (Eq, Generic)
+
+mkEditResultM :: (Eq a, Monad m) => m a -> m a -> m (EditResult a)
+mkEditResultM = liftA2 mkEditResult
 
 -- | Build an 'EditResult' given the previous value
 mkEditResult :: Eq a => a -> a -> EditResult a
@@ -153,10 +150,10 @@ type MatchSection ann = Name ann -> [SectionArg ann] -> [Field ann] -> Bool
 addField
   :: AddConfig
   -> Relative (Field (WithComments Position))
-  -> Edit (Relative [Field (WithComments Position)])
+  -> Edit Relative [Field (WithComments Position)]
 addField ac newField = Edit $ \_ -> case ac of
-    AddStart -> EditOk . liftA2 (:) newField
-    AddEnd -> EditOk . liftA2 snoc newField
+    AddStart -> fmap EditOk . liftA2 (:) newField
+    AddEnd -> fmap EditOk . liftA2 snoc newField
   where
     snoc x xs = xs ++ [x]
 
@@ -165,11 +162,11 @@ data RemoveConfig = RemoveAll | RemoveFirst
 removeField
   :: RemoveConfig
   -> MatchField (WithComments Position)
-  -> Edit [Field (WithComments Position)]
+  -> Edit Relative [Field (WithComments Position)]
 removeField rc match = Edit $ \_ -> case rc of
   -- No position dependency
-  RemoveAll -> mkEditResult <*> filter p
-  RemoveFirst -> mkEditResult <*> filterOne p
+  RemoveAll -> mkEditResultM <*> fmap (filter p)
+  RemoveFirst -> mkEditResultM <*> fmap (filterOne p)
   where
     p (Field _ name fls) = not (match name fls)
     p _ = True
@@ -184,17 +181,15 @@ modifyField
   -> MatchField (WithComments Position)
   -- ^ Match a given field
   -> (CabalSpecVersion -> [FieldLine (WithComments Position)] -> EditResult [FieldLine (WithComments Position)])
-  -> Edit (Relative [Field (WithComments Position)])
+  -> Edit Relative [Field (WithComments Position)]
 modifyField mc match modifyFieldLines = Edit $ \spec ->
   let doModify :: Field (WithComments Position) -> EditResult (Field (WithComments Position))
       doModify (Field colonPos fname fls)
         | match fname fls = Field colonPos fname <$> modifyFieldLines spec fls
       doModify x = EditUnchanged x
-
    in case mc of
-        ModifyFirst -> (mapFirstRest doModify undefined)
-
-        -- ModifyLast -> mapLast doModify
+        ModifyFirst -> fmap @Relative $ sequence @[] @EditResult . (mapFirstRest doModify EditUnchanged)
+        ModifyLast -> fmap @Relative $ mapLast doModify
 
 -- modifySection
 --   :: ModifyConfig
@@ -225,20 +220,27 @@ modifyField mc match modifyFieldLines = Edit $ \spec ->
 --         ModifyLast -> mapLast doModify
 
 -- | If up to this point things are still unchanged, make it an error and stop here.
-failIfUnchanged :: Edit a -> Edit a
-failIfUnchanged (Edit f) = Edit $ \spec input -> case f spec input of
+failIfUnchanged :: (Functor f) => Edit f a -> Edit f a
+failIfUnchanged (Edit f) = Edit $ \spec input -> f spec input <&> \case
   EditUnchanged{} -> EditErr ExpectChanges
   other -> other
 
 -- | The product operator should deal with the positioning chaining
-andThen :: Edit a -> Edit a -> Edit a
-andThen (Edit x) (Edit y) = Edit $ \spec input -> x spec input >>= y spec
+andThen :: forall m a. Monad m => Edit m a -> Edit m a -> Edit m a
+andThen (Edit x) (Edit y) = Edit $ \spec input ->
+  x spec input >>= \(out :: EditResult a) -> case out of
+    EditOk ok -> y spec (pure @m ok)
+    EditUnchanged u -> y spec (pure @m u)
+    EditErr err -> pure @m (EditErr err)
 
 infixl 5 `andThen`
 
 -- | Fallback if something is unchanged.
-orFallback :: Edit a -> Edit a -> Edit a
-orFallback (Edit x) (Edit y) = Edit $ \spec input -> x spec input `orFallback'` y spec input
+orFallback :: forall m a. Monad m => Edit m a -> Edit m a -> Edit m a
+orFallback (Edit x) (Edit y) = Edit $ \spec input ->
+  x spec input >>= \(out :: EditResult a) ->
+      y spec input >>= \(out' :: EditResult a) ->
+        pure @m (orFallback' out out')
 
 infixl 4 `orFallback`
 
