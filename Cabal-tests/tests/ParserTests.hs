@@ -16,6 +16,7 @@ import Test.Tasty.HUnit
 
 import Control.Applicative
 import Control.Monad                               (void, unless)
+import Control.Monad.State
 import Data.Algorithm.Diff                         (PolyDiff (..), getGroupedDiff)
 import Data.Maybe                                  (isNothing)
 import Distribution.Fields                         (pwarning)
@@ -38,6 +39,7 @@ import Distribution.PackageDescription.Format
 import Distribution.Parsec                         (PWarnType (..), PWarning (..), showPErrorWithSource, showPWarningWithSource)
 import Distribution.Pretty                         (prettyShow)
 import Distribution.Fields.ParseResult
+import Distribution.Fields.Field.Relative
 import Distribution.Utils.Generic                  (fromUTF8BS, toUTF8BS)
 import System.Directory                            (setCurrentDirectory)
 import System.Environment                          (getArgs, withArgs)
@@ -155,17 +157,17 @@ warningTest wt fp = testCase (show wt) $ do
 editFieldGoldenTests :: TestTree
 editFieldGoldenTests = testGroup "edit-golden"
   [ mkEditFieldGoldenTest "add-field-end" "simple.cabal" $
-      addField AddEnd (mkName () "its-a-new-field") mempty [] mempty
+      addField AddEnd (mkField (mkName () "its-a-new-field") [] [])
   , mkEditFieldGoldenTest "add-field-start" "simple.cabal" $
-      addField AddStart (mkName () "its-a-new-field") mempty [] mempty
+      addField AddStart (mkField (mkName () "its-a-new-field") [] [])
 
   , mkEditFieldGoldenTest "remove-field" "simple.cabal" $
       removeField RemoveFirst (\fname _ -> getName fname == "version")
   , mkEditFieldGoldenTest "remove-field-in-section" "simple.cabal" $
-      modifySection ModifyFirst (\sname sargs _ -> getName sname == "library" && null sargs) id $
+      modifySection ModifyFirst (\sname sargs _ -> getName sname == "library" && null sargs) (const EditUnchanged) $
         removeField RemoveAll (\fname _ -> getName fname == "build-depends")
   , mkEditFieldGoldenTest "modify-field-in-section" "simple.cabal" $
-      modifySection ModifyFirst (\sname sargs _ -> getName sname == "library" && null sargs) id $
+      modifySection ModifyFirst (\sname sargs _ -> getName sname == "library" && null sargs) (const EditUnchanged) $
         modifyField ModifyFirst (\fname _ -> getName fname == "build-depends") $
           modifyValueList @CommaVCat @(Identity Dependency) @Dependency
             ( \case
@@ -176,28 +178,29 @@ editFieldGoldenTests = testGroup "edit-golden"
 
   -- The example doesn't have the field "depends" but "build-depends" to demonstrate what would happen if the matcher doesn't match anything.
   , mkEditFieldGoldenTest "remove-field-unchanged" "simple.cabal" $
-      modifySection ModifyFirst (\sname sargs _ -> getName sname == "library" && null sargs) id $
+      modifySection ModifyFirst (\sname sargs _ -> getName sname == "library" && null sargs) (const EditUnchanged) $
         removeField RemoveAll (\fname _ -> getName fname == "depends")
 
   , mkEditFieldGoldenTest "remove-field-alternative" "simple.cabal" $
-     modifySection ModifyFirst (\sname sargs _ -> getName sname == "library" && null sargs) id
+     modifySection ModifyFirst (\sname sargs _ -> getName sname == "library" && null sargs) (const EditUnchanged)
       ( removeField RemoveAll (\fname _ -> getName fname == "depends")
         `orFallback`
         removeField RemoveAll (\fname _ -> getName fname == "build-depends")
       )
   ]
 
-mkEditFieldGoldenTest :: String -> FilePath -> Edit [Field (WithComments Position)] -> TestTree
+mkEditFieldGoldenTest :: String -> FilePath -> Edit Relative [Field (WithComments Position)] -> TestTree
 mkEditFieldGoldenTest name fname edit = ediffGolden goldenTest name exprFile $ do
   contents <- BS.readFile input
   let res = readFieldsConcrete' contents
 
-  case res of
+  relFields <- case res of
     Left perr -> fail $ formatError contents perr
     Right (fs, warns) -> do
       unless (null warns) (fail $ unlines (map show warns))
-      pure $ runEdit edit cabalSpecLatest fs
+      pure $ runEdit edit cabalSpecLatest (toRelativeFields fs)
 
+  pure $ evalState relFields onePos
   where
     input = "tests" </> "ParserTests" </> "edit" </> fname
     exprFile = addExtension (dropExtension input <> "_" <> name) "expr"
@@ -228,7 +231,7 @@ mkFormatPrintedTest name fname format = ediffGolden goldenTest name exprFile $ d
 editFieldPrintedTests :: TestTree
 editFieldPrintedTests = testGroup "edit-printed"
   [ mkEditFieldPrintedTest "modify-field-in-section" "simple.cabal" $
-      modifySection ModifyFirst (\sname sargs _ -> getName sname == "library" && null sargs) id $
+      modifySection ModifyFirst (\sname sargs _ -> getName sname == "library" && null sargs) (const EditUnchanged) $
         modifyField ModifyFirst (\fname _ -> getName fname == "build-depends") $
           modifyValueList @CommaVCat @(Identity Dependency) @Dependency
             ( \case
@@ -238,17 +241,18 @@ editFieldPrintedTests = testGroup "edit-printed"
             )
   ]
 
-mkEditFieldPrintedTest :: String -> FilePath -> Edit [Field (WithComments Position)] -> TestTree
+mkEditFieldPrintedTest :: String -> FilePath -> Edit Relative [Field (WithComments Position)] -> TestTree
 mkEditFieldPrintedTest name fname edit = ediffGolden goldenTest name exprFile $ do
   contents <- BS.readFile input
   let res = readFieldsConcrete' contents
 
-  editResult <- case res of
+  relativeEditResult <- case res of
     Left perr -> fail $ formatError contents perr
     Right (fs, warns) -> do
       unless (null warns) (fail $ unlines (map show warns))
-      pure $ runEdit edit cabalSpecLatest fs
+      pure $ runEdit edit cabalSpecLatest (toRelativeFields fs)
 
+  let editResult = evalState relativeEditResult onePos
   case editResult of
     EditOk ok -> pure $ toExpr (runRenderFields ok)
     EditUnchanged u -> pure (toExpr @String "unchanged")

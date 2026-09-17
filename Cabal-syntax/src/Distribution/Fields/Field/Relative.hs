@@ -4,7 +4,7 @@
 --   This will help the modification, abstracting away the positing shifting.
 module Distribution.Fields.Field.Relative where
 
-import Control.Monad.State (StateT, get, gets, modify, runStateT)
+import Control.Monad.State (StateT, get, gets, modify, runStateT, runState)
 import Data.List.NonEmpty (NonEmpty (..))
 import Distribution.Fields.Field
 import Distribution.Parsec.Position
@@ -26,8 +26,8 @@ type RelativeT (m :: Type -> Type) = StateT Position m
 -- TODO(leana8959): the fact that we reuse Position makes it possible to just lift something in the context.
 -- Is that good?
 
-fromRelativeFields :: Position -> RelativeT m [Field ann] -> m ([Field ann], Position)
-fromRelativeFields = flip runStateT
+fromRelativeFields :: Position -> Relative [Field ann] -> ([Field ann], Position)
+fromRelativeFields = flip runState
 
 toRelativeFields :: Monad m => [Field (WithComments Position)] -> RelativeT m [Field (WithComments Position)]
 toRelativeFields = traverse toRelativeField

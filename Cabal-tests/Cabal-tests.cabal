@@ -95,6 +95,7 @@ test-suite parser-tests
     , tasty-hunit
     , tree-diff         >=0.1     && <0.4
 
+    , mtl
     , text
     , pretty-simple
     , pretty
