@@ -1,4 +1,5 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE ViewPatterns #-}
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE LambdaCase #-}
@@ -25,7 +26,7 @@ module Distribution.Fields.Transform
     -- * Modification
   , ModifyConfig (..)
   , modifyField
-  -- , modifySection
+  , modifySection
 
     -- * Control flow
   , failIfUnchanged
@@ -66,9 +67,7 @@ import qualified Data.ByteString.Char8 as BS8
 import Data.Coerce
 import Data.Functor ((<&>))
 import Data.Kind
-import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.List.NonEmpty as NE
-import Data.Maybe
 import Data.Proxy
 import Distribution.Annotation
 import Distribution.FieldGrammar.Newtypes
@@ -80,10 +79,8 @@ import Distribution.Types.ConfVar
 import GHC.Generics
 
 import Distribution.CabalSpecVersion
-import qualified Distribution.Compat.Lens as L
 import qualified Distribution.Fields.Field.Lens as L ()
 import Distribution.Fields.Field.Relative
-import qualified Distribution.Parsec.Position.Lens as L
 
 -- | Reified function to facilitate chaining
 --   This can't be a functor (so there's no applicative nor alternative), I think there are better ways to do this.
@@ -188,36 +185,29 @@ modifyField mc match modifyFieldLines = Edit $ \spec ->
         | match fname fls = Field colonPos fname <$> modifyFieldLines spec fls
       doModify x = EditUnchanged x
    in case mc of
-        ModifyFirst -> fmap @Relative $ sequence @[] @EditResult . (mapFirstRest doModify EditUnchanged)
-        ModifyLast -> fmap @Relative $ mapLast doModify
+        ModifyFirst -> fmap @Relative (sequence @[] @EditResult . mapFirstRest doModify EditUnchanged)
+        ModifyLast -> fmap @Relative (mapLast doModify)
 
--- modifySection
---   :: ModifyConfig
---   -> MatchSection (WithComments Position)
---   -- ^ Match a given section
---   -> (CabalSpecVersion -> [SectionArg (WithComments Position)] -> EditResult [SectionArg (WithComments Position)])
---   -- ^ Transform the section args
---   -> Edit [Field (WithComments Position)]
---   -- ^ Transform inner fields
---   -> Edit [Field (WithComments Position)]
--- modifySection mc match modifySectionArgs modifyFields = Edit $ \spec ->
---   let doModify (Section sname sargs fs)
---         | match sname sargs fs =
---             let sargs' = modifySectionArgs spec sargs
---                 fs' = runEdit modifyFields spec fs
---              in -- TODO(leana8959): handle the case where section args' comments
---                 -- push the following content down.
---                 Section sname <$> sargs' <*> fs'
---       doModify x = EditUnchanged x
-
---       doShift (old, new) fd =
---         let (_, oldEnd) = fieldRowRange old
---             (_, newEnd) = fieldRowRange new
---             lineShift = (newEnd - oldEnd) `max` 0 -- ignore backjump
---          in offsetFieldRow lineShift fd
---    in case mc of
---         ModifyFirst -> mapFirstThen doModify doShift
---         ModifyLast -> mapLast doModify
+modifySection
+  :: ModifyConfig
+  -> MatchSection (WithComments Position)
+  -- ^ Match a given section
+  -> (CabalSpecVersion -> [SectionArg (WithComments Position)] -> EditResult [SectionArg (WithComments Position)])
+  -- ^ Transform the section args
+  -> Edit Relative [Field (WithComments Position)]
+  -- ^ Transform inner fields
+  -> Edit Relative [Field (WithComments Position)]
+modifySection mc match modifySectionArgs modifyFields = Edit $ \spec ->
+  let doModify :: Field (WithComments Position) -> Relative (EditResult (Field (WithComments Position)))
+      doModify (Section sname sargs fs) | match sname sargs fs =
+            let sargs' = modifySectionArgs spec sargs
+                -- TODO(leana8959): there is no relative context here, is it alright to say there is one like so?
+                fs' = runEdit modifyFields spec (pure @Relative fs)
+             in fmap (Section sname <$> sargs' <*>) fs'
+      doModify x = pure @Relative (EditUnchanged x)
+   in case mc of
+        ModifyFirst -> (>>= mapFirst' doModify)
+        ModifyLast -> (>>= mapLast' doModify)
 
 -- | If up to this point things are still unchanged, make it an error and stop here.
 failIfUnchanged :: (Functor f) => Edit f a -> Edit f a
@@ -265,46 +255,23 @@ mapFirstThen f g (x : xs) = case f x of
   EditUnchanged x' -> (x' :) <$> mapFirstThen f g xs
   EditErr err -> EditErr err
 
+mapFirst' :: (a -> Relative (EditResult a)) -> [a] -> Relative (EditResult [a])
+mapFirst' _ [] = pure @Relative (EditUnchanged [])
+mapFirst' f (x : xs) = let x' = f x in (fmap . fmap) (: xs) x'
+
+mapLast' :: (a -> Relative (EditResult a)) -> [a] -> Relative (EditResult [a])
+mapLast' f = (fmap . fmap) reverse . mapFirst' f . reverse
+
 mapFirst :: (a -> EditResult a) -> [a] -> EditResult [a]
 mapFirst f = mapFirstThen f (const id)
 
 mapFirstRest :: (a -> b) -> (a -> b) -> [a] -> [b]
 mapFirstRest _ _ [] = []
-mapFirstRest f g [u] = [f u]
+mapFirstRest f _ [u] = [f u]
 mapFirstRest f g (u : us) = f u : map g us
 
 mapLast :: (a -> EditResult a) -> [a] -> EditResult [a]
 mapLast f = fmap reverse . mapFirst f . reverse
-
-fieldsRowRange :: L.HasPosition ann => NonEmpty (Field ann) -> (Int, Int)
-fieldsRowRange = finalize . fmap fieldRowRange
-  where
-    finalize ranges = (fst (NE.head ranges), snd (NE.last ranges))
-
--- TODO(leana8959): this doesn't measure the comments' height, we should probably do that.
-fieldRowRange :: L.HasPosition ann => Field ann -> (Int, Int)
-fieldRowRange (Field _colonPos fname fls) =
-  let nameRow = L.view L.positionRow (nameAnn fname)
-      maybeLastFieldLinePos = L.view L.positionRow . fieldLineAnn . NE.last <$> NE.nonEmpty fls
-   in (nameRow, fromMaybe nameRow maybeLastFieldLinePos)
-fieldRowRange (Section sname _sargs fs) =
-  let nameRow = L.view L.positionRow (nameAnn sname)
-      bodyEnd = snd . fieldsRowRange <$> NE.nonEmpty fs
-   in (nameRow, fromMaybe nameRow bodyEnd)
-
--- | Compute the ending position of a field based on its range.
-afterFieldEndPosition :: L.HasPosition ann => Field ann -> Position
-afterFieldEndPosition f =
-  let (_, endRow) = fieldRowRange f
-   in Position (endRow + 1 {- next line -}) 1
-
-offsetFieldRow :: L.HasPosition ann => Int -> Field ann -> Field ann
-offsetFieldRow n = \case
-  (Field colonPos fname fls) -> Field (incrementRowN colonPos) (fmap incrementRowN fname) (map (fmap incrementRowN) fls)
-  (Section sname sargs fs) -> Section (fmap incrementRowN sname) (map (fmap incrementRowN) sargs) (map (fmap incrementRowN) fs)
-  where
-    incrementRowN :: L.HasPosition ann => ann -> ann
-    incrementRowN = L.over L.positionRow (+ n)
 
 --------------------------------------------------------------------------------
 -- Editing 'FieldLine's.
