@@ -188,6 +188,17 @@ modifyField mc match modifyFieldLines = Edit $ \spec ->
         ModifyFirst -> fmap @Relative (sequence @[] @EditResult . mapFirstRest doModify EditUnchanged)
         ModifyLast -> fmap @Relative (mapLast doModify)
 
+-- TODO(leana8959): the inner modification is odd
+-- TODO(leana8959): should edit functions be within the relative context as well?
+
+-- TODO(leana8959): the modification functions should use fmap to modify within the context.
+-- not bind, IDK what that does. That involves running the state in sequence, which says that there's an order.
+
+-- TODO(leana8959): provide an EditOk that is the identity function for composability.
+-- TODO(leana8959): make edit function that didn't change anything always fail.
+
+-- TODO(leana8959): should be distinguish the Position type with an Offset type. (I think we should)
+
 modifySection
   :: ModifyConfig
   -> MatchSection (WithComments Position)
@@ -202,6 +213,7 @@ modifySection mc match modifySectionArgs modifyFields = Edit $ \spec ->
       doModify (Section sname sargs fs) | match sname sargs fs =
             let sargs' = modifySectionArgs spec sargs
                 -- TODO(leana8959): there is no relative context here, is it alright to say there is one like so?
+                -- pure relative is never the right solution, because Position is not converted to offset
                 fs' = runEdit modifyFields spec (pure @Relative fs)
              in fmap (Section sname <$> sargs' <*>) fs'
       doModify x = pure @Relative (EditUnchanged x)
