@@ -29,6 +29,7 @@ type RelativeT (m :: Type -> Type) = StateT Position m
 data Offset = Offset
       {-# UNPACK #-} !Int -- row offset
       {-# UNPACK #-} !Int -- column offset
+  deriving (Eq, Ord, Show, Read)
 
 -- | The second position's offset to the first one
 diffPosition :: Position -> Position -> Offset
