@@ -26,64 +26,73 @@ type RelativeT (m :: Type -> Type) = StateT Position m
 -- TODO(leana8959): the fact that we reuse Position makes it possible to just lift something in the context.
 -- Is that good?
 
+data Offset = Offset
+      {-# UNPACK #-} !Int -- row offset
+      {-# UNPACK #-} !Int -- column offset
+
+-- | The second position's offset to the first one
+diffPosition :: Position -> Position -> Offset
+diffPosition (Position r0 c0) (Position r1 c1) = Offset (r1 - r0) (c1 - c0)
+
+offsetToPosition :: Position -> Offset -> Position
+offsetToPosition (Position r c) (Offset rd cd) = Position (r + rd) (c + cd)
+
 fromRelativeFields :: Position -> Relative [Field ann] -> ([Field ann], Position)
 fromRelativeFields = flip runState
 
-toRelativeFields :: Monad m => [Field (WithComments Position)] -> RelativeT m [Field (WithComments Position)]
+toRelativeFields :: Monad m => [Field (WithComments Position)] -> RelativeT m [Field (WithComments Offset)]
 toRelativeFields = traverse toRelativeField
 
 -- TODO: toRelativeField should be parameterized by the starting position as well
 
 -- | Expects the fields to be sorted in ascending order by 'Position'.
-toRelativeField :: Monad m => Field (WithComments Position) -> RelativeT m (Field (WithComments Position))
+toRelativeField :: Monad m => Field (WithComments Position) -> RelativeT m (Field (WithComments Offset))
 toRelativeField (Field colonPos fname fls) = do
   fname' <- relativizeName fname
-  colonPos' <- toRelativePosition colonPos
+  -- colonPos' <- toOffset colonPos
   fls' <- toRelativeFieldLines fls
-  pure (Field colonPos' fname' fls')
+  -- TODO(leana8959): colonPos is in correct, however we don't yet have a way to modify the Field datatype to hold either Position or Offset.
+  pure (Field colonPos fname' fls')
 toRelativeField (Section sname sargs fs) = do
   sname' <- relativizeName sname
   sargs' <- toRelativeSectionArgs sargs
   fs' <- toRelativeFields fs
   pure (Section sname' sargs' fs')
 
-toRelativeAnn :: Monad m => WithComments Position -> RelativeT m (WithComments Position)
+toRelativeAnn :: Monad m => WithComments Position -> RelativeT m (WithComments Offset)
 toRelativeAnn (WithComments cmts p) =
   let (pre, post) = partitionCommentsAt p cmts
    in do
         pre' <- toRelativeComments pre
-        p' <- toRelativePosition p
+        p' <- toOffset p
         post' <- toRelativeComments post
         pure (WithComments (pre' <> post') p')
 
-toRelativeComments :: Monad m => [Comment Position] -> RelativeT m [Comment Position]
+toRelativeComments :: Monad m => [Comment Position] -> RelativeT m [Comment Offset]
 toRelativeComments = traverse toRelativeComment
 
-toRelativeComment :: Monad m => Comment Position -> RelativeT m (Comment Position)
-toRelativeComment (Comment bs p) = Comment bs <$> toRelativePosition p
+toRelativeComment :: Monad m => Comment Position -> RelativeT m (Comment Offset)
+toRelativeComment (Comment bs p) = Comment bs <$> toOffset p
 
-toRelativePosition :: Monad m => Position -> RelativeT m Position
-toRelativePosition p = gets $ \p0@(Position row0 col0) ->
-  if L.view L.positionRow p == L.view L.positionRow p0
-    then p & L.over L.positionCol (\col -> col0 - col)
-    else p & L.over L.positionRow (\row -> row0 - row)
+toOffset :: Monad m => Position -> RelativeT m Offset
+toOffset p = gets (\p0 -> diffPosition p0 p)
 
 partitionCommentsAt :: Position -> [Comment Position] -> ([Comment Position], [Comment Position])
 partitionCommentsAt p0 = span (\(Comment _ p) -> p <= p0)
 
-relativizeName :: Monad m => Name (WithComments Position) -> RelativeT m (Name (WithComments Position))
+relativizeName :: Monad m => Name (WithComments Position) -> RelativeT m (Name (WithComments Offset))
 relativizeName (Name ann name) = Name <$> toRelativeAnn ann <*> pure name
 
-toRelativeFieldLines :: Monad m => [FieldLine (WithComments Position)] -> RelativeT m [FieldLine (WithComments Position)]
+toRelativeFieldLines :: Monad m => [FieldLine (WithComments Position)] -> RelativeT m [FieldLine (WithComments Offset)]
 toRelativeFieldLines = traverse toRelativeFieldLine
 
-toRelativeFieldLine :: Monad m => FieldLine (WithComments Position) -> RelativeT m (FieldLine (WithComments Position))
+toRelativeFieldLine :: Monad m => FieldLine (WithComments Position) -> RelativeT m (FieldLine (WithComments Offset))
 toRelativeFieldLine (FieldLine ann bs) = FieldLine <$> toRelativeAnn ann <*> pure bs
 
-toRelativeSectionArgs :: Monad m => [SectionArg (WithComments Position)] -> RelativeT m [SectionArg (WithComments Position)]
+toRelativeSectionArgs :: Monad m => [SectionArg (WithComments Position)] -> RelativeT m [SectionArg (WithComments Offset)]
 toRelativeSectionArgs = traverse toRelativeSectionArg
 
-toRelativeSectionArg :: Monad m => SectionArg (WithComments Position) -> RelativeT m (SectionArg (WithComments Position))
+toRelativeSectionArg :: Monad m => SectionArg (WithComments Position) -> RelativeT m (SectionArg (WithComments Offset))
 toRelativeSectionArg (SecArgName ann bs) = SecArgName <$> toRelativeAnn ann <*> pure bs
 toRelativeSectionArg (SecArgStr ann bs) = SecArgStr <$> toRelativeAnn ann <*> pure bs
 toRelativeSectionArg (SecArgOther ann bs) = SecArgOther <$> toRelativeAnn ann <*> pure bs
