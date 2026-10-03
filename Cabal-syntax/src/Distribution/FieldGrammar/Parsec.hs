@@ -97,6 +97,7 @@ import Distribution.Fields.ParseResult
 import Distribution.Parsec
 import Distribution.Parsec.FieldLineStream
 import Distribution.Parsec.Position (positionCol, positionRow)
+import Distribution.Fields.Field.Relative (Offset (..), offsetCol, offsetRow)
 
 -------------------------------------------------------------------------------
 -- Auxiliary types
@@ -516,7 +517,7 @@ removeComments = fmap unComments
 
 -- | Biased to put comments as trailing.
 --   Precondition: both list are sorted by 'Position' (asc).
-interleaveComments :: [FieldLine Position] -> [Comment Position] -> [FieldLine (WithComments Position)]
+interleaveComments :: [FieldLine Offset] -> [Comment Offset] -> [FieldLine (WithComments Offset)]
 interleaveComments [] _ = [] -- We have nothing to attach the comment to, considered it deleted.
 interleaveComments [FieldLine pos bs] cmts = [FieldLine (WithComments cmts pos) bs]
 interleaveComments (FieldLine pos bs : fls) cmts =
@@ -528,41 +529,40 @@ interleaveComments (FieldLine pos bs : fls) cmts =
 minimumNE :: Ord a => NonEmpty a -> a
 minimumNE (x :| xs) = min x (minimum xs)
 
-joinFieldLines :: NonEmpty (FieldLine Position) -> FieldLine Position
+joinFieldLines :: NonEmpty (FieldLine Offset) -> FieldLine Offset
 -- No indentation needed
 joinFieldLines (FieldLine ann bs :| []) = FieldLine ann bs
 -- Fixup missing whitespaces, then join
 joinFieldLines fsNE =
-  let leftmostCol = minimumNE $ fmap (L.view L.positionCol . fieldLineAnn) fsNE
+  let leftmostCol = minimumNE $ fmap (L.view offsetCol . fieldLineAnn) fsNE
       ann0 = fieldLineAnn (NE.head fsNE)
-      indented = map (indentFieldLine leftmostCol) (NE.toList fsNE)
-      bss = toBSWithNewlines (L.view L.positionRow ann0) indented
-   in FieldLine (L.set L.positionCol leftmostCol ann0) bss
+      fs = map (indentFieldLine leftmostCol) (NE.toList fsNE)
+      bss = toBSWithNewlines fs
+   in FieldLine (L.set offsetCol leftmostCol ann0) bss
 
 -- | Indent a FieldLine while preserving 'FieldLine' invariants.
-indentFieldLine :: L.HasPosition ann => Int -> FieldLine ann -> FieldLine ann
+indentFieldLine :: Int -> FieldLine Offset -> FieldLine Offset
 indentFieldLine leftmostCol (FieldLine ann bs) =
-  let myCol = L.view L.positionCol ann
+  let myCol = L.view offsetCol ann
       indent = myCol - leftmostCol
-   in FieldLine (L.set L.positionCol leftmostCol ann) (BS8.replicate indent ' ' <> bs)
+   in FieldLine (L.set offsetCol leftmostCol ann) (BS8.replicate indent ' ' <> bs)
 
-toBSWithNewlines :: L.HasPosition ann => Int -> [FieldLine ann] -> BS.ByteString
-toBSWithNewlines row0 = mconcat . mealy go row0
+toBSWithNewlines :: [FieldLine Offset] -> BS.ByteString
+toBSWithNewlines = mconcat . map go
   where
-    go row (FieldLine ann bs) =
-      let myRow = L.view L.positionRow ann
-          newlines = myRow - row
-       in (myRow, BS8.replicate newlines '\n' <> bs)
+    go :: FieldLine Offset -> BS.ByteString
+    go (FieldLine (Offset _ c) bs) = BS8.replicate c '\n' <> bs
 
 -- | Lines the inner 'ByteString', remove empty lines, distributing start column numbers and enumerate row numbers.
 --   We assume that the joined field lines have been aligned to the same column.
-splitFieldLines :: FieldLine Position -> [FieldLine Position]
+splitFieldLines :: FieldLine Offset -> [FieldLine Offset]
 splitFieldLines (FieldLine ann bs0) =
+-- TODO(leana8959): fix me
   let ls = BS8.lines bs0
-      Position startRow startCol = L.view L.position ann
+      Offset startRow startCol = ann
       rowNs = [startRow ..]
    in zipWith
-        ( \bs row -> FieldLine (Position row startCol) bs
+        ( \bs row -> FieldLine (Offset row startCol) bs
         )
         ls
         rowNs
