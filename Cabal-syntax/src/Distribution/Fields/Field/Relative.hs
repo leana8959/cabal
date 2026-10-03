@@ -2,6 +2,8 @@
 
 -- | We define an alternative algebra on Fields with relative positioning.
 --   This will help the modification, abstracting away the positing shifting.
+--
+--   The Offset represents the row,column offset to the previous AST element.
 module Distribution.Fields.Field.Relative where
 
 import Control.Monad.State (StateT, get, gets, modify, runState)
@@ -12,6 +14,7 @@ import qualified Data.ByteString as BS
 import qualified Data.ByteString.Char8 as BS8
 import Data.Functor.Identity
 import Data.Kind
+import Distribution.Compat.Lens (Lens')
 
 type EpField = FieldConcrete Position (WithComments Position)
 
@@ -29,6 +32,12 @@ data Offset = Offset
       {-# UNPACK #-} !Int -- column offset
   deriving (Eq, Ord, Show, Read)
 
+offsetRow :: Lens' Offset Int
+offsetRow f (Offset row col) = (\row' -> Offset row' col) <$> f row
+
+offsetCol :: Lens' Offset Int
+offsetCol f (Offset row col) = (\col' -> Offset row col') <$> f col
+
 -- | The second position's offset to the first one
 diffPosition :: Position -> Position -> Offset
 diffPosition (Position r0 c0) (Position r1 c1) = Offset (r1 - r0) (c1 - c0)
@@ -42,7 +51,7 @@ fromRelativeFields = flip runState
 toRelativeFields :: Monad m => [Field (WithComments Position)] -> RelativeT m [Field (WithComments Offset)]
 toRelativeFields = traverse toRelativeField
 
--- TODO: toRelativeField should be parameterized by the starting position as well
+-- TODO(leana8959): toRelativeField should be parameterized by the starting position as well
 
 -- | Expects the fields to be sorted in ascending order by 'Position'.
 toRelativeField :: Monad m => Field (WithComments Position) -> RelativeT m (Field (WithComments Offset))
@@ -85,6 +94,8 @@ relativizeName (Name ann name) = Name <$> toRelativeAnn ann <*> pure name
 toRelativeFieldLines :: Monad m => [FieldLine (WithComments Position)] -> RelativeT m [FieldLine (WithComments Offset)]
 toRelativeFieldLines = traverse toRelativeFieldLine
 
+-- TODO(leana8959): this is wrong. it should update the position with bs
+-- TODO(leana8959): check other functions as well.
 toRelativeFieldLine :: Monad m => FieldLine (WithComments Position) -> RelativeT m (FieldLine (WithComments Offset))
 toRelativeFieldLine (FieldLine ann bs) = FieldLine <$> toRelativeAnn ann <*> pure bs
 
