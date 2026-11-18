@@ -94,11 +94,11 @@ import Distribution.CabalSpecVersion
 import Distribution.Compat.Lens (ALens')
 import Distribution.FieldGrammar.Class
 import Distribution.Fields.Field
+import Distribution.Fields.Field.Relative
 import Distribution.Fields.ParseResult
 import Distribution.Parsec
 import Distribution.Parsec.FieldLineStream
 import Distribution.Parsec.Position (positionCol, positionRow)
-import Distribution.Fields.Field.Relative (Offset (..), offsetCol, offsetRow)
 
 -------------------------------------------------------------------------------
 -- Auxiliary types
@@ -500,54 +500,63 @@ extractComments = foldMap (\x -> priorComments x <> followingComments x)
 removeComments :: Functor f => f (WithComments ann) -> f ann
 removeComments = fmap unComments
 
+-- TODO(leana8959): update these relatively
+
 -- | Biased to put comments as trailing.
 --   Precondition: both list are sorted by 'Position' (asc).
-interleaveComments :: [FieldLine Offset] -> [Comment Offset] -> [FieldLine (WithComments Offset)]
-interleaveComments [] _ = [] -- We have nothing to attach the comment to, considered it deleted.
-interleaveComments [FieldLine pos bs] cmts = [FieldLine (WithComments [] cmts pos) bs]
-interleaveComments (FieldLine pos bs : fls) cmts =
-  let (pre, post) = span (\(Comment _ cpos) -> pos < cpos) cmts
-   in FieldLine (WithComments []pre pos) bs : interleaveComments fls post
+interleaveComments :: [FieldLine RelRowPos] -> [Comment RelRowPos] -> [FieldLine (WithComments RelRowPos)]
+interleaveComments = undefined
+-- interleaveComments [] _ = [] -- We have nothing to attach the comment to, considered it deleted.
+-- interleaveComments [FieldLine pos bs] cmts = [FieldLine (WithComments [] cmts pos) bs]
+-- interleaveComments (FieldLine pos bs : fls) cmts =
+--   let (pre, post) = span (\(Comment _ cpos) -> pos < cpos) cmts
+--    in FieldLine (WithComments []pre pos) bs : interleaveComments fls post
 
 -- TODO(leana8959): add property tests
 
 minimumNE :: Ord a => NonEmpty a -> a
 minimumNE (x :| xs) = min x (minimum xs)
 
-joinFieldLines :: NonEmpty (FieldLine Offset) -> FieldLine Offset
--- No indentation needed
-joinFieldLines (FieldLine ann bs :| []) = FieldLine ann bs
--- Fixup missing whitespaces, then join
-joinFieldLines fsNE =
-  let leftmostCol = minimumNE $ fmap (L.view offsetCol . fieldLineAnn) fsNE
-      ann0 = fieldLineAnn (NE.head fsNE)
-      fs = map (indentFieldLine leftmostCol) (NE.toList fsNE)
-      bss = toBSWithNewlines fs
-   in FieldLine (L.set offsetCol leftmostCol ann0) bss
+-- TODO(leana8959): rewrite these relatively
+joinFieldLines :: NonEmpty (FieldLine RelRowPos) -> FieldLine RelRowPos
+joinFieldLines = undefined
+-- -- No indentation needed
+-- joinFieldLines (FieldLine ann bs :| []) = FieldLine ann bs
+-- -- Fixup missing whitespaces, then join
+-- joinFieldLines fsNE =
+--   let leftmostCol = minimumNE $ fmap (L.view L.positionCol . fieldLineAnn) fsNE
+--       ann0 = fieldLineAnn (NE.head fsNE)
+--       indented = map (indentFieldLine leftmostCol) (NE.toList fsNE)
+--       bss = toBSWithNewlines (L.view L.positionRow ann0) indented
+--    in FieldLine (L.set L.positionCol leftmostCol ann0) bss
 
 -- | Indent a FieldLine while preserving 'FieldLine' invariants.
-indentFieldLine :: Int -> FieldLine Offset -> FieldLine Offset
+indentFieldLine :: L.HasPosition ann => Int -> FieldLine ann -> FieldLine ann
 indentFieldLine leftmostCol (FieldLine ann bs) =
-  let myCol = L.view offsetCol ann
+  let myCol = L.view L.positionCol ann
       indent = myCol - leftmostCol
-   in FieldLine (L.set offsetCol leftmostCol ann) (BS8.replicate indent ' ' <> bs)
+   in FieldLine (L.set L.positionCol leftmostCol ann) (BS8.replicate indent ' ' <> bs)
 
-toBSWithNewlines :: [FieldLine Offset] -> BS.ByteString
-toBSWithNewlines = mconcat . map go
+toBSWithNewlines :: L.HasPosition ann => Int -> [FieldLine ann] -> BS.ByteString
+toBSWithNewlines row0 = mconcat . mealy go row0
   where
-    go :: FieldLine Offset -> BS.ByteString
-    go (FieldLine (Offset _ c) bs) = BS8.replicate c '\n' <> bs
+    go row (FieldLine ann bs) =
+      let myRow = L.view L.positionRow ann
+          newlines = myRow - row
+       in (myRow, BS8.replicate newlines '\n' <> bs)
+
+-- TODO(leana8959): update these relatively
 
 -- | Lines the inner 'ByteString', remove empty lines, distributing start column numbers and enumerate row numbers.
 --   We assume that the joined field lines have been aligned to the same column.
-splitFieldLines :: FieldLine Offset -> [FieldLine Offset]
-splitFieldLines (FieldLine ann bs0) =
--- TODO(leana8959): fix me
-  let ls = BS8.lines bs0
-      Offset startRow startCol = ann
-      rowNs = [startRow ..]
-   in zipWith
-        ( \bs row -> FieldLine (Offset row startCol) bs
-        )
-        ls
-        rowNs
+splitFieldLines :: FieldLine RelRowPos -> [FieldLine RelRowPos]
+splitFieldLines = undefined
+-- splitFieldLines (FieldLine ann bs0) =
+--   let ls = BS8.lines bs0
+--       Position startRow startCol = L.view L.position ann
+--       rowNs = [startRow ..]
+--    in zipWith
+--         ( \bs row -> FieldLine (Position row startCol) bs
+--         )
+--         ls
+--         rowNs

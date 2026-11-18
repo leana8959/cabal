@@ -47,6 +47,7 @@ data Offset = Offset
 data RelRowPos = RelRowPos
   {-# UNPACK #-} !Int -- row offset
   {-# UNPACK #-} !Int -- column position
+  deriving (Eq, Ord, Show, Read)
 
 relRowFields :: [EpField] -> PosM [RelEpField]
 relRowFields = traverse relRowField

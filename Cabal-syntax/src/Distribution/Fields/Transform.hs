@@ -86,11 +86,10 @@ import Distribution.Parsec.FieldLineStream
 -- import Distribution.Types.ConfVar
 import GHC.Generics
 
+import Distribution.Fields.Field.Relative
+
 import Distribution.CabalSpecVersion
 import qualified Distribution.Fields.Field.Lens as L ()
-
--- TODO(leana8959): Change this with relative monad in the future
-type EpField = FieldConcrete Offset (WithComments Offset)
 
 -- commented for now, for the Field datatype refactor
 
@@ -152,12 +151,12 @@ data AddConfig = AddStart | AddEnd
 
 -- TODO: Offset being fixed is awkward
 type MatchField ann = Name ann -> [FieldLine ann] -> Bool
-type MatchSection ann = Name ann -> [SectionArg ann] -> [FieldConcrete Offset ann] -> Bool
+type MatchSection ann = Name ann -> [SectionArg ann] -> [FieldConcrete RelRowPos ann] -> Bool
 
 addField
   :: AddConfig
-  -> EpField
-  -> Edit [EpField]
+  -> RelEpField
+  -> Edit [RelEpField]
 addField ac newField = Edit $ \_ -> case ac of
   AddStart -> EditOk . (newField :)
   AddEnd -> EditOk . (newField `snoc`)
@@ -168,8 +167,8 @@ data RemoveConfig = RemoveAll | RemoveFirst
 
 removeField
   :: RemoveConfig
-  -> MatchField (WithComments Offset)
-  -> Edit [EpField]
+  -> MatchField (WithComments RelRowPos)
+  -> Edit [RelEpField]
 removeField rc match = Edit $ \_ -> case rc of
   RemoveAll -> mkEditResult <*> filter p
   RemoveFirst -> mkEditResult <*> filterOne p
@@ -182,10 +181,10 @@ data ModifyConfig = ModifyFirst | ModifyLast
 -- Different modification strategies
 modifyField
   :: ModifyConfig
-  -> MatchField (WithComments Offset)
+  -> MatchField (WithComments RelRowPos)
   -- ^ Match a given field
-  -> (CabalSpecVersion -> [FieldLine (WithComments Offset)] -> EditResult [FieldLine (WithComments Offset)])
-  -> Edit [EpField]
+  -> (CabalSpecVersion -> [RelEpFieldLine] -> EditResult [RelEpFieldLine])
+  -> Edit [RelEpField]
 modifyField mc match modifyFieldLines = Edit $ \spec ->
   let doModify (FieldConcrete colonPos fname fls) | match fname fls = FieldConcrete colonPos fname <$> fls'
         where
@@ -198,15 +197,15 @@ modifyField mc match modifyFieldLines = Edit $ \spec ->
 
 modifySection
   :: ModifyConfig
-  -> MatchSection (WithComments Offset)
+  -> MatchSection (WithComments RelRowPos)
   -- ^ Match a given section
-  -> (CabalSpecVersion -> [SectionArg (WithComments Offset)] -> EditResult [SectionArg (WithComments Offset)])
+  -> (CabalSpecVersion -> [RelEpSecArg] -> EditResult [RelEpSecArg])
   -- ^ Transform the section args
-  -> Edit [EpField]
+  -> Edit [RelEpField]
   -- ^ Transform inner fields
-  -> Edit [EpField]
+  -> Edit [RelEpField]
 modifySection mc match modifySectionArgs modifyFields = Edit $ \spec ->
-  let doModify :: EpField -> EditResult EpField
+  let doModify :: RelEpField -> EditResult RelEpField
       doModify (SectionConcrete sname sargs fs)
         | match sname sargs fs =
             let sargs' = modifySectionArgs spec sargs
@@ -295,7 +294,7 @@ modifyValueAtomAla
    . (Coercible a b, Parsec b, Pretty b)
   => (a -> Maybe a)
   -- ^ Nothing prevents a new render.
-  -> (CabalSpecVersion -> [FieldLine (WithComments Offset)] -> EditResult [FieldLine (WithComments Offset)])
+  -> (CabalSpecVersion -> [RelEpFieldLine] -> EditResult [RelEpFieldLine])
 modifyValueAtomAla transformA spec fls0 =
   let comments = foldMap extractComments fls0
       fls = fmap removeComments fls0
@@ -375,7 +374,7 @@ modifyValueList
      )
   => (a -> Maybe a)
   -- ^ Nothing prevents a new render.
-  -> (CabalSpecVersion -> [FieldLine (WithComments Offset)] -> EditResult [FieldLine (WithComments Offset)])
+  -> (CabalSpecVersion -> [RelEpFieldLine] -> EditResult [RelEpFieldLine])
 modifyValueList transformA spec fls0 =
   let comments = foldMap extractComments fls0
       fls = fmap removeComments fls0
@@ -431,7 +430,7 @@ prependValueList
      , Parsec (List sep (Located b) (Located a))
      )
   => a
-  -> (CabalSpecVersion -> [FieldLine (WithComments Offset)] -> EditResult [FieldLine (WithComments Offset)])
+  -> (CabalSpecVersion -> [RelEpFieldLine] -> EditResult [RelEpFieldLine])
 prependValueList newValue spec fls0 =
   let comments = foldMap extractComments fls0
       fls = fmap removeComments fls0
