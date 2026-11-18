@@ -6,7 +6,7 @@
 --   The Offset represents the row,column offset to the previous AST element.
 module Distribution.Fields.Field.Relative where
 
-import Control.Monad.State (StateT, get, gets, modify, runState)
+import Control.Monad.State (State, StateT, get, gets, modify, runState)
 import Distribution.Fields.Field
 import Distribution.Parsec.Position
 
@@ -16,13 +16,24 @@ import Data.Functor.Identity
 import Data.Kind
 import Distribution.Compat.Lens (Lens')
 
+-- TODO(leana8959): do the aliases properly
+
 type EpField = FieldConcrete Position (WithComments Position)
+type RelEpField = FieldConcrete RelRowPos (WithComments RelRowPos)
+
+type EpFieldLine = FieldLine (WithComments Position)
+type RelEpFieldLine = FieldLine (WithComments RelRowPos)
+
+type EpSecArg = SectionArg (WithComments Position)
+type RelEpSecArg = SectionArg (WithComments RelRowPos)
 
 -- | As a convention, we say the current position is not yet occupied.
 --   Each relative thing should increment the current position to where the next thing can start.
 type Relative = RelativeT Identity
 
 type RelativeT (m :: Type -> Type) = StateT Position m
+
+type PosM = State Position
 
 -- TODO(leana8959): the fact that we reuse Position makes it possible to just lift something in the context.
 -- Is that good?
@@ -32,11 +43,50 @@ data Offset = Offset
       {-# UNPACK #-} !Int -- column offset
   deriving (Eq, Ord, Show, Read)
 
-offsetRow :: Lens' Offset Int
-offsetRow f (Offset row col) = (\row' -> Offset row' col) <$> f row
+-- | Position where the line is relative
+data RelRowPos = RelRowPos
+  {-# UNPACK #-} !Int -- row offset
+  {-# UNPACK #-} !Int -- column position
 
-offsetCol :: Lens' Offset Int
-offsetCol f (Offset row col) = (\col' -> Offset row col') <$> f col
+relRowFields :: [EpField] -> PosM [RelEpField]
+relRowFields = traverse relRowField
+
+relRowField :: EpField -> PosM RelEpField
+relRowField (FieldConcrete colonPos fname fls) = FieldConcrete <$> mkRelRowPos colonPos <*> relRowName fname <*> relRowFieldLines fls
+relRowField (SectionConcrete sname sargs fs) = SectionConcrete <$> relRowName sname <*> relRowSecArgs sargs <*> relRowFields fs
+
+relRowName :: Name (WithComments Position) -> PosM (Name (WithComments RelRowPos))
+relRowName (Name cmtPos name) = Name <$> relRowCommentsPos cmtPos <*> pure name
+
+relRowFieldLines :: [EpFieldLine] -> PosM [RelEpFieldLine]
+relRowFieldLines = traverse relRowFieldLine
+relRowFieldLine :: EpFieldLine -> PosM RelEpFieldLine
+relRowFieldLine (FieldLine cmtPos bs) = FieldLine <$> relRowCommentsPos cmtPos <*> pure bs
+
+
+relRowSecArgs :: [EpSecArg] -> PosM [RelEpSecArg]
+relRowSecArgs = traverse relRowSecArg
+relRowSecArg :: EpSecArg -> PosM RelEpSecArg
+relRowSecArg (SecArgName ann bs) = SecArgName <$> relRowCommentsPos ann <*> pure bs
+relRowSecArg (SecArgStr ann bs) = SecArgStr <$> relRowCommentsPos ann <*> pure bs
+relRowSecArg (SecArgOther ann bs) = SecArgOther <$> relRowCommentsPos ann <*> pure bs
+
+-- basics
+
+relRowCommentsPos :: WithComments Position -> PosM (WithComments RelRowPos)
+relRowCommentsPos (WithComments pre post p) = WithComments <$> relRowComments pre <*> relRowComments post <*> mkRelRowPos p
+
+relRowComments :: [Comment Position] -> PosM [Comment RelRowPos]
+relRowComments = traverse relRowComment
+relRowComment :: Comment Position -> PosM (Comment RelRowPos)
+relRowComment (Comment bs pos) = Comment bs <$> mkRelRowPos pos
+
+mkRelRowPos :: Position -> PosM RelRowPos
+mkRelRowPos (Position r c) = gets (\(Position r0 _) -> RelRowPos (r - r0) c)
+
+
+{-
+
 
 -- | The second position's offset to the first one
 diffPosition :: Position -> Position -> Offset
@@ -184,3 +234,4 @@ mkRelSectionArg (SecArgName _ bs) = gets (\p -> SecArgName p bs) <* offsetBSWith
 mkRelSectionArg (SecArgStr _ bs) = gets (\p -> SecArgStr p bs) <* offsetBSWithSpace bs
 mkRelSectionArg (SecArgOther _ bs) = gets (\p -> SecArgOther p bs) <* offsetBSWithSpace bs
 
+-}
