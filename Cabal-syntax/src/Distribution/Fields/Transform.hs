@@ -62,7 +62,6 @@ import Distribution.FieldGrammar.Parsec
   , splitFieldLines
   )
 import Distribution.Fields.Field
-import Distribution.Fields.Field.Relative (Offset)
 import Distribution.Parsec.Position
 import Distribution.Pretty
 
@@ -81,9 +80,6 @@ import Distribution.FieldGrammar.Newtypes
 import Distribution.Parsec
 import Distribution.Parsec.FieldLineStream
 
--- import Distribution.Fields.ConfVar
--- import Distribution.Types.Condition
--- import Distribution.Types.ConfVar
 import GHC.Generics
 
 import Distribution.Fields.Field.Relative
