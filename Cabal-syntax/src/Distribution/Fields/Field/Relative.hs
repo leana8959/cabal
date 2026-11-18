@@ -6,7 +6,7 @@
 --   The Offset represents the row,column offset to the previous AST element.
 module Distribution.Fields.Field.Relative where
 
-import Control.Monad.State (State, StateT, get, gets, modify, runState)
+import Control.Monad.State (State, StateT, get, gets, modify, runState, put)
 import Distribution.Fields.Field
 import Distribution.Parsec.Position
 
@@ -28,6 +28,7 @@ type EpSecArg = SectionArg (WithComments Position)
 type RelEpSecArg = SectionArg (WithComments RelRowPos)
 
 type PosM = State Position
+type ColM = State Int -- just the column
 
 -- | Position where the line is relative
 data RelRowPos = RelRowPos
@@ -73,12 +74,32 @@ mkRelRowPos (Position r c) = gets (\(Position r0 _) -> RelRowPos (r - r0) c)
 
 -- TODO(leana8959): Implement mkField primitives that makes relative fields
 
-mkField
+mkFieldM
   :: Name ()
   -> [BS.ByteString] -- ^ Comments to the 'Name'
   -> [BS.ByteString] -- ^ FieldLines
-  -> RelEpField
-mkField name cmts fls = undefined
+  -> ColM RelEpField
+mkFieldM name cmts fls = do
+  name' <- mkRelColPosName name
+
+  undefined
+
+-- TODO(leana8959): field comment generation would require knowing the surrounding indentation context
+
+mkComments :: [BS.ByteString] -> Relative [Comment Position]
+mkComments = traverse mkComment
+
+mkComment :: BS.ByteString -> Relative (Comment Position)
+mkComment bs = gets (Comment ("-- " <> bs)) <* modify (incRow 1)
+
+mkRelColPosName :: Name () -> ColM (Name RelRowPos)
+mkRelColPosName name = gets (\c -> RelRowPos 0 c <$ name) <* offsetColByBS (getName name)
+
+offsetColByBS :: BS.ByteString -> ColM BS.ByteString
+offsetColByBS bs = bs <$ modify (+ (BS8.length bs))
+
+resetCol :: ColM ()
+resetCol = put 1 -- one indexed
 
 mkSection
   :: Name ()
